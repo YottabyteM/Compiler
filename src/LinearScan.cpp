@@ -162,8 +162,25 @@ void LinearScan::computeLiveIntervals()
 bool LinearScan::linearScanRegisterAllocation()
 {
     // Todo
+    active.clear(); regs.clear();
+    for (int i = 4; i < 11; i ++ )
+        regs.push_back(i);
+    bool flag = true;
+    for (auto &interval : intervals) {
+        expireOldIntervals(interval);
 
-    return true;
+        if (!regs.size()) {
+            spillAtInterval(interval);
+            flag = false;
+        }
+        else {
+            interval->rreg = (*regs.rbegin());
+            regs.pop_back();
+            active.push_back(interval);
+            sort(active.begin(), active.end(), comp);
+        }
+    }
+    return flag;
 }
 
 void LinearScan::modifyCode()
@@ -190,17 +207,40 @@ void LinearScan::genSpillCode()
          * 1. insert ldr inst before the use of vreg
          * 2. insert str inst after the def of vreg
          */ 
+        interval->disp = func->AllocSpace(4);
+        for (auto use : interval->uses) {
+            MachineBlock* block = use->getParent()->getParent();
+            block->insertbefore(use->getParent(), new LoadMInstruction(block, new MachineOperand(*use), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+        }
+
+        for (auto def : interval->defs) {
+            MachineBlock* block = def->getParent()->getParent();
+            block->insertafter(def->getParent(), new LoadMInstruction(block, new MachineOperand(*def), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+        }
     }
 }
 
 void LinearScan::expireOldIntervals(Interval *interval)
 {
     // Todo
+    for (auto inter = active.begin(); inter != active.end(); inter = active.erase(find(active.begin(), active.end(), (*inter)))) {
+        if ((*inter)->end >= interval->start) return;
+        regs.push_back((*inter)->rreg);
+        sort(regs.begin(), regs.end());
+    }
 }
 
 void LinearScan::spillAtInterval(Interval *interval)
 {
     // Todo
+    if ((*active.rbegin())->end <= interval->end)
+        interval->spill = true;
+    else {
+        (*active.rbegin())->spill = true;
+        interval->rreg = (*active.rbegin())->rreg;
+        active.push_back(interval);
+        sort(active.begin(), active.end(), comp);
+    }
 }
 
 bool LinearScan::compareStart(Interval *a, Interval *b)

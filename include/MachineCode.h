@@ -226,6 +226,8 @@ public:
     std::set<MachineOperand *> &getLiveOut() { return live_out; };
     std::vector<MachineBlock *> &getPreds() { return pred; };
     std::vector<MachineBlock *> &getSuccs() { return succ; };
+    void insertbefore(MachineInstruction* pos, MachineInstruction* cont);
+    void insertafter(MachineInstruction* pos, MachineInstruction* cont);
     void output();
 };
 

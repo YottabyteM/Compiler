@@ -31,7 +31,7 @@ private:
     MachineFunction *func;
     std::vector<int> regs;
     std::map<MachineOperand *, std::set<MachineOperand *>> du_chains;
-    std::vector<Interval*> intervals;
+    std::vector<Interval*> intervals, active;
     static bool compareStart(Interval*a, Interval*b);
     void expireOldIntervals(Interval *interval);
     void spillAtInterval(Interval *interval);
@@ -40,6 +40,7 @@ private:
     bool linearScanRegisterAllocation();
     void modifyCode();
     void genSpillCode();
+    bool comp(Interval* a, Interval* b) { return a->end < b->end; };
 public:
     LinearScan(MachineUnit *unit);
     void allocateRegisters();

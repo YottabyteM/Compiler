@@ -306,3 +306,20 @@ void MachineUnit::output()
     for (auto iter : func_list)
         iter->output();
 }
+
+void MachineBlock::insertbefore(MachineInstruction* pos, MachineInstruction* cont)
+{
+    auto p = find(inst_list.begin(), inst_list.end(), cont);
+    inst_list.insert(p, cont);
+}
+
+void MachineBlock::insertafter(MachineInstruction* pos, MachineInstruction* cont)
+{
+    auto p = find(inst_list.begin(), inst_list.end(), cont);
+    if (p == inst_list.end()) 
+    {
+        inst_list.push_back(cont);
+        return;
+    }
+    inst_list.insert(p + 1, cont);
+}
