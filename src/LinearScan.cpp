@@ -177,6 +177,9 @@ bool LinearScan::linearScanRegisterAllocation()
             interval->rreg = (*regs.rbegin());
             regs.pop_back();
             active.push_back(interval);
+            auto comp = [&](Interval* a, Interval* b) -> bool {
+                return a->end < b->end;
+            };
             sort(active.begin(), active.end(), comp);
         }
     }
@@ -239,6 +242,9 @@ void LinearScan::spillAtInterval(Interval *interval)
         (*active.rbegin())->spill = true;
         interval->rreg = (*active.rbegin())->rreg;
         active.push_back(interval);
+        auto comp = [&](Interval* a, Interval* b) -> bool {
+            return a->end < b->end;
+        };
         sort(active.begin(), active.end(), comp);
     }
 }

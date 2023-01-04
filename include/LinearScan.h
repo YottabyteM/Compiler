@@ -40,7 +40,6 @@ private:
     bool linearScanRegisterAllocation();
     void modifyCode();
     void genSpillCode();
-    bool comp(Interval* a, Interval* b) { return a->end < b->end; };
 public:
     LinearScan(MachineUnit *unit);
     void allocateRegisters();
