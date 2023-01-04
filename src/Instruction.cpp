@@ -93,6 +93,7 @@ LoadInstruction::~LoadInstruction()
 
 void LoadInstruction::output() const
 {
+    // TODO : Array
     std::string dst = operands[0]->toStr();
     std::string src = operands[1]->toStr();
     std::string dst_type = operands[0]->getType()->toStr();
@@ -117,6 +118,7 @@ StoreInstruction::~StoreInstruction()
 
 void StoreInstruction::output() const
 {
+    // TODO : Array
     std::string dst = operands[0]->toStr();
     std::string src = operands[1]->toStr();
     std::string dst_type = operands[0]->getType()->toStr();
@@ -509,14 +511,26 @@ MachineOperand *Instruction::genMachineOperand(Operand *ope)
     auto se = ope->getEntry();
     MachineOperand *mope = nullptr;
     if (se->isConstant())
-        mope = new MachineOperand(MachineOperand::IMM, se->getValue());
+        mope = new MachineOperand(MachineOperand::IMM, se->getValue(), se->getType()->isFloat());
     else if (se->isTemporary())
-        mope = new MachineOperand(MachineOperand::VREG, dynamic_cast<TemporarySymbolEntry *>(se)->getLabel());
+        mope = new MachineOperand(MachineOperand::VREG, dynamic_cast<TemporarySymbolEntry *>(se)->getLabel(), se->getType()->isFloat());
     else if (se->isVariable())
     {
         auto id_se = dynamic_cast<IdentifierSymbolEntry *>(se);
         if (id_se->isGlobal())
             mope = new MachineOperand(id_se->toStr().c_str());
+        else if (id_se->isParam())
+        {
+            int paramNo = this->parent->getParent()->getParamNo(ope);
+            if (paramNo >= 0 && paramNo <= 3)
+            {
+                mope = new MachineOperand(MachineOperand::REG, paramNo, se->getType()->isFloat());
+            }
+            else if (paramNo >= 4)
+            {
+                // TODO
+            }
+        }
         else
         {
             assert(0);
@@ -526,19 +540,19 @@ MachineOperand *Instruction::genMachineOperand(Operand *ope)
     return mope;
 }
 
-MachineOperand *Instruction::genMachineReg(int reg)
+MachineOperand *Instruction::genMachineReg(int reg, bool is_float)
 {
-    return new MachineOperand(MachineOperand::REG, reg);
+    return new MachineOperand(MachineOperand::REG, reg, is_float);
 }
 
-MachineOperand *Instruction::genMachineVReg()
+MachineOperand *Instruction::genMachineVReg(bool is_float)
 {
-    return new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel());
+    return new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), is_float);
 }
 
-MachineOperand *Instruction::genMachineImm(int val)
+MachineOperand *Instruction::genMachineImm(double val, bool is_float)
 {
-    return new MachineOperand(MachineOperand::IMM, val);
+    return new MachineOperand(MachineOperand::IMM, val, is_float);
 }
 
 MachineOperand *Instruction::genMachineLabel(int block_no)
@@ -555,12 +569,13 @@ void AllocaInstruction::genMachineCode(AsmBuilder *builder)
      * Allocate stack space for local variabel
      * Store frame offset in symbol entry */
     auto cur_func = builder->getFunction();
-    int offset = cur_func->AllocSpace(4);
+    int offset = cur_func->AllocSpace(se->getType()->getSize());
     dynamic_cast<TemporarySymbolEntry *>(operands[0]->getEntry())->setOffset(-offset);
 }
 
 void LoadInstruction::genMachineCode(AsmBuilder *builder)
 {
+    // TODO：Array
     auto cur_block = builder->getBlock();
     MachineInstruction *cur_inst = nullptr;
     // Load global operand
@@ -582,10 +597,24 @@ void LoadInstruction::genMachineCode(AsmBuilder *builder)
     {
         // example: load r1, [r0, #4]
         auto dst = genMachineOperand(operands[0]);
-        auto src1 = genMachineReg(11);
+        auto src1 = genMachineReg(11); // fp
         auto src2 = genMachineImm(dynamic_cast<TemporarySymbolEntry *>(operands[1]->getEntry())->getOffset());
+        // int offset = dynamic_cast<TemporarySymbolEntry*>(operands[1]->getEntry())->getOffset();
+        // auto src2 = genMachineImm(offset);
+        // if(offset > 255 || offset < -255) {
+        //     auto internal_reg = genMachineVReg();
+        //     cur_inst = new LoadMInstruction(cur_block, internal_reg, src2);
+        //     cur_block->InsertInst(cur_inst);
+        //     src2 = new MachineOperand(*internal_reg);
+        // }
         cur_inst = new LoadMInstruction(cur_block, dst, src1, src2);
         cur_block->InsertInst(cur_inst);
+        // // 如果是函数参数 则保留其偏移量方便后续调整
+        // // 如果偏移量为正值则说明其在栈底之上 为保留参数
+        // if (dynamic_cast<TemporarySymbolEntry *>(operands[1]->getEntry())->getOffset() >= 0)
+        // {
+        //     cur_block->getParent()->insertSavedParamsOffset(src2);
+        // }
     }
     // Load operand from temporary variable
     else
@@ -600,13 +629,67 @@ void LoadInstruction::genMachineCode(AsmBuilder *builder)
 
 void StoreInstruction::genMachineCode(AsmBuilder *builder)
 {
-    // TODO
+    // TODO : Array
+    auto cur_block = builder->getBlock();
+    MachineInstruction *cur_inst = nullptr;
+    // // 如果当前是存参数 则直接修改dst的offset
+    // if (operands[1]->getEntry()->isVariable() && dynamic_cast<IdentifierSymbolEntry *>(operands[1]->getEntry())->isParam())
+    // {
+    //     int paramNo = this->getParent()->getParent()->getParamNo(operands[1]);
+    //     if (paramNo >= 4)
+    //         dynamic_cast<TemporarySymbolEntry *>(operands[0]->getEntry())->setOffset(4 * (paramNo - 4));
+    // }
+    MachineOperand *src = genMachineOperand(operands[1]);
+    // 如果src为常数，需要先load进来
+    if (src->isImm())
+    {
+        auto internal_reg = genMachineVReg();
+        cur_inst = new LoadMInstruction(cur_block, internal_reg, src);
+        cur_block->InsertInst(cur_inst);
+        src = new MachineOperand(*internal_reg);
+    }
+    // Store global operand
+    if (operands[0]->getEntry()->isVariable() && dynamic_cast<IdentifierSymbolEntry *>(operands[0]->getEntry())->isGlobal())
+    {
+        auto internal_reg1 = genMachineVReg();
+        auto internal_reg2 = new MachineOperand(*internal_reg1);
+        auto dst = genMachineOperand(operands[0]);
+        // example: load r0, addr_a
+        cur_inst = new LoadMInstruction(cur_block, internal_reg1, dst);
+        cur_block->InsertInst(cur_inst);
+        // example: store r1, [r0]
+        cur_inst = new StoreMInstruction(cur_block, src, internal_reg2);
+        cur_block->InsertInst(cur_inst);
+    }
+    // Store local operand
+    else if (operands[0]->getEntry()->isTemporary() && operands[0]->getDef() && operands[0]->getDef()->isAlloc())
+    {
+        // example: store r1, [r0, #4]
+        auto dst1 = genMachineReg(11);
+        int offset = dynamic_cast<TemporarySymbolEntry *>(operands[0]->getEntry())->getOffset();
+        auto dst2 = genMachineImm(offset);
+        // if (offset > 255 || offset < -255)
+        // {
+        //     auto internal_reg = genMachineVReg();
+        //     cur_inst = new LoadMInstruction(cur_block, internal_reg, dst2);
+        //     cur_block->InsertInst(cur_inst);
+        //     dst2 = new MachineOperand(*internal_reg);
+        // }
+        cur_inst = new StoreMInstruction(cur_block, src, dst1, dst2);
+        cur_block->InsertInst(cur_inst);
+    }
+    // store operand from temporary variable
+    else
+    {
+        // example: store r1, [r0]
+        auto dst = genMachineOperand(operands[0]);
+        cur_inst = new StoreMInstruction(cur_block, src, dst);
+        cur_block->InsertInst(cur_inst);
+    }
 }
 
 void BinaryInstruction::genMachineCode(AsmBuilder *builder)
 {
-    // TODO:
-    // complete other instructions
     auto cur_block = builder->getBlock();
     auto dst = genMachineOperand(operands[0]);
     auto src1 = genMachineOperand(operands[1]);
@@ -614,21 +697,60 @@ void BinaryInstruction::genMachineCode(AsmBuilder *builder)
     /* HINT:
      * The source operands of ADD instruction in ir code both can be immediate num.
      * However, it's not allowed in assembly code.
-     * So you need to insert LOAD/MOV instrucrion to load immediate num into register.
+     * So you need to insert LOAD/MOV instruction to load immediate num into register.
      * As to other instructions, such as MUL, CMP, you need to deal with this situation, too.*/
     MachineInstruction *cur_inst = nullptr;
     if (src1->isImm())
     {
-        auto internal_reg = genMachineVReg();
+        auto internal_reg = genMachineVReg(src1->isFloat());
         cur_inst = new LoadMInstruction(cur_block, internal_reg, src1);
         cur_block->InsertInst(cur_inst);
         src1 = new MachineOperand(*internal_reg);
     }
+    if (opcode == MUL || opcode == DIV || opcode == MOD)
+    {
+        if (src2->isImm())
+        {
+            auto internal_reg = genMachineVReg(src2->isFloat());
+            cur_inst = new LoadMInstruction(cur_block, internal_reg, src2);
+            cur_block->InsertInst(cur_inst);
+            src2 = new MachineOperand(*internal_reg);
+        }
+    }
+    // if(src2->isImm() && (src2->getVal() > 255 || src2->getVal() < -255)) {
+    //     auto internal_reg = genMachineVReg();
+    //     cur_inst = new LoadMInstruction(cur_block, internal_reg, src2);
+    //     cur_block->InsertInst(cur_inst);
+    //     src2 = new MachineOperand(*internal_reg);
+    // }
     switch (opcode)
     {
     case ADD:
         cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, src1, src2);
         break;
+    case SUB:
+        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::SUB, dst, src1, src2);
+        break;
+    case MUL:
+        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, dst, src1, src2);
+        break;
+    case DIV:
+        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::DIV, dst, src1, src2);
+        break;
+    case MOD:
+    {
+        // // a % b = a - a / b * b
+        // cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::DIV, dst, src1, src2);
+        // auto internal_reg = new MachineOperand(*dst);
+        // src1 = new MachineOperand(*src1);
+        // src2 = new MachineOperand(*src2);
+        // cur_block->InsertInst(cur_inst);
+        // cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, internal_reg, dst, src2);
+        // cur_block->InsertInst(cur_inst);
+        // dst = new MachineOperand(*internal_reg);
+        // cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::SUB, dst, src1, internal_reg);
+        // break;
+    }
     default:
         break;
     }

@@ -33,9 +33,9 @@ void Function::output() const
     Type *retType = funcType->getRetType();
     fprintf(yyout, "define dso_local %s %s(", retType->toStr().c_str(), sym_ptr->toStr().c_str());
     fprintf(stderr, "define dso_local %s %s(", retType->toStr().c_str(), sym_ptr->toStr().c_str());
-    for (auto it = paramslist.begin(); it != paramslist.end(); it++)
+    for (auto it = param_list.begin(); it != param_list.end(); it++)
     {
-        if (it != paramslist.begin())
+        if (it != param_list.begin())
         {
             fprintf(yyout, ", ");
             fprintf(stderr, ", ");
@@ -88,4 +88,14 @@ void Function::genMachineCode(AsmBuilder *builder)
             mblock->addSucc(map[*succ]);
     }
     cur_unit->InsertFunc(cur_func);
+}
+
+int Function::getParamNo(Operand *param)
+{
+    for (int i = 0; i < param_list.size(); i++)
+    {
+        if (param_list[i] == param)
+            return i;
+    }
+    assert(0);
 }

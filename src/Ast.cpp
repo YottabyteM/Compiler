@@ -664,6 +664,7 @@ void DeclStmt::genCode()
         expr->genCode();
         Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(se)->getAddr();
         Operand *src = expr->getOperand();
+        // TODO : Array
         /***
          * We haven't implemented array yet, the lval can only be ID. So we just store the result of the `expr` to the addr of the id.
          * If you want to implement array, you have to caculate the address first and then store the result into it.

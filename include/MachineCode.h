@@ -28,9 +28,10 @@ class MachineOperand
 private:
     MachineInstruction *parent;
     int type;
-    int val;           // value of immediate number
+    float val;         // value of immediate number
     int reg_no;        // register no
     std::string label; // address label
+    bool is_float;     // is floating point
 public:
     enum
     {
@@ -39,7 +40,7 @@ public:
         REG,
         LABEL
     };
-    MachineOperand(int tp, int val);
+    MachineOperand(int tp, float val, bool is_float = false);
     MachineOperand(std::string label);
     bool operator==(const MachineOperand &) const;
     bool operator<(const MachineOperand &) const;
@@ -59,6 +60,7 @@ public:
     MachineInstruction *getParent() { return this->parent; };
     void PrintReg();
     void output();
+    bool isFloat() { return this->is_float; };
 };
 
 class MachineInstruction
@@ -84,7 +86,9 @@ protected:
         MOV,
         BRANCH,
         CMP,
-        STACK
+        // STACK,
+        // ZEXT,
+        // VCVT
     };
 
 public:
@@ -103,6 +107,7 @@ public:
     int getNo() { return no; };
     std::vector<MachineOperand *> &getDef() { return def_list; };
     std::vector<MachineOperand *> &getUse() { return use_list; };
+    MachineBlock *getParent() { return parent; };
 };
 
 class BinaryMInstruction : public MachineInstruction
@@ -114,7 +119,6 @@ public:
         SUB,
         MUL,
         DIV,
-        MOD
     };
     BinaryMInstruction(MachineBlock *p, int op,
                        MachineOperand *dst, MachineOperand *src1, MachineOperand *src2,
@@ -212,6 +216,8 @@ public:
     std::vector<MachineInstruction *> &getInsts() { return inst_list; };
     std::vector<MachineInstruction *>::iterator begin() { return inst_list.begin(); };
     std::vector<MachineInstruction *>::iterator end() { return inst_list.end(); };
+    std::vector<MachineInstruction *>::reverse_iterator rbegin() { return inst_list.rbegin(); };
+    std::vector<MachineInstruction *>::reverse_iterator rend() { return inst_list.rend(); };
     MachineBlock(MachineFunction *p, int no)
     {
         this->parent = p;
@@ -224,6 +230,7 @@ public:
     std::set<MachineOperand *> &getLiveOut() { return live_out; };
     std::vector<MachineBlock *> &getPreds() { return pred; };
     std::vector<MachineBlock *> &getSuccs() { return succ; };
+    MachineFunction *getParent() { return parent; };
     void output();
 };
 
@@ -253,6 +260,7 @@ public:
     };
     void InsertBlock(MachineBlock *block) { this->block_list.push_back(block); };
     void addSavedRegs(int regno) { saved_regs.insert(regno); };
+    MachineUnit *getParent() { return parent; };
     void output();
 };
 

@@ -26,9 +26,9 @@ public:
     Instruction *getPrev();
     virtual void output() const = 0;
     MachineOperand *genMachineOperand(Operand *);
-    MachineOperand *genMachineReg(int reg);
-    MachineOperand *genMachineVReg();
-    MachineOperand *genMachineImm(int val);
+    MachineOperand *genMachineReg(int reg, bool is_float = false);
+    MachineOperand *genMachineVReg(bool is_float = false);
+    MachineOperand *genMachineImm(double val, bool is_float = false);
     MachineOperand *genMachineLabel(int block_no);
     virtual void genMachineCode(AsmBuilder *) = 0;
 

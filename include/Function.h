@@ -22,7 +22,7 @@ private:
     SymbolEntry *sym_ptr;
     BasicBlock *entry;
     Unit *parent;
-    std::vector<Operand *> paramslist;
+    std::vector<Operand *> param_list;
 
 public:
     Function(Unit *, SymbolEntry *);
@@ -37,8 +37,9 @@ public:
     reverse_iterator rbegin() { return block_list.rbegin(); };
     reverse_iterator rend() { return block_list.rend(); };
     SymbolEntry *getSymPtr() { return sym_ptr; };
-    void insertParams(Operand *param) { paramslist.push_back(param); }
+    void insertParams(Operand *param) { param_list.push_back(param); }
     void genMachineCode(AsmBuilder *);
+    int getParamNo(Operand *param);
 };
 
 #endif

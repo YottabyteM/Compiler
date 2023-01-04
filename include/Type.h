@@ -35,6 +35,7 @@ public:
     bool isConstFloat() const { return kind == CONST_FLOAT; };
     bool isConst() const { return (kind == CONST_INT) || (kind == CONST_FLOAT); };
     bool isPTR() const { return kind == PTR; };
+    int getSize() const { return (size == 32) ? 4 : 1; }; // 单位是字节数
 };
 
 class IntType : public Type
