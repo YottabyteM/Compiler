@@ -27,6 +27,14 @@ void Unit::output() const
         func->output();
 }
 
+void Unit::genMachineCode(MachineUnit *munit)
+{
+    AsmBuilder *builder = new AsmBuilder();
+    builder->setUnit(munit);
+    for (auto &func : func_list)
+        func->genMachineCode(builder);
+}
+
 Unit::~Unit()
 {
     auto delete_list = func_list;

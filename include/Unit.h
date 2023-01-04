@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "Function.h"
+#include "AsmBuilder.h"
 #include <unordered_set>
 
 class Unit
@@ -13,18 +14,19 @@ class Unit
 private:
     std::vector<Function *> func_list;
     std::unordered_set<IdentifierSymbolEntry *> decl_list;
-    
+
 public:
     Unit() = default;
-    ~Unit() ;
+    ~Unit();
     void insertFunc(Function *);
-    void insertDecl(IdentifierSymbolEntry*);
+    void insertDecl(IdentifierSymbolEntry *);
     void removeFunc(Function *);
     void output() const;
     iterator begin() { return func_list.begin(); };
     iterator end() { return func_list.end(); };
     reverse_iterator rbegin() { return func_list.rbegin(); };
     reverse_iterator rend() { return func_list.rend(); };
+    void genMachineCode(MachineUnit *munit);
 };
 
 #endif

@@ -128,6 +128,7 @@ public:
 class TemporarySymbolEntry : public SymbolEntry
 {
 private:
+    int stack_offset;
     int label;
 
 public:
@@ -135,6 +136,8 @@ public:
     virtual ~TemporarySymbolEntry(){};
     std::string toStr();
     int getLabel() const { return label; };
+    void setOffset(int offset) { this->stack_offset = offset; };
+    int getOffset() { return this->stack_offset; };
     // You can add any function you need here.
 };
 
@@ -151,7 +154,7 @@ public:
     SymbolTable();
     SymbolTable(SymbolTable *prev);
     bool install(std::string name, SymbolEntry *entry);
-    SymbolEntry *lookup(std::string name, bool isFunc = 0, std::vector<Type *> ParamsType = std::vector<Type *>{});
+    SymbolEntry *lookup(std::string name, bool isFunc = false, std::vector<Type *> ParamsType = std::vector<Type *>{});
     SymbolTable *getPrev() { return prev; };
     int getLevel() { return level; };
     static int getLabel() { return counter++; };
