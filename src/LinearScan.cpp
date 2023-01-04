@@ -8,6 +8,8 @@ LinearScan::LinearScan(MachineUnit *unit)
     this->unit = unit;
     for (int i = 4; i < 11; i++)
         regs.push_back(i);
+    for (int i = 5; i < 32; i++)
+        fregs.push_back(i);
 }
 
 void LinearScan::allocateRegisters()
@@ -76,7 +78,7 @@ void LinearScan::computeLiveIntervals()
         int t = -1;
         for (auto &use : du_chain.second)
             t = std::max(t, use->getParent()->getNo());
-        Interval *interval = new Interval({du_chain.first->getParent()->getNo(), t, false, 0, 0, {du_chain.first}, du_chain.second});
+        Interval *interval = new Interval({du_chain.first->getParent()->getNo(), t, false, 0, 0, du_chain.first->isFloat(), {du_chain.first}, du_chain.second});
         intervals.push_back(interval);
     }
     for (auto &interval : intervals)
@@ -176,26 +178,50 @@ bool LinearScan::linearScanRegisterAllocation()
     regs.clear();
     for (int i = 4; i < 11; i++)
         regs.push_back(i);
+    for (int i = 5; i < 32; i++)
+        fregs.push_back(i);
     bool flag = true;
     for (auto &interval : intervals)
     {
         expireOldIntervals(interval);
 
-        if (!regs.size())
+        if (interval->is_freg)
         {
-            spillAtInterval(interval);
-            flag = false;
+            if (!fregs.size())
+            {
+                spillAtInterval(interval);
+                flag = false;
+            }
+            else
+            {
+                interval->rreg = (*fregs.rbegin());
+                fregs.pop_back();
+                active.push_back(interval);
+                auto comp = [&](Interval *a, Interval *b) -> bool
+                {
+                    return a->end < b->end;
+                };
+                sort(active.begin(), active.end(), comp);
+            }
         }
         else
         {
-            interval->rreg = (*regs.rbegin());
-            regs.pop_back();
-            active.push_back(interval);
-            auto comp = [&](Interval *a, Interval *b) -> bool
+            if (!regs.size())
             {
-                return a->end < b->end;
-            };
-            sort(active.begin(), active.end(), comp);
+                spillAtInterval(interval);
+                flag = false;
+            }
+            else
+            {
+                interval->rreg = (*regs.rbegin());
+                regs.pop_back();
+                active.push_back(interval);
+                auto comp = [&](Interval *a, Interval *b) -> bool
+                {
+                    return a->end < b->end;
+                };
+                sort(active.begin(), active.end(), comp);
+            }
         }
     }
     return flag;
@@ -235,7 +261,7 @@ void LinearScan::genSpillCode()
         for (auto def : interval->defs)
         {
             MachineBlock *block = def->getParent()->getParent();
-            block->insertAfter(def->getParent(), new LoadMInstruction(block, new MachineOperand(*def), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+            block->insertAfter(def->getParent(), new StoreMInstruction(block, new MachineOperand(*def), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
         }
     }
 }
@@ -247,26 +273,37 @@ void LinearScan::expireOldIntervals(Interval *interval)
     {
         if ((*inter)->end >= interval->start)
             return;
-        regs.push_back((*inter)->rreg);
-        sort(regs.begin(), regs.end());
+        if ((*inter)->is_freg)
+        {
+            fregs.push_back((*inter)->rreg);
+            sort(fregs.begin(), fregs.end());
+        }
+        else
+        {
+            regs.push_back((*inter)->rreg);
+            sort(regs.begin(), regs.end());
+        }
     }
 }
 
 void LinearScan::spillAtInterval(Interval *interval)
 {
     // Todo
-    if ((*active.rbegin())->end <= interval->end)
-        interval->spill = true;
-    else
+    if ((*active.rbegin())->end > interval->end)
     {
         (*active.rbegin())->spill = true;
         interval->rreg = (*active.rbegin())->rreg;
+        active.pop_back();
         active.push_back(interval);
         auto comp = [&](Interval *a, Interval *b) -> bool
         {
             return a->end < b->end;
         };
         sort(active.begin(), active.end(), comp);
+    }
+    else
+    {
+        interval->spill = true;
     }
 }
 
