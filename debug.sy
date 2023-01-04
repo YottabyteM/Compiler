@@ -1,0 +1,7 @@
+
+int main()
+{
+    if (1) { putch(65); }
+	
+    return 0;
+}
