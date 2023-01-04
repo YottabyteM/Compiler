@@ -31,7 +31,7 @@ private:
     MachineFunction *func;
     std::vector<int> regs;
     std::map<MachineOperand *, std::set<MachineOperand *>> du_chains;
-    std::vector<Interval*> intervals;
+    std::vector<Interval*> intervals, active;
     static bool compareStart(Interval*a, Interval*b);
     void expireOldIntervals(Interval *interval);
     void spillAtInterval(Interval *interval);

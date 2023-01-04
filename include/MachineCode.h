@@ -231,6 +231,8 @@ public:
     std::vector<MachineBlock *> &getPreds() { return pred; };
     std::vector<MachineBlock *> &getSuccs() { return succ; };
     MachineFunction *getParent() { return parent; };
+    void insertBefore(MachineInstruction *pos, MachineInstruction *cont);
+    void insertAfter(MachineInstruction *pos, MachineInstruction *cont);
     void output();
 };
 

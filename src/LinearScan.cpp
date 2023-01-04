@@ -17,13 +17,13 @@ void LinearScan::allocateRegisters()
         func = f;
         bool success;
         success = false;
-        while (!success)        // repeat until all vregs can be mapped
+        while (!success) // repeat until all vregs can be mapped
         {
             computeLiveIntervals();
             success = linearScanRegisterAllocation();
-            if (success)        // all vregs can be mapped to real regs
+            if (success) // all vregs can be mapped to real regs
                 modifyCode();
-            else                // spill vregs that can't be mapped to real regs
+            else // spill vregs that can't be mapped to real regs
                 genSpillCode();
         }
     }
@@ -79,37 +79,47 @@ void LinearScan::computeLiveIntervals()
         Interval *interval = new Interval({du_chain.first->getParent()->getNo(), t, false, 0, 0, {du_chain.first}, du_chain.second});
         intervals.push_back(interval);
     }
-    for (auto& interval : intervals) {
+    for (auto &interval : intervals)
+    {
         auto uses = interval->uses;
         auto begin = interval->start;
         auto end = interval->end;
-        for (auto block : func->getBlocks()) {
+        for (auto block : func->getBlocks())
+        {
             auto liveIn = block->getLiveIn();
             auto liveOut = block->getLiveOut();
             bool in = false;
             bool out = false;
             for (auto use : uses)
-                if (liveIn.count(use)) {
+                if (liveIn.count(use))
+                {
                     in = true;
                     break;
                 }
             for (auto use : uses)
-                if (liveOut.count(use)) {
+                if (liveOut.count(use))
+                {
                     out = true;
                     break;
                 }
-            if (in && out) {
+            if (in && out)
+            {
                 begin = std::min(begin, (*(block->begin()))->getNo());
                 end = std::max(end, (*(block->rbegin()))->getNo());
-            } else if (!in && out) {
+            }
+            else if (!in && out)
+            {
                 for (auto i : block->getInsts())
                     if (i->getDef().size() > 0 &&
-                        i->getDef()[0] == *(uses.begin())) {
+                        i->getDef()[0] == *(uses.begin()))
+                    {
                         begin = std::min(begin, i->getNo());
                         break;
                     }
                 end = std::max(end, (*(block->rbegin()))->getNo());
-            } else if (in && !out) {
+            }
+            else if (in && !out)
+            {
                 begin = std::min(begin, (*(block->begin()))->getNo());
                 int temp = 0;
                 for (auto use : uses)
@@ -162,8 +172,33 @@ void LinearScan::computeLiveIntervals()
 bool LinearScan::linearScanRegisterAllocation()
 {
     // Todo
+    active.clear();
+    regs.clear();
+    for (int i = 4; i < 11; i++)
+        regs.push_back(i);
+    bool flag = true;
+    for (auto &interval : intervals)
+    {
+        expireOldIntervals(interval);
 
-    return true;
+        if (!regs.size())
+        {
+            spillAtInterval(interval);
+            flag = false;
+        }
+        else
+        {
+            interval->rreg = (*regs.rbegin());
+            regs.pop_back();
+            active.push_back(interval);
+            auto comp = [&](Interval *a, Interval *b) -> bool
+            {
+                return a->end < b->end;
+            };
+            sort(active.begin(), active.end(), comp);
+        }
+    }
+    return flag;
 }
 
 void LinearScan::modifyCode()
@@ -180,27 +215,59 @@ void LinearScan::modifyCode()
 
 void LinearScan::genSpillCode()
 {
-    for(auto &interval:intervals)
+    for (auto &interval : intervals)
     {
-        if(!interval->spill)
+        if (!interval->spill)
             continue;
         // TODO
         /* HINT:
          * The vreg should be spilled to memory.
          * 1. insert ldr inst before the use of vreg
          * 2. insert str inst after the def of vreg
-         */ 
+         */
+        interval->disp = func->AllocSpace(4);
+        for (auto use : interval->uses)
+        {
+            MachineBlock *block = use->getParent()->getParent();
+            block->insertBefore(use->getParent(), new LoadMInstruction(block, new MachineOperand(*use), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+        }
+
+        for (auto def : interval->defs)
+        {
+            MachineBlock *block = def->getParent()->getParent();
+            block->insertAfter(def->getParent(), new LoadMInstruction(block, new MachineOperand(*def), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+        }
     }
 }
 
 void LinearScan::expireOldIntervals(Interval *interval)
 {
     // Todo
+    for (auto inter = active.begin(); inter != active.end(); inter = active.erase(find(active.begin(), active.end(), (*inter))))
+    {
+        if ((*inter)->end >= interval->start)
+            return;
+        regs.push_back((*inter)->rreg);
+        sort(regs.begin(), regs.end());
+    }
 }
 
 void LinearScan::spillAtInterval(Interval *interval)
 {
     // Todo
+    if ((*active.rbegin())->end <= interval->end)
+        interval->spill = true;
+    else
+    {
+        (*active.rbegin())->spill = true;
+        interval->rreg = (*active.rbegin())->rreg;
+        active.push_back(interval);
+        auto comp = [&](Interval *a, Interval *b) -> bool
+        {
+            return a->end < b->end;
+        };
+        sort(active.begin(), active.end(), comp);
+    }
 }
 
 bool LinearScan::compareStart(Interval *a, Interval *b)
