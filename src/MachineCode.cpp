@@ -377,6 +377,7 @@ BranchMInstruction::BranchMInstruction(MachineBlock *p, int op,
                                        MachineOperand *dst,
                                        int cond)
 {
+    // TODO
     this->type = MachineInstruction::BRANCH;
     this->op = op;
     this->parent = p;
@@ -413,6 +414,7 @@ CmpMInstruction::CmpMInstruction(MachineBlock *p,
                                  MachineOperand *src1, MachineOperand *src2,
                                  int cond)
 {
+    // TODO
     this->type = MachineInstruction::CMP;
     this->parent = p;
     this->op = cond = cond;
@@ -438,6 +440,7 @@ StackMInstruction::StackMInstruction(MachineBlock *p, int op,
                                      MachineOperand *src,
                                      int cond)
 {
+    // TODO
     this->parent = p;
     this->type = MachineInstruction::STACK;
     this->op = op;
@@ -631,10 +634,10 @@ void MachineUnit::output()
     PrintGlobalDecl();
     for (auto iter : func_list)
         iter->output();
-    for (auto v : global_list) {
-        fprintf(yyout, "addr_%s_%d:\n", v->toStr().erase(0, 1).c_str(), n);
-        fprintf(yyout, "\t.word %s\n", v->toStr().erase(0,1).c_str());
-    }
+    // for (auto v : global_list) {
+    //     fprintf(yyout, "addr_%s_%d:\n", v->toStr().erase(0, 1).c_str(), n);
+    //     fprintf(yyout, "\t.word %s\n", v->toStr().erase(0,1).c_str());
+    // }
 }
 
 void MachineBlock::insertBefore(MachineInstruction *pos, MachineInstruction *cont)
