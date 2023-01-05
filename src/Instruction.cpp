@@ -599,14 +599,13 @@ void LoadInstruction::genMachineCode(AsmBuilder *builder)
         auto dst = genMachineOperand(operands[0]);
         auto src1 = genMachineReg(11); // fp
         auto src2 = genMachineImm(dynamic_cast<TemporarySymbolEntry *>(operands[1]->getEntry())->getOffset());
-        // int offset = dynamic_cast<TemporarySymbolEntry*>(operands[1]->getEntry())->getOffset();
-        // auto src2 = genMachineImm(offset);
-        // if(offset > 255 || offset < -255) {
-        //     auto internal_reg = genMachineVReg();
-        //     cur_inst = new LoadMInstruction(cur_block, internal_reg, src2);
-        //     cur_block->InsertInst(cur_inst);
-        //     src2 = new MachineOperand(*internal_reg);
-        // }
+        if (src2->isIllegalOp2())
+        {
+            auto internal_reg = genMachineVReg();
+            cur_inst = new LoadMInstruction(cur_block, internal_reg, src2);
+            cur_block->InsertInst(cur_inst);
+            src2 = new MachineOperand(*internal_reg);
+        }
         cur_inst = new LoadMInstruction(cur_block, dst, src1, src2);
         cur_block->InsertInst(cur_inst);
         // // 如果是函数参数 则保留其偏移量方便后续调整
@@ -668,13 +667,13 @@ void StoreInstruction::genMachineCode(AsmBuilder *builder)
         auto dst1 = genMachineReg(11);
         int offset = dynamic_cast<TemporarySymbolEntry *>(operands[0]->getEntry())->getOffset();
         auto dst2 = genMachineImm(offset);
-        // if (offset > 255 || offset < -255)
-        // {
-        //     auto internal_reg = genMachineVReg();
-        //     cur_inst = new LoadMInstruction(cur_block, internal_reg, dst2);
-        //     cur_block->InsertInst(cur_inst);
-        //     dst2 = new MachineOperand(*internal_reg);
-        // }
+        if (dst2->isIllegalOp2())
+        {
+            auto internal_reg = genMachineVReg();
+            cur_inst = new LoadMInstruction(cur_block, internal_reg, dst2);
+            cur_block->InsertInst(cur_inst);
+            dst2 = new MachineOperand(*internal_reg);
+        }
         cur_inst = new StoreMInstruction(cur_block, src, dst1, dst2);
         cur_block->InsertInst(cur_inst);
     }

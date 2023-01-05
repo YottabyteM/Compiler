@@ -169,7 +169,7 @@ public:
     {
         B,
         BL,
-        BX
+        // BX
     };
     BranchMInstruction(MachineBlock *p, int op,
                        MachineOperand *dst,
@@ -206,8 +206,6 @@ public:
                       int cond = MachineInstruction::NONE);
     void output();
 };
-
-// toDo: add classes
 
 class ZextMInstruction : public MachineInstruction
 {
@@ -312,7 +310,7 @@ public:
     std::vector<MachineFunction *>::iterator end() { return func_list.end(); };
     void InsertFunc(MachineFunction *func) { func_list.push_back(func); };
     void output();
-    void insertGlobal(IdentifierSymbolEntry* sym_ptr) { global_list.push_back(sym_ptr); };
+    void insertGlobal(IdentifierSymbolEntry *sym_ptr) { global_list.push_back(sym_ptr); };
 };
 
 #endif

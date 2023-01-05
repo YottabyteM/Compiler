@@ -377,7 +377,6 @@ BranchMInstruction::BranchMInstruction(MachineBlock *p, int op,
                                        MachineOperand *dst,
                                        int cond)
 {
-    // TODO
     this->type = MachineInstruction::BRANCH;
     this->op = op;
     this->parent = p;
@@ -400,9 +399,9 @@ void BranchMInstruction::output()
         fprintf(yyout, " ");
         break;
         break;
-    case BX:
-        fprintf(yyout, "\tbx ");
-        break;
+    // case BX:
+    //     fprintf(yyout, "\tbx ");
+    //     break;
     default:
         break;
     }
@@ -414,7 +413,6 @@ CmpMInstruction::CmpMInstruction(MachineBlock *p,
                                  MachineOperand *src1, MachineOperand *src2,
                                  int cond)
 {
-    // TODO
     this->type = MachineInstruction::CMP;
     this->parent = p;
     this->op = cond = cond;
@@ -440,7 +438,6 @@ StackMInstruction::StackMInstruction(MachineBlock *p, int op,
                                      MachineOperand *src,
                                      int cond)
 {
-    // TODO
     this->parent = p;
     this->type = MachineInstruction::STACK;
     this->op = op;
@@ -544,7 +541,23 @@ VcvtMInstruction::VcvtMInstruction(MachineBlock *p,
 
 void VcvtMInstruction::output()
 {
-    // TODO
+    switch (this->op)
+    {
+    case VcvtMInstruction::F2S:
+        fprintf(yyout, "\tvcvt.s32.f32 ");
+        break;
+    case VcvtMInstruction::S2F:
+        fprintf(yyout, "\tvcvt.f32.s32 ");
+        break;
+    default:
+        break;
+    }
+    PrintCond();
+    fprintf(yyout, " ");
+    this->def_list[0]->output();
+    fprintf(yyout, ", ");
+    this->use_list[0]->output();
+    fprintf(yyout, "\n");
 }
 
 MachineFunction::MachineFunction(MachineUnit *p, SymbolEntry *sym_ptr)
