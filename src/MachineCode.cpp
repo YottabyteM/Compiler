@@ -377,19 +377,49 @@ BranchMInstruction::BranchMInstruction(MachineBlock *p, int op,
                                        MachineOperand *dst,
                                        int cond)
 {
-    // TODO
+    this->type = MachineInstruction::BRANCH;
+    this->op = op;
+    this->parent = p;
+    this->cond = cond;
+    this->def_list.push_back(dst);
+    dst->setParent(this);
 }
 
 void BranchMInstruction::output()
 {
     // TODO
+    switch (op)
+    {
+    case BL:
+        fprintf(yyout, "\tbl ");
+        break;
+    case B:
+        fprintf(yyout, "\tb");
+        PrintCond();
+        fprintf(yyout, " ");
+        break;
+        break;
+    // case BX:
+    //     fprintf(yyout, "\tbx ");
+    //     break;
+    default:
+        break;
+    }
+    this->def_list[0]->output();
+    fprintf(yyout, "\n");
 }
 
 CmpMInstruction::CmpMInstruction(MachineBlock *p,
                                  MachineOperand *src1, MachineOperand *src2,
                                  int cond)
 {
-    // TODO
+    this->type = MachineInstruction::CMP;
+    this->parent = p;
+    this->op = cond = cond;
+    this->use_list.push_back(src1);
+    this->use_list.push_back(src2);
+    src1->setParent(this);
+    src2->setParent(this);
 }
 
 void CmpMInstruction::output()
@@ -397,13 +427,17 @@ void CmpMInstruction::output()
     // TODO
     // Jsut for reg alloca test
     // delete it after test
+    fprintf(yyout, "\tcmp ");
+    this->use_list[0]->output();
+    fprintf(yyout, ", ");
+    this->use_list[1]->output();
+    fprintf(yyout, "\n");
 }
 
 StackMInstruction::StackMInstruction(MachineBlock *p, int op,
                                      MachineOperand *src,
                                      int cond)
 {
-    // TODO
     this->parent = p;
     this->type = MachineInstruction::STACK;
     this->op = op;

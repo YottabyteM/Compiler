@@ -300,7 +300,9 @@ class MachineUnit
 {
 private:
     std::vector<MachineFunction *> func_list;
+    std::vector<IdentifierSymbolEntry *> global_list;
     void PrintGlobalDecl();
+    void PrintGlobal();
 
 public:
     std::vector<MachineFunction *> &getFuncs() { return func_list; };
@@ -308,6 +310,7 @@ public:
     std::vector<MachineFunction *>::iterator end() { return func_list.end(); };
     void InsertFunc(MachineFunction *func) { func_list.push_back(func); };
     void output();
+    void insertGlobal(IdentifierSymbolEntry *sym_ptr) { global_list.push_back(sym_ptr); };
 };
 
 #endif
