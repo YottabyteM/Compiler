@@ -63,6 +63,26 @@ std::string ConstFloatType::toStr()
     // return "double";
 }
 
+std::string IntArrayType::toStr()
+{
+     return "int array";
+}
+
+std::string ConstIntArrayType::toStr()
+{
+    return "const int array";
+}
+
+std::string ConstFloatArrayType::toStr()
+{
+    return "const float array";
+}
+
+std::string FloatArrayType::toStr()
+{
+    return "float array";
+}
+
 std::string FunctionType::toStr()
 {
     std::ostringstream buffer;

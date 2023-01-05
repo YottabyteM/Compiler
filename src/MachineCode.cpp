@@ -583,6 +583,25 @@ void MachineUnit::PrintGlobalDecl()
 {
     // TODO:
     // You need to print global variable/const declarition code;
+    fprintf(yyout, "\t.data\n");
+    for (auto v : global_list) {
+        if (!v->getType()->isARRAY()) {
+            fprintf(yyout, "\t.global %s\n", v->toStr().erase(0,1).c_str());
+            fprintf(yyout, "\t.align 4\n");
+            fprintf(yyout,"\t.size %s, %d\n", v->toStr().erase(0,1).c_str(), v->getType()->getSize());
+            fprintf(yyout,"%s:\n", v->toStr().erase(0,1).c_str());
+            if(v->getType()->isInt()) {
+                fprintf(yyout, "\t.word %d\n", int(v->getValue()));
+            } else {
+                auto value = float(v->getValue());
+                uint32_t temp = reinterpret_cast<uint32_t&>(value);
+                fprintf(yyout, "\t.word %u\n", temp);
+            }
+        }
+        else {
+            // TODO
+        }
+    }
 }
 
 void MachineUnit::output()
@@ -593,11 +612,16 @@ void MachineUnit::output()
      * 2. Traverse all the function in func_list to print assembly code;
      * 3. Don't forget print bridge label at the end of assembly code!! */
     fprintf(yyout, "\t.arch armv8-a\n");
+    fprintf(yyout, "\t.fpu vfpv3-d16\n");
     fprintf(yyout, "\t.arch_extension crc\n");
     fprintf(yyout, "\t.arm\n");
     PrintGlobalDecl();
     for (auto iter : func_list)
         iter->output();
+    for (auto v : global_list) {
+        fprintf(yyout, "addr_%s_%d:\n", v->toStr().erase(0, 1).c_str(), n);
+        fprintf(yyout, "\t.word %s\n", v->toStr().erase(0,1).c_str());
+    }
 }
 
 void MachineBlock::insertBefore(MachineInstruction *pos, MachineInstruction *cont)

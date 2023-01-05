@@ -17,7 +17,12 @@ protected:
         FUNC,
         CONST_INT,
         CONST_FLOAT,
+        INT_ARRAY,
+        FLOAT_ARRAY,
+        CONST_INT_ARRAY,
+        CONST_FLOAT_ARRAY,
         PTR
+        
     };
     int size;
 
@@ -36,6 +41,9 @@ public:
     bool isConst() const { return (kind == CONST_INT) || (kind == CONST_FLOAT); };
     bool isPTR() const { return kind == PTR; };
     int getSize() const { return (size == 32) ? 4 : 1; }; // 单位是字节数
+    bool isIntArray() const { return kind == INT_ARRAY || kind == CONST_INT_ARRAY; };
+    bool isFloatArray() const { return kind == FLOAT_ARRAY || kind == CONST_FLOAT_ARRAY; };
+    bool isARRAY() const { return isIntArray() || isFloatArray(); };
 };
 
 class IntType : public Type
@@ -94,6 +102,50 @@ private:
 
 public:
     PointerType(Type *valueType);
+    std::string toStr();
+};
+
+class IntArrayType : public Type
+{
+private:
+    std::vector<int> dim;
+public:
+    IntArrayType() : Type(Type::INT_ARRAY) {};
+    void AddDim(int d) { dim.push_back(d); };
+    std::vector<int> fetch() { return dim; };
+    std::string toStr();
+};
+
+class ConstIntArrayType : public Type
+{
+private:
+    std::vector<int> dim;
+public:
+    ConstIntArrayType() : Type(Type::CONST_INT_ARRAY) {};
+    void AddDim(int d) { dim.push_back(d); };
+    std::vector<int> fetch() { return dim; };
+    std::string toStr();
+};
+
+class FloatArrayType : public Type
+{
+private:
+    std::vector<int> dim;
+public:
+    FloatArrayType() : Type(Type::FLOAT_ARRAY) {};
+    void AddDim(int d) { dim.push_back(d); };
+    std::vector<int> fetch() { return dim; };
+    std::string toStr();
+};
+
+class ConstFloatArrayType : public Type
+{
+private:
+    std::vector<int> dim;
+public:
+    ConstFloatArrayType() : Type(Type::CONST_FLOAT_ARRAY) {};
+    void AddDim(int d) { dim.push_back(d); };
+    std::vector<int> fetch() { return dim; };
     std::string toStr();
 };
 
