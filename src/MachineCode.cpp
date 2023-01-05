@@ -99,11 +99,34 @@ void MachineOperand::output()
     case LABEL:
         if (this->label.substr(0, 2) == ".L")
             fprintf(yyout, "%s", this->label.c_str());
+        else if (this->label.substr(0, 1) == "@")
+            fprintf(yyout, "%s", this->label.c_str() + 1);
         else
             fprintf(yyout, "addr_%s", this->label.c_str());
     default:
         break;
     }
+}
+
+// 合法的第二操作数循环移位偶数位后可以用8bit表示
+bool MachineOperand::isIllegalOp2()
+{
+    assert(this->isImm());
+    unsigned bin_val;
+    if (this->is_float)
+        bin_val = reinterpret_cast<unsigned &>(this->val);
+    else
+    {
+        signed sval = (int)(this->val);
+        bin_val = reinterpret_cast<unsigned &>(sval);
+    }
+    for (int i = 0; i < 32; i += 2)
+    {
+        unsigned shift_val = (bin_val >> i) | (bin_val << (32 - i)); // 循环右移i位
+        if (!(shift_val & 0xFFFFFF00))
+            return false;
+    }
+    return true;
 }
 
 void MachineInstruction::PrintCond()
@@ -192,7 +215,7 @@ void BinaryMInstruction::output()
             break;
         }
     }
-    this->PrintCond(); // cond应该是None
+    this->PrintCond();
     this->def_list[0]->output();
     fprintf(yyout, ", ");
     this->use_list[0]->output();
@@ -221,7 +244,21 @@ LoadMInstruction::LoadMInstruction(MachineBlock *p,
 
 void LoadMInstruction::output()
 {
-    fprintf(yyout, "\tldr ");
+    // 小的立即数用MOV优化一下
+    if ((this->use_list.size() == 1) && this->use_list[0]->isImm() && !this->use_list[0]->isIllegalOp2())
+    {
+        if (this->def_list[0]->isFloat())
+            fprintf(yyout, "\tvmov");
+        else
+            fprintf(yyout, "\tmov");
+    }
+    else
+    {
+        if (this->def_list[0]->isFloat())
+            fprintf(yyout, "\tvldr.32 ");
+        else
+            fprintf(yyout, "\tldr ");
+    }
     this->def_list[0]->output();
     fprintf(yyout, ", ");
 
@@ -295,12 +332,45 @@ MovMInstruction::MovMInstruction(MachineBlock *p, int op,
                                  MachineOperand *dst, MachineOperand *src,
                                  int cond)
 {
-    // TODO
+    assert(!src->isImm());
+    this->parent = p;
+    this->type = MachineInstruction::MOV;
+    this->op = op;
+    this->cond = cond;
+    this->def_list.push_back(dst);
+    this->use_list.push_back(src);
+    dst->setParent(this);
+    src->setParent(this);
 }
 
 void MovMInstruction::output()
 {
-    // TODO
+    switch (this->op)
+    {
+    case MovMInstruction::MOV:
+        fprintf(yyout, "\tmov");
+        break;
+    // case MovMInstruction::MVN:
+    //     fprintf(yyout, "\tmvn");
+    //     break;
+    // case MovMInstruction::MOVT:
+    //     fprintf(yyout, "\tmovt");
+    //     break;
+    case MovMInstruction::VMOV:
+        fprintf(yyout, "\tvmov");
+        break;
+    // case MovMInstruction::VMOVF32:
+    //     fprintf(yyout, "\tvmov.f32");
+    //     break;
+    default:
+        break;
+    }
+    PrintCond();
+    fprintf(yyout, " ");
+    this->def_list[0]->output();
+    fprintf(yyout, ", ");
+    this->use_list[0]->output();
+    fprintf(yyout, "\n");
 }
 
 BranchMInstruction::BranchMInstruction(MachineBlock *p, int op,
@@ -329,16 +399,131 @@ void CmpMInstruction::output()
     // delete it after test
 }
 
-StackMInstrcuton::StackMInstrcuton(MachineBlock *p, int op,
+StackMInstruction::StackMInstruction(MachineBlock *p, int op,
+                                     MachineOperand *src,
+                                     int cond)
+{
+    // TODO
+    this->parent = p;
+    this->type = MachineInstruction::STACK;
+    this->op = op;
+    this->cond = cond;
+    this->use_list.push_back(src);
+    src->setParent(this);
+}
+
+StackMInstruction::StackMInstruction(MachineBlock *p, int op,
+                                     std::vector<MachineOperand *> src,
+                                     int cond)
+{
+    this->parent = p;
+    this->type = MachineInstruction::STACK;
+    this->op = op;
+    this->cond = cond;
+    this->use_list = src;
+    for (auto ope : use_list)
+    {
+        ope->setParent(this);
+    }
+}
+
+void StackMInstruction::output()
+{
+    std::string op_str;
+    if (this->use_list[0]->isFloat())
+    {
+        switch (op)
+        {
+        case PUSH:
+            op_str = "\tvpush {";
+            break;
+        case POP:
+            op_str = "\tvpop {";
+            break;
+        }
+    }
+    else
+    {
+        switch (op)
+        {
+        case PUSH:
+            op_str = "\tpush {";
+            break;
+        case POP:
+            op_str = "\tpop {";
+            break;
+        }
+    }
+    // 浮点寄存器可能会很多 每次只能push/pop16个
+    size_t i = 0;
+    while (i != use_list.size())
+    {
+        fprintf(yyout, op_str.c_str());
+        this->use_list[i++]->output();
+        for (size_t j = 1; i != use_list.size() && j < 16; i++, j++)
+        {
+            fprintf(yyout, ", ");
+            this->use_list[i]->output();
+        }
+        fprintf(yyout, "}\n");
+    }
+}
+
+ZextMInstruction::ZextMInstruction(MachineBlock *p, MachineOperand *dst, MachineOperand *src, int cond)
+{
+    this->parent = p;
+    this->type = MachineInstruction::ZEXT;
+    this->cond = cond;
+    this->def_list.push_back(dst);
+    this->use_list.push_back(src);
+    dst->setParent(this);
+    src->setParent(this);
+}
+
+void ZextMInstruction::output()
+{
+    fprintf(yyout, "\tuxtb ");
+    def_list[0]->output();
+    fprintf(yyout, ", ");
+    use_list[0]->output();
+    fprintf(yyout, "\n");
+}
+
+VcvtMInstruction::VcvtMInstruction(MachineBlock *p,
+                                   int op,
+                                   MachineOperand *dst,
                                    MachineOperand *src,
                                    int cond)
 {
-    // TODO
+    this->parent = p;
+    this->type = MachineInstruction::VCVT;
+    this->op = op;
+    this->cond = cond;
+    this->def_list.push_back(dst);
+    this->use_list.push_back(src);
+    dst->setParent(this);
+    src->setParent(this);
 }
 
-void StackMInstrcuton::output()
+void VcvtMInstruction::output()
 {
-    // TODO
+    switch (this->op)
+    {
+    case VcvtMInstruction::F2S:
+        fprintf(yyout, "\tvcvt.s32.f32 ");
+        break;
+    case VcvtMInstruction::S2F:
+        fprintf(yyout, "\tvcvt.f32.s32 ");
+        break;
+    default:
+        break;
+    }
+    PrintCond();
+    fprintf(yyout, " ");
+    this->def_list[0]->output();
+    fprintf(yyout, ", ");
+    this->use_list[0]->output();
+    fprintf(yyout, "\n");
 }
 
 MachineFunction::MachineFunction(MachineUnit *p, SymbolEntry *sym_ptr)

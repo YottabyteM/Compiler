@@ -592,7 +592,7 @@ void ImplicitCast::genCode()
         else
         {
             assert(src->getType()->isFloat() || src->getType()->isConstFloat());
-            new IntFloatCastInstruction(IntFloatCastInstruction::F2I, dst, src, bb);
+            new IntFloatCastInstruction(IntFloatCastInstruction::F2S, dst, src, bb);
         }
     }
     else
@@ -605,13 +605,13 @@ void ImplicitCast::genCode()
             Type *type = src->getType()->isConstBool() ? TypeSystem::constIntType : TypeSystem::intType;
             Operand *t = new Operand(new TemporarySymbolEntry(type, SymbolTable::getLabel()));
             new ZextInstruction(t, src, bb);
-            new IntFloatCastInstruction(IntFloatCastInstruction::I2F, dst, t, bb);
+            new IntFloatCastInstruction(IntFloatCastInstruction::S2F, dst, t, bb);
         }
         // int -> float
         else
         {
             assert(src->getType() == TypeSystem::intType || src->getType() == TypeSystem::constIntType);
-            new IntFloatCastInstruction(IntFloatCastInstruction::I2F, dst, src, bb);
+            new IntFloatCastInstruction(IntFloatCastInstruction::S2F, dst, src, bb);
         }
     }
 }

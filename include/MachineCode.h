@@ -61,6 +61,7 @@ public:
     void PrintReg();
     void output();
     bool isFloat() { return this->is_float; };
+    bool isIllegalOp2(); // 第二操作数应符合8位图格式
 };
 
 class MachineInstruction
@@ -86,9 +87,9 @@ protected:
         MOV,
         BRANCH,
         CMP,
-        // STACK,
-        // ZEXT,
-        // VCVT
+        STACK,
+        ZEXT,
+        VCVT
     };
 
 public:
@@ -150,7 +151,10 @@ public:
     enum opType
     {
         MOV,
-        MVN
+        // MVN,
+        // MOVT,
+        VMOV,
+        // VMOVF32
     };
     MovMInstruction(MachineBlock *p, int op,
                     MachineOperand *dst, MachineOperand *src,
@@ -165,7 +169,7 @@ public:
     {
         B,
         BL,
-        BX
+        // BX
     };
     BranchMInstruction(MachineBlock *p, int op,
                        MachineOperand *dst,
@@ -186,21 +190,49 @@ public:
     void output();
 };
 
-class StackMInstrcuton : public MachineInstruction
+class StackMInstruction : public MachineInstruction
 {
 public:
     enum opType
     {
         PUSH,
-        POP
+        POP,
     };
-    StackMInstrcuton(MachineBlock *p, int op,
-                     MachineOperand *src,
-                     int cond = MachineInstruction::NONE);
+    StackMInstruction(MachineBlock *p, int op,
+                      MachineOperand *src,
+                      int cond = MachineInstruction::NONE);
+    StackMInstruction(MachineBlock *p, int op,
+                      std::vector<MachineOperand *> src,
+                      int cond = MachineInstruction::NONE);
     void output();
 };
 
 // toDo: add classes
+
+class ZextMInstruction : public MachineInstruction
+{
+public:
+    ZextMInstruction(MachineBlock *p,
+                     MachineOperand *dst, MachineOperand *src,
+                     int cond = MachineInstruction::NONE);
+    void output();
+};
+
+class VcvtMInstruction : public MachineInstruction
+{
+public:
+    enum opType
+    {
+        S2F,
+        F2S
+    };
+    VcvtMInstruction(MachineBlock *p,
+                     int op,
+                     MachineOperand *dst,
+                     MachineOperand *src,
+                     int cond = MachineInstruction::NONE);
+    void output();
+};
 
 class MachineBlock
 {

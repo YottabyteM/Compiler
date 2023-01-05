@@ -188,8 +188,8 @@ public:
     void genMachineCode(AsmBuilder *);
     enum
     {
-        I2F,
-        F2I
+        S2F,
+        F2S
     };
 };
 

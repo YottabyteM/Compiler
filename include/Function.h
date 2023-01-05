@@ -39,7 +39,6 @@ public:
     SymbolEntry *getSymPtr() { return sym_ptr; };
     void insertParams(Operand *param) { param_list.push_back(param); }
     void genMachineCode(AsmBuilder *);
-    int getParamNo(Operand *param);
 };
 
 #endif
