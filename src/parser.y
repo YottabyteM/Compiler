@@ -191,12 +191,12 @@ UnaryExpr
         {
             std::vector<ExprNode *> RParams = dynamic_cast<FuncCallParamsNode *>$3->getParams();
             std::vector<Type *> FParamsType = dynamic_cast<FunctionType *>(se->getType())->getParamsType();
-            for(int i = 0; i != (int)RParams.size(); i++)
+            for(size_t i = 0; i != RParams.size(); i++)
                 RParams[i] = typeCast(RParams[i], FParamsType[i]);
             dynamic_cast<FuncCallParamsNode *>$3->setParams(RParams);
         }
         Type *retType = dynamic_cast<FunctionType *>(se->getType())->getRetType();
-        SymbolEntry *t = new TemporarySymbolEntry(retType, SymbolTable::getLabel()); // 函数调用没做常量传播
+        SymbolEntry *t = new TemporarySymbolEntry(retType, SymbolTable::getLabel()); // 1.函数调用没做常量传播 2.某些函数调用无需返回值，但这里也分配了一个临时符号
         $$ = new FuncCallNode(t, new Id(se), (FuncCallParamsNode*)$3);
     }
     | ADD UnaryExpr {

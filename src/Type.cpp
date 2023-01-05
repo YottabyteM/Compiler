@@ -67,7 +67,7 @@ std::string FunctionType::toStr()
 {
     std::ostringstream buffer;
     buffer << returnType->toStr() << "(";
-    for (int i = 0; i < (int)paramsType.size(); i++)
+    for (size_t i = 0; i != paramsType.size(); i++)
     {
         if (i)
             buffer << ", ";

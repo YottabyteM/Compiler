@@ -171,7 +171,7 @@ bool match(std::vector<Type *> paramsType, std::vector<Type *> paramsType_found)
 {
     if (paramsType.size() != paramsType_found.size())
         return false;
-    for (int j = 0; j < (int)paramsType_found.size(); j++)
+    for (size_t j = 0; j != paramsType_found.size(); j++)
         if (!convertible(paramsType[j], paramsType_found[j]))
             return false;
     return true;
