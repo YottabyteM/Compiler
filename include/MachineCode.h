@@ -207,8 +207,6 @@ public:
     void output();
 };
 
-// toDo: add classes
-
 class ZextMInstruction : public MachineInstruction
 {
 public:
