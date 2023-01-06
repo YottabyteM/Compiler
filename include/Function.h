@@ -32,6 +32,7 @@ public:
     void remove(BasicBlock *bb);
     void output() const;
     std::vector<BasicBlock *> &getBlockList() { return block_list; };
+    std::vector<Operand *> &getParamsList() {return param_list;};
     iterator begin() { return block_list.begin(); };
     iterator end() { return block_list.end(); };
     reverse_iterator rbegin() { return block_list.rbegin(); };

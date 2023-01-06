@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
     unit.genMachineCode(&mUnit);
     LinearScan linearScan(&mUnit);
     linearScan.allocateRegisters();
+    fprintf(stderr, "asm generated\n");
     if (dump_asm)
     {
         mUnit.output();

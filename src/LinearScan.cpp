@@ -78,7 +78,7 @@ void LinearScan::computeLiveIntervals()
         int t = -1;
         for (auto &use : du_chain.second)
             t = std::max(t, use->getParent()->getNo());
-        Interval *interval = new Interval({du_chain.first->getParent()->getNo(), t, false, 0, 0, du_chain.first->isFloat(), {du_chain.first}, du_chain.second});
+        Interval *interval = new Interval({du_chain.first->getParent()->getNo(), t, false, 0, 0, du_chain.first->getValType(), {du_chain.first}, du_chain.second});
         intervals.push_back(interval);
     }
     for (auto &interval : intervals)
@@ -185,7 +185,11 @@ bool LinearScan::linearScanRegisterAllocation()
     {
         expireOldIntervals(interval);
 
-        if (interval->is_freg)
+        auto comp = [&](Interval *a, Interval *b) -> bool
+        {
+            return a->end < b->end;
+        };
+        if (interval->valType->isFloat())
         {
             if (!fregs.size())
             {
@@ -196,12 +200,10 @@ bool LinearScan::linearScanRegisterAllocation()
             {
                 interval->rreg = (*fregs.rbegin());
                 fregs.pop_back();
-                active.push_back(interval);
-                auto comp = [&](Interval *a, Interval *b) -> bool
-                {
-                    return a->end < b->end;
-                };
-                sort(active.begin(), active.end(), comp);
+                // active.push_back(interval);
+                // sort(active.begin(), active.end(), comp);
+                auto insertPos = std::lower_bound(active.begin(), active.end(), interval, comp);
+                active.insert(insertPos, interval);
             }
         }
         else
@@ -215,12 +217,10 @@ bool LinearScan::linearScanRegisterAllocation()
             {
                 interval->rreg = (*regs.rbegin());
                 regs.pop_back();
-                active.push_back(interval);
-                auto comp = [&](Interval *a, Interval *b) -> bool
-                {
-                    return a->end < b->end;
-                };
-                sort(active.begin(), active.end(), comp);
+                // active.push_back(interval);
+                // sort(active.begin(), active.end(), comp);
+                auto insertPos = std::lower_bound(active.begin(), active.end(), interval, comp);
+                active.insert(insertPos, interval);
             }
         }
     }
@@ -231,7 +231,7 @@ void LinearScan::modifyCode()
 {
     for (auto &interval : intervals)
     {
-        func->addSavedRegs(interval->rreg);
+        func->addSavedRegs(interval->rreg, interval->valType->isFloat());
         for (auto def : interval->defs)
             def->setReg(interval->rreg);
         for (auto use : interval->uses)
@@ -251,7 +251,7 @@ void LinearScan::genSpillCode()
          * 1. insert ldr inst before the use of vreg
          * 2. insert str inst after the def of vreg
          */
-        interval->disp = func->AllocSpace(4);
+        interval->disp = func->AllocSpace(/*interval->valType->getSize()*/ 4);
         for (auto use : interval->uses)
         {
             MachineBlock *block = use->getParent()->getParent();
@@ -273,7 +273,7 @@ void LinearScan::expireOldIntervals(Interval *interval)
     {
         if ((*inter)->end >= interval->start)
             return;
-        if ((*inter)->is_freg)
+        if ((*inter)->valType->isFloat())
         {
             fregs.push_back((*inter)->rreg);
             sort(fregs.begin(), fregs.end());
@@ -294,12 +294,14 @@ void LinearScan::spillAtInterval(Interval *interval)
         (*active.rbegin())->spill = true;
         interval->rreg = (*active.rbegin())->rreg;
         active.pop_back();
-        active.push_back(interval);
         auto comp = [&](Interval *a, Interval *b) -> bool
         {
             return a->end < b->end;
         };
-        sort(active.begin(), active.end(), comp);
+        auto insertPos = std::lower_bound(active.begin(), active.end(), interval, comp);
+        active.insert(insertPos, interval);
+        // active.push_back(interval);
+        // sort(active.begin(), active.end(), comp);
     }
     else
     {

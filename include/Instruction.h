@@ -26,9 +26,9 @@ public:
     Instruction *getPrev();
     virtual void output() const = 0;
     MachineOperand *genMachineOperand(Operand *);
-    MachineOperand *genMachineReg(int reg, bool is_float = false);
-    MachineOperand *genMachineVReg(bool is_float = false);
-    MachineOperand *genMachineImm(double val, bool is_float = false);
+    MachineOperand *genMachineReg(int reg, Type *valType = TypeSystem::intType);
+    MachineOperand *genMachineVReg(Type *valType = TypeSystem::intType);
+    MachineOperand *genMachineImm(double val, Type *valType = TypeSystem::intType);
     MachineOperand *genMachineLabel(int block_no);
     virtual void genMachineCode(AsmBuilder *) = 0;
 
@@ -123,9 +123,9 @@ public:
         E,
         NE,
         L,
-        GE,
+        LE,
         G,
-        LE
+        GE
     };
 };
 

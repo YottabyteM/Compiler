@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <list>
+#include "Type.h"
 
 class MachineUnit;
 class MachineOperand;
@@ -23,7 +24,7 @@ private:
         bool spill; // whether this vreg should be spilled to memory
         int disp;   // displacement in stack
         int rreg;   // the real register mapped from virtual register if the vreg is not spilled to memory
-        bool is_freg;
+        Type *valType;
         std::set<MachineOperand *> defs;
         std::set<MachineOperand *> uses;
     };

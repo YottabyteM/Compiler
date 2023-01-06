@@ -310,6 +310,7 @@ void FuncDefParamsNode::output(int level)
 
 void FuncDefParamsNode::addChild(Id *next)
 {
+    dynamic_cast<IdentifierSymbolEntry *>(next->getSymPtr())->setParamNo(paramsList.size());
     paramsList.push_back(next);
 }
 
@@ -432,7 +433,6 @@ void BinaryExpr::genCode()
     }
     if (op == AND)
     {
-        height = 1;
         expr1->genCode();
         if (!expr1->trueList().empty()) // 常量折叠
         {
@@ -448,7 +448,6 @@ void BinaryExpr::genCode()
     }
     else if (op == OR)
     {
-        height = 1;
         expr1->genCode();
         if (!expr1->falseList().empty()) // 常量折叠
         {
@@ -683,6 +682,7 @@ void IfStmt::genCode()
 
     height = 1;
     cond->genCode();
+    height = 0;
 
     if (!cond->trueList().empty()) // 常量折叠，排除if(0)
     {
@@ -705,6 +705,7 @@ void IfElseStmt::genCode()
 
     height = 1;
     cond->genCode();
+    height = 0;
 
     if (!cond->trueList().empty()) // 常量折叠，排除if(0)
     {
@@ -814,6 +815,7 @@ void WhileStmt::genCode()
     builder->setInsertBB(cond_bb);
     height = 1;
     cond->genCode();
+    height = 0;
     backPatch(cond->falseList(), end_bb);
 
     if (!cond->trueList().empty()) // 常量折叠，排除while(0)
@@ -843,7 +845,7 @@ void FuncCallParamsNode::genCode()
 void FuncCallNode::genCode()
 {
     IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(funcId->getSymPtr());
-    if (se->not_dec_but_exist())
+    if (se->isLibFunc())
         builder->getUnit()->insertDecl(se);
     BasicBlock *bb = builder->getInsertBB();
     if (params == nullptr)

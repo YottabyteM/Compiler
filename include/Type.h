@@ -26,16 +26,16 @@ public:
     virtual ~Type(){};
     virtual std::string toStr() = 0;
     bool isInt() const { return kind == INT || kind == CONST_INT; }; // int/bool/const int/const bool
-    bool isBool() const { return kind == INT && size == 1; };
+    bool isBool() const { return (kind == INT || kind == CONST_INT) && size == 1; };
     bool isFloat() const { return kind == FLOAT || kind == CONST_FLOAT; };
     bool isVoid() const { return kind == VOID; };
     bool isFunc() const { return kind == FUNC; };
     bool isConstInt() const { return kind == CONST_INT; }; // const int/const bool
     bool isConstBool() const { return kind == CONST_INT && size == 1; };
     bool isConstFloat() const { return kind == CONST_FLOAT; };
-    bool isConst() const { return (kind == CONST_INT) || (kind == CONST_FLOAT); };
+    bool isConst() const { return (kind == CONST_INT) || (kind == CONST_FLOAT); }; // TODO : Array
     bool isPTR() const { return kind == PTR; };
-    int getSize() const { return (size == 32) ? 4 : 1; }; // 单位是字节数
+    int getSize() const { return (size == 32) ? 4 : 1; }; // 单位是字节数, TODO：Array
 };
 
 class IntType : public Type

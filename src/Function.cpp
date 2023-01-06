@@ -70,6 +70,7 @@ void Function::output() const
 void Function::genMachineCode(AsmBuilder *builder)
 {
     auto cur_unit = builder->getUnit();
+    std::vector<SymbolEntry *> params_sym_ptr;
     auto cur_func = new MachineFunction(cur_unit, this->sym_ptr);
     builder->setFunction(cur_func);
     std::map<BasicBlock *, MachineBlock *> map;
@@ -87,5 +88,5 @@ void Function::genMachineCode(AsmBuilder *builder)
         for (auto succ = block->succ_begin(); succ != block->succ_end(); succ++)
             mblock->addSucc(map[*succ]);
     }
-    cur_unit->InsertFunc(cur_func);
+    cur_unit->insertFunc(cur_func);
 }

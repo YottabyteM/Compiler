@@ -22,15 +22,15 @@ TESTCASE = $(shell find $(TEST_PATH) -name "*.sy")
 TESTCASE_NUM = $(words $(TESTCASE))
 LLVM_IR = $(addsuffix _std.ll, $(basename $(TESTCASE)))
 GCC_ASM = $(addsuffix _std.s, $(basename $(TESTCASE)))
-OUTPUT_LAB4 = $(addsuffix .toks, $(basename $(TESTCASE)))
-OUTPUT_LAB5 = $(addsuffix .ast, $(basename $(TESTCASE)))
-OUTPUT_LAB6 = $(addsuffix .ll, $(basename $(TESTCASE)))
-OUTPUT_LAB7 = $(addsuffix .s, $(basename $(TESTCASE)))
+OUTPUT_TOKS = $(addsuffix .toks, $(basename $(TESTCASE)))
+OUTPUT_AST = $(addsuffix .ast, $(basename $(TESTCASE)))
+OUTPUT_IR = $(addsuffix .ll, $(basename $(TESTCASE)))
+OUTPUT_ASM = $(addsuffix .s, $(basename $(TESTCASE)))
 OUTPUT_RES = $(addsuffix .res, $(basename $(TESTCASE)))
 OUTPUT_BIN = $(addsuffix .bin, $(basename $(TESTCASE)))
 OUTPUT_LOG = $(addsuffix .log, $(basename $(TESTCASE)))
 
-.phony:all app run gdb testlab4 testlab5 testlab6 testlab7 test clean clean-all clean-test clean-app llvmir gccasm
+.phony:all app run gdb testlexer testparser testir testasm test clean clean-all clean-test clean-app llvmir gccasm
 
 all:app
 
@@ -82,13 +82,13 @@ llvmir:$(LLVM_IR)
 
 gccasm:$(GCC_ASM)
 
-testlab4:app $(OUTPUT_LAB4)
+testlexer:app $(OUTPUT_TOKS)
 
-testlab5:app $(OUTPUT_LAB5)
+testparser:app $(OUTPUT_AST)
 
-testlab6:app $(OUTPUT_LAB6)
+testir:app $(OUTPUT_IR)
 
-testlab7:app $(OUTPUT_LAB7)
+testasm:app $(OUTPUT_ASM)
 
 .ONESHELL:
 test:app
@@ -149,7 +149,7 @@ clean-app:
 	@rm -rf $(BUILD_PATH) $(PARSER) $(LEXER) $(PARSERH)
 
 clean-test:
-	@rm -rf $(OUTPUT_LAB4) $(OUTPUT_LAB5) $(OUTPUT_LAB6) $(OUTPUT_LAB7) $(OUTPUT_LOG) $(OUTPUT_BIN) $(OUTPUT_RES) $(LLVM_IR) $(GCC_ASM) ./example.ast ./example.ll ./example.s
+	@rm -rf $(OUTPUT_TOKS) $(OUTPUT_AST) $(OUTPUT_IR) $(OUTPUT_ASM) $(OUTPUT_LOG) $(OUTPUT_BIN) $(OUTPUT_RES) $(LLVM_IR) $(GCC_ASM) ./example.ast ./example.ll ./example.s
 
 clean-all:clean-test clean-app
 
