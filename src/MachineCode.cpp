@@ -794,7 +794,6 @@ void MachineUnit::printGlobalDecl()
 
 void MachineUnit::output()
 {
-    // TODO
     /* Hint:
      * 1. You need to print global variable/const declarition code;
      * 2. Traverse all the function in func_list to print assembly code;
