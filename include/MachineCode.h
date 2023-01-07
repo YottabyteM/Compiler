@@ -93,7 +93,8 @@ protected:
         CMP,
         STACK,
         ZEXT,
-        VCVT
+        VCVT,
+        // VMRS
     };
 
 public:
@@ -237,6 +238,13 @@ public:
     void output();
 };
 
+class VmrsMInstruction : public MachineInstruction
+{
+public:
+    VmrsMInstruction(MachineBlock *p);
+    void output();
+};
+
 class MachineBlock
 {
 private:
@@ -268,6 +276,7 @@ public:
     MachineFunction *getParent() { return parent; };
     void insertBefore(MachineInstruction *pos, MachineInstruction *inst);
     void insertAfter(MachineInstruction *pos, MachineInstruction *inst);
+    MachineOperand *insertLoadImm(MachineOperand *imm);
     void output();
 };
 

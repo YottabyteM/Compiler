@@ -27,7 +27,7 @@ MachineOperand::MachineOperand(std::string label)
 {
     this->type = MachineOperand::LABEL;
     this->label = label;
-    // this->valType = TypeSystem::intType;
+    this->valType = TypeSystem::intType;
 }
 
 bool MachineOperand::operator==(const MachineOperand &a) const
@@ -36,7 +36,7 @@ bool MachineOperand::operator==(const MachineOperand &a) const
         return false;
     if (this->type == IMM)
         return this->val == a.val;
-    return this->reg_no == a.reg_no;
+    return this->reg_no == a.reg_no /*&& ((this->valType->isFloat() && a.valType->isFloat()) || (this->valType->isInt() && a.valType->isInt()))*/;
 }
 
 bool MachineOperand::operator<(const MachineOperand &a) const
@@ -45,8 +45,8 @@ bool MachineOperand::operator<(const MachineOperand &a) const
     {
         if (this->type == IMM)
             return this->val < a.val;
-        // assert(this->type == VREG || this->type == REG);
-        return this->reg_no < a.reg_no; // 不太理解比较label的意义
+        // assert(this->type == VREG || this->type == REG); // 不太理解比较label的意义
+        return /*(this->valType->isInt() && a.valType->isFloat()) || */ this->reg_no < a.reg_no;
     }
     return this->type < a.type;
 }
@@ -128,8 +128,9 @@ bool MachineOperand::isIllegalShifterOperand()
 {
     assert(this->isImm());
     unsigned bin_val;
-    if (valType->isFloat())
-        bin_val = reinterpret_cast<unsigned &>(this->val);
+    if (valType->isFloat()) // TODO
+        // bin_val = reinterpret_cast<unsigned &>(this->val);
+        return true;
     else
     {
         signed signed_val = (int)(this->val);
@@ -607,6 +608,17 @@ void VcvtMInstruction::output()
     fprintf(yyout, "\n");
 }
 
+// VmrsMInstruction::VmrsMInstruction(MachineBlock *p)
+// {
+//     this->parent = p;
+//     this->type = MachineInstruction::VMRS;
+// }
+
+// void VmrsMInstruction::output()
+// {
+//     fprintf(yyout, "\tvmrs APSR_nzcv, FPSCR\n");
+// }
+
 void MachineBlock::insertBefore(MachineInstruction *pos, MachineInstruction *inst)
 {
     auto p = find(inst_list.begin(), inst_list.end(), pos);
@@ -622,6 +634,35 @@ void MachineBlock::insertAfter(MachineInstruction *pos, MachineInstruction *inst
         return;
     }
     inst_list.insert(p + 1, inst);
+}
+
+MachineOperand *MachineBlock::insertLoadImm(MachineOperand *imm)
+{
+    // if (imm->getValType()->isInt())
+    // {
+    //     auto internal_reg = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::intType);
+    //     this->InsertInst(new LoadMInstruction(this, internal_reg, imm));
+    //     return new MachineOperand(*internal_reg);
+    // }
+    // assert(imm->getValType()->isFloat());
+    // MachineOperand *internal_reg1 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::intType);
+    // this->InsertInst(new LoadMInstruction(this, internal_reg1, imm));
+    // MachineOperand *internal_reg2 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::floatType);
+    // internal_reg1 = new MachineOperand(*internal_reg1);
+    // this->InsertInst(new MovMInstruction(this, MovMInstruction::VMOV, internal_reg2, internal_reg1));
+    // return new MachineOperand(*internal_reg2);
+
+    MachineOperand *internal_reg1 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::intType);
+    this->InsertInst(new LoadMInstruction(this, internal_reg1, imm));
+    if (imm->getValType()->isFloat())
+    {
+        MachineOperand *internal_reg2 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::floatType);
+        internal_reg1 = new MachineOperand(*internal_reg1);
+        this->InsertInst(new MovMInstruction(this, MovMInstruction::VMOV, internal_reg2, internal_reg1));
+        return new MachineOperand(*internal_reg2);
+    }
+    assert(imm->getValType()->isInt());
+    return new MachineOperand(*internal_reg1);
 }
 
 void MachineBlock::output()
@@ -750,7 +791,7 @@ void MachineFunction::output()
     i = 0;
     while (i != fregs.size())
     {
-        fprintf(yyout, "\tvpush {");
+        fprintf(yyout, "\tvpop {");
         fregs[i++]->output();
         for (int j = 1; i != fregs.size() && j != 16; i++, j++)
         {

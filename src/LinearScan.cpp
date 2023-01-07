@@ -176,6 +176,7 @@ bool LinearScan::linearScanRegisterAllocation()
     // Todo
     active.clear();
     regs.clear();
+    fregs.clear();
     for (int i = 4; i < 11; i++)
         regs.push_back(i);
     for (int i = 5; i < 32; i++)
@@ -275,13 +276,17 @@ void LinearScan::expireOldIntervals(Interval *interval)
             return;
         if ((*inter)->valType->isFloat())
         {
-            fregs.push_back((*inter)->rreg);
-            sort(fregs.begin(), fregs.end());
+            auto insertPos = std::lower_bound(fregs.begin(), fregs.end(), (*inter)->rreg);
+            fregs.insert(insertPos, (*inter)->rreg);
+            // fregs.push_back((*inter)->rreg);
+            // sort(fregs.begin(), fregs.end());
         }
         else
         {
-            regs.push_back((*inter)->rreg);
-            sort(regs.begin(), regs.end());
+            auto insertPos = std::lower_bound(regs.begin(), regs.end(), (*inter)->rreg);
+            regs.insert(insertPos, (*inter)->rreg);
+            // regs.push_back((*inter)->rreg);
+            // sort(regs.begin(), regs.end());
         }
     }
 }
