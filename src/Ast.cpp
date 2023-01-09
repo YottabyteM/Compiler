@@ -352,12 +352,12 @@ void Ast::genCode(Unit *unit)
 
 void Id::genCode()
 {
-    if (getType()->isConst() && !isArray()) // 常量折叠
+    if (getType()->isConst() && !is_Array()) // 常量折叠
         return;
     BasicBlock *bb = builder->getInsertBB();
     Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(symbolEntry)->getAddr();
     dst = new Operand(new TemporarySymbolEntry(dst->getType(), SymbolTable::getLabel()));
-    if (!isArray()) 
+    if (!is_Array()) 
         new LoadInstruction(dst, addr, bb);
     else 
     {
@@ -661,6 +661,7 @@ void Constant::genCode()
     return;
 }
 
+
 void ImplicitCast::genCode()
 {
     BasicBlock *bb = builder->getInsertBB();
@@ -769,6 +770,14 @@ void IndicesNode::output(int level)
     {
         expr->output(level+4);
     }
+}
+
+void InitNode::output(int level)
+{
+    if (isLeaf()) leaf->output(level + 4);
+    else 
+        for (auto _initNode : leaves)
+            _initNode->output(level + 4);
 }
 
 void IndicesNode::genCode()

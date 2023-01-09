@@ -3,6 +3,7 @@
 
 #include "SymbolTable.h"
 #include <vector>
+#include <assert.h>
 
 class Instruction;
 class Function;
@@ -19,7 +20,7 @@ private:
 public:
     Operand(SymbolEntry *se) : se(se) { def = nullptr; };
     void setDef(Instruction *inst) { def = inst; };
-    void addUse(Instruction *inst) { uses.push_back(inst); };
+    void addUse(Instruction *inst) { assert(inst != nullptr); uses.push_back(inst); };
     void removeUse(Instruction *inst);
     int usersNum() const { return uses.size(); };
 

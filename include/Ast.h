@@ -58,36 +58,6 @@ public:
     ~ExprNode(){};
 };
 
-class IndicesNode : public StmtNode
-{
-private:
-    std::vector<ExprNode*> exprList;
-public:
-    IndicesNode() {};
-    void Addnew(ExprNode* new_expr) { exprList.push_back(new_expr); };
-    void Addbefore(ExprNode* new_expr) { exprList.insert(exprList.begin(), new_expr); };
-    void output(int level);
-    std::vector<ExprNode*> getexprList() { return exprList; };
-    void genCode();
-};
-
-class Id : public ExprNode
-{
-private:
-    IndicesNode* indices;
-    bool isArray = false;
-public:
-    Id(SymbolEntry *se) : ExprNode(se){ isArray = se->getType()->isARRAY(); };
-    SymbolEntry* get_Entry_of_Id() {return symbolEntry; };
-    void SetIndices(IndicesNode* new_indices) { indices = new_indices; };
-    IndicesNode* getIndices() { return indices; };
-    void output(int level);
-    bool isArray() { return isArray; };
-    // void typeCheck();
-    void genCode();
-    ~Id(){};
-};
-
 class UnaryExpr : public ExprNode
 {
 private:
@@ -171,6 +141,35 @@ class StmtNode : public Node
 {
 };
 
+class IndicesNode : public StmtNode
+{
+private:
+    std::vector<ExprNode*> exprList;
+public:
+    IndicesNode() {};
+    void Addnew(ExprNode* new_expr) { exprList.push_back(new_expr); };
+    void Addbefore(ExprNode* new_expr) { exprList.insert(exprList.begin(), new_expr); };
+    void output(int level);
+    std::vector<ExprNode*> getexprList() { return exprList; };
+    void genCode();
+};
+
+class Id : public ExprNode
+{
+private:
+    IndicesNode* indices;
+    bool is_array = false;
+public:
+    Id(SymbolEntry *se) : ExprNode(se){ is_array = se->getType()->isARRAY(); };
+    SymbolEntry* get_Entry_of_Id() {return symbolEntry; };
+    void SetIndices(IndicesNode* new_indices) { indices = new_indices; };
+    IndicesNode* getIndices() { return indices; };
+    void output(int level);
+    bool is_Array() { return is_array; };
+    // void typeCheck();
+    void genCode();
+    ~Id(){};
+};
 
 class InitNode : public StmtNode
 {
@@ -179,10 +178,10 @@ private:
     ExprNode* leaf;
     std::vector<InitNode*> leaves;
 public:
-    InitNode(bool isconst) : 
+    InitNode(bool isconst = false) : 
         isconst(isconst), leaf(nullptr){};
     void addleaf(InitNode* next) { leaves.push_back(next); };
-    void setleaf(ExprNode* leaf) { leaf = leaf; };
+    void setleaf(ExprNode* leaf1) { leaf = leaf1; };
     bool isLeaf() { return leaves.empty(); };
     bool isConst() const { return isconst; }
     void output(int level);
@@ -237,7 +236,9 @@ private:
     bool BeArray;
 
 public:
-    DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst, bool isArray) : id(id), expr(expr), BeConst(isConst), BeArray(isArray) { next = nullptr; };
+    DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false) : 
+            id(id), expr(expr), BeConst(isConst), BeArray(isArray) 
+                { next = nullptr; };
     void setNext(DeclStmt *next);
     DeclStmt *getNext();
     void output(int level);

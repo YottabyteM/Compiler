@@ -56,11 +56,11 @@ public:
 class FloatType : public Type
 {
 private:
-    bool is_need = false;
+    bool is_Need = false;
 public:
     FloatType(int size) : Type(Type::FLOAT) { this->size = size; };
-    bool need_Fp() { is_need = true; };
-    bool is_need() { return is_need; };
+    void need_Fp() { is_Need = true; };
+    bool is_need() { return is_Need; };
     std::string toStr();
 };
 
