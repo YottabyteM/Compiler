@@ -23,15 +23,18 @@ class MachineFunction;
 class MachineBlock;
 class MachineInstruction;
 
+bool isShifterOperandVal(unsigned bin_val);
+
 class MachineOperand
 {
 private:
     MachineInstruction *parent;
     int type;
-    float val;         // value of immediate number
+    double val;        // value of immediate number
     int reg_no;        // register no
     std::string label; // address label
-    bool is_float;     // is floating point
+    Type *valType;
+
 public:
     enum
     {
@@ -40,7 +43,7 @@ public:
         REG,
         LABEL
     };
-    MachineOperand(int tp, float val, bool is_float = false);
+    MachineOperand(int tp, double val, Type *valType = TypeSystem::intType);
     MachineOperand(std::string label);
     bool operator==(const MachineOperand &) const;
     bool operator<(const MachineOperand &) const;
@@ -49,6 +52,7 @@ public:
     bool isVReg() { return this->type == VREG; };
     bool isLabel() { return this->type == LABEL; };
     int getVal() { return this->val; };
+    void setVal(double val) { this->val = val; }; // 目前仅用于spilled reg更新栈内偏移
     int getReg() { return this->reg_no; };
     void setReg(int regno)
     {
@@ -58,10 +62,10 @@ public:
     std::string getLabel() { return this->label; };
     void setParent(MachineInstruction *p) { this->parent = p; };
     MachineInstruction *getParent() { return this->parent; };
-    void PrintReg();
+    void printReg();
     void output();
-    bool isFloat() { return this->is_float; };
-    bool isIllegalOp2(); // 第二操作数应符合8位图格式
+    Type *getValType() { return this->valType; };
+    bool isIllegalShifterOperand(); // 第二操作数应符合8位图格式
 };
 
 class MachineInstruction
@@ -77,8 +81,8 @@ protected:
     std::vector<MachineOperand *> use_list;
     void addDef(MachineOperand *ope) { def_list.push_back(ope); };
     void addUse(MachineOperand *ope) { use_list.push_back(ope); };
-    // Print execution code after printing opcode
-    void PrintCond();
+    // print execution code after printing opcode
+    void printCond();
     enum instType
     {
         BINARY,
@@ -89,7 +93,8 @@ protected:
         CMP,
         STACK,
         ZEXT,
-        VCVT
+        VCVT,
+        // VMRS
     };
 
 public:
@@ -104,6 +109,7 @@ public:
         NONE
     };
     virtual void output() = 0;
+    bool isBranch() { return type == BRANCH; };
     void setNo(int no) { this->no = no; };
     int getNo() { return no; };
     std::vector<MachineOperand *> &getDef() { return def_list; };
@@ -232,6 +238,13 @@ public:
     void output();
 };
 
+class VmrsMInstruction : public MachineInstruction
+{
+public:
+    VmrsMInstruction(MachineBlock *p);
+    void output();
+};
+
 class MachineBlock
 {
 private:
@@ -261,8 +274,9 @@ public:
     std::vector<MachineBlock *> &getPreds() { return pred; };
     std::vector<MachineBlock *> &getSuccs() { return succ; };
     MachineFunction *getParent() { return parent; };
-    void insertBefore(MachineInstruction *pos, MachineInstruction *cont);
-    void insertAfter(MachineInstruction *pos, MachineInstruction *cont);
+    void insertBefore(MachineInstruction *pos, MachineInstruction *inst);
+    void insertAfter(MachineInstruction *pos, MachineInstruction *inst);
+    MachineOperand *insertLoadImm(MachineOperand *imm);
     void output();
 };
 
@@ -273,7 +287,9 @@ private:
     std::vector<MachineBlock *> block_list;
     int stack_size;
     std::set<int> saved_regs;
+    std::set<int> saved_fregs;
     SymbolEntry *sym_ptr;
+    std::vector<MachineOperand *> additional_args_offset;
 
 public:
     std::vector<MachineBlock *> &getBlocks() { return block_list; };
@@ -291,8 +307,12 @@ public:
         return this->stack_size;
     };
     void InsertBlock(MachineBlock *block) { this->block_list.push_back(block); };
-    void addSavedRegs(int regno) { saved_regs.insert(regno); };
+    void addSavedRegs(int regno, bool is_freg = false) { is_freg ? saved_fregs.insert(regno) : saved_regs.insert(regno); };
+    std::vector<MachineOperand *> getSavedRegs();
+    std::vector<MachineOperand *> getSavedFRegs();
     MachineUnit *getParent() { return parent; };
+    void addArgsOffset(MachineOperand *param) { additional_args_offset.push_back(param); };
+    // std::vector<MachineOperand *> getArgsOffset() { return additional_args_offset; };
     void output();
 };
 
@@ -300,17 +320,19 @@ class MachineUnit
 {
 private:
     std::vector<MachineFunction *> func_list;
-    std::vector<IdentifierSymbolEntry *> global_list;
-    void PrintGlobalDecl();
-    void PrintGlobal();
+    std::vector<IdentifierSymbolEntry *> global_var_list;
+    int LtorgNo; // 当前LiteralPool序号
 
 public:
     std::vector<MachineFunction *> &getFuncs() { return func_list; };
     std::vector<MachineFunction *>::iterator begin() { return func_list.begin(); };
     std::vector<MachineFunction *>::iterator end() { return func_list.end(); };
-    void InsertFunc(MachineFunction *func) { func_list.push_back(func); };
+    void insertFunc(MachineFunction *func) { func_list.push_back(func); };
+    void insertGlobalVar(IdentifierSymbolEntry *sym_ptr) { global_var_list.push_back(sym_ptr); };
+    void printGlobalDecl();
+    void printBridge();
+    int getLtorgNo() { return LtorgNo; };
     void output();
-    void insertGlobal(IdentifierSymbolEntry *sym_ptr) { global_list.push_back(sym_ptr); };
 };
 
 #endif

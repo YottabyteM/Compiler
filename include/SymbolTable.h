@@ -89,6 +89,7 @@ private:
     std::string name;
     int scope;
     Operand *addr; // The address of the identifier.
+    int paramNo; // if is param
     // You can add any field you need here.
 
 public:
@@ -102,8 +103,10 @@ public:
     void setAddr(Operand *addr) { this->addr = addr; };
     Operand *getAddr() { return addr; };
     // You can add any function you need here.
+    void setParamNo(int paramNo) {this->paramNo = paramNo;};
+    int getParamNo() {return paramNo;};
     std::string getName() const { return name; };
-    bool not_dec_but_exist();
+    bool isLibFunc();
     void decl_code();
 };
 

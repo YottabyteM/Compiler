@@ -27,8 +27,9 @@ public:
     use_iterator use_end() { return uses.end(); };
     Type *getType() { return se->getType(); };
     std::string toStr() const;
-    SymbolEntry *getEntry() { return se; };
     Instruction *getDef() { return def; };
+    std::vector<Instruction *> getUses() { return uses;};
+    SymbolEntry *getEntry() { return se; };
 };
 
 #endif

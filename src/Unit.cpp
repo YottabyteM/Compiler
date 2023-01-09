@@ -18,10 +18,10 @@ void Unit::removeFunc(Function *func)
 void Unit::output() const
 {
     for (auto item : decl_list)
-        if (!item->not_dec_but_exist())
+        if (!item->isLibFunc())
             item->decl_code();
     for (auto item : decl_list)
-        if (item->not_dec_but_exist())
+        if (item->isLibFunc())
             item->decl_code();
     for (auto func : func_list)
         func->output();
@@ -31,6 +31,9 @@ void Unit::genMachineCode(MachineUnit *munit)
 {
     AsmBuilder *builder = new AsmBuilder();
     builder->setUnit(munit);
+    for (auto decl : decl_list)
+        if ((!decl->isLibFunc() && !decl->getType()->isConst())) // TODO：数组常量这里没加
+            munit->insertGlobalVar(decl);
     for (auto &func : func_list)
         func->genMachineCode(builder);
 }

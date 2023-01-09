@@ -40,7 +40,7 @@ std::string lib_fun[14] = {"getint",
                            "starttime",
                            "stoptime"};
 
-bool IdentifierSymbolEntry::not_dec_but_exist()
+bool IdentifierSymbolEntry::isLibFunc()
 {
     for (int i = 0; i < 14; i++)
         if (name == lib_fun[i])
@@ -76,13 +76,13 @@ void IdentifierSymbolEntry::decl_code()
             ;
         else if (type->isInt())
         {
-            fprintf(yyout, "@%s = dso_local global %s %d, align 4\n", name.c_str(), type->toStr().c_str(), (int)value);
-            fprintf(stderr, "@%s = dso_local global %s %d, align 4\n", name.c_str(), type->toStr().c_str(), (int)value);
+            fprintf(yyout, "%s = dso_local global %s %d, align 4\n", name.c_str(), type->toStr().c_str(), (int)value);
+            fprintf(stderr, "%s = dso_local global %s %d, align 4\n", name.c_str(), type->toStr().c_str(), (int)value);
         }
         else if (type->isFloat())
         {
-            fprintf(yyout, "@%s = dso_local global %s %s, align 4\n", name.c_str(), type->toStr().c_str(), Double2HexStr(value).c_str());
-            fprintf(stderr, "@%s = dso_local global %s %s, align 4\n", name.c_str(), type->toStr().c_str(), Double2HexStr(value).c_str());
+            fprintf(yyout, "%s = dso_local global %s %s, align 4\n", name.c_str(), type->toStr().c_str(), Double2HexStr(value).c_str());
+            fprintf(stderr, "%s = dso_local global %s %s, align 4\n", name.c_str(), type->toStr().c_str(), Double2HexStr(value).c_str());
         }
     }
 }
@@ -134,7 +134,7 @@ std::string IdentifierSymbolEntry::toStr()
     }
     else if (isGlobal())
     {
-        return "@" + name;
+        return type->isFunc() ? "@" + name : name;
     }
     else
     {

@@ -69,7 +69,10 @@ void LiveVariableAnalysis::computeUsePos(MachineFunction *func)
         {
             auto uses = inst->getUse();
             for (auto &use : uses)
+            {
+                // assert(!use->isLabel());
                 all_uses[*use].insert(use);
+            }
         }
     }
 }
