@@ -58,11 +58,31 @@ public:
     ~ExprNode(){};
 };
 
+class IndicesNode : public StmtNode
+{
+private:
+    std::vector<ExprNode*> exprList;
+public:
+    IndicesNode() {};
+    void Addnew(ExprNode* new_expr) { exprList.push_back(new_expr); };
+    void Addbefore(ExprNode* new_expr) { exprList.insert(exprList.begin(), new_expr); };
+    void output(int level);
+    std::vector<ExprNode*> getexprList() { return exprList; };
+    void genCode();
+};
+
 class Id : public ExprNode
 {
+private:
+    IndicesNode* indices;
+    bool isArray = false;
 public:
-    Id(SymbolEntry *se) : ExprNode(se){};
+    Id(SymbolEntry *se) : ExprNode(se){ isArray = se->getType()->isARRAY(); };
+    SymbolEntry* get_Entry_of_Id() {return symbolEntry; };
+    void SetIndices(IndicesNode* new_indices) { indices = new_indices; };
+    IndicesNode* getIndices() { return indices; };
     void output(int level);
+    bool isArray() { return isArray; };
     // void typeCheck();
     void genCode();
     ~Id(){};
@@ -151,6 +171,26 @@ class StmtNode : public Node
 {
 };
 
+
+class InitNode : public StmtNode
+{
+private:
+    bool isconst;
+    ExprNode* leaf;
+    std::vector<InitNode*> leaves;
+public:
+    InitNode(bool isconst) : 
+        isconst(isconst), leaf(nullptr){};
+    void addleaf(InitNode* next) { leaves.push_back(next); };
+    void setleaf(ExprNode* leaf) { leaf = leaf; };
+    bool isLeaf() { return leaves.empty(); };
+    bool isConst() const { return isconst; }
+    void output(int level);
+    void genCode();
+    std::vector<InitNode*> getleaves() {return leaves; };
+    ExprNode* getself() {return leaf;};
+};
+
 class CompoundStmt : public StmtNode
 {
 private:
@@ -191,11 +231,13 @@ class DeclStmt : public StmtNode
 {
 private:
     Id *id;
-    ExprNode *expr;
+    InitNode *expr;
     DeclStmt *next;
+    bool BeConst;
+    bool BeArray;
 
 public:
-    DeclStmt(Id *id, ExprNode *expr = nullptr) : id(id), expr(expr) { next = nullptr; };
+    DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst, bool isArray) : id(id), expr(expr), BeConst(isConst), BeArray(isArray) { next = nullptr; };
     void setNext(DeclStmt *next);
     DeclStmt *getNext();
     void output(int level);

@@ -41,7 +41,7 @@
 
 
 %nterm <stmttype> Stmts Stmt AssignStmt ExprStmt BlockStmt NullStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt DeclStmt 
-%nterm <stmttype> VarDeclStmt ConstDeclStmt VarDef ConstDef VarDefList ConstDefList 
+%nterm <stmttype> VarDeclStmt ConstDeclStmt VarDef ConstDef VarDefList ConstDefList ArrayConstIndices ArrayIndices ArrayVarIndices
 %nterm <stmttype> FuncFParams FuncRParams FuncDef 
 %nterm <exprtype> LVal Exp ConstExp Cond PrimaryExpr UnaryExpr MulDivModExpr AddSubExpr RelExpr LEqExpr LAndExpr LOrExpr 
 %nterm <exprtype> InitVal ConstInitVal InitValList ConstInitValList 
@@ -89,14 +89,38 @@ Type
     }
     // 需要额外检查，比如 VOID 不能出现在声明语句。
     ;
-// ArrayIndices:
-//     : ArrayIndices LBRACKET ConstExp RBRACKET {
-
-//     }
-//     | LBRACKET ConstExp RBRACKET {
-        
-//     }
-//     ;
+ArrayConstIndices
+    : ArrayConstIndices LBRACKET ConstExp RBRACKET {
+        IndicesNode* node = dynamic_cast<IndicesNode*>($1);
+        node->Addnew($3);
+        $$ = node;
+    }
+    | LBRACKET ConstExp RBRACKET {
+        IndicesNode* node = new IndicesNode();
+        node->Addnew($2);
+        $$ = node;
+    }
+    ;
+ArrayVarIndices
+    : ArrayVarIndices LBRACKET Exp RBRACKET {
+        IndicesNode* node = dynamic_cast<IndicesNode*>($1);
+        node->Addnew($3);
+        $$ = node;
+    }
+    | LBRACKET Exp RBRACKET {
+        IndicesNode* node = new IndicesNode();
+        node->Addnew($2);
+        $$ = node;
+    }
+    ;
+ArrayIndices
+    : ArrayConstIndices {
+        $$ = $1;
+    }
+    | ArrayVarIndices {
+        $$ = $1;
+    }
+    ;
 LVal
     : ID {
         SymbolEntry *se;
@@ -111,19 +135,21 @@ LVal
         $$ = new Id(se);
         delete []$1;
     }
-    // | ID ArrayIndices {
-    //     SymbolEntry *se;
-    //     se = identifiers->lookup($1);
-    //     // 类型检查1：变量未声明
-    //     if(se == nullptr)
-    //     {
-    //         fprintf(stderr, "identifier \"%s\" is undefined\n", (char*)$1);
-    //         delete [](char*)$1;
-    //         assert(se != nullptr);
-    //     }
-    //     $$ = new Id(se, $2);
-    //     delete []$1;
-    // }
+    | ID ArrayIndices {
+        SymbolEntry *se;
+        se = identifiers->lookup($1);
+        // 类型检查1：变量未声明
+        if(se == nullptr)
+        {
+            fprintf(stderr, "identifier \"%s\" is undefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(se != nullptr);
+        }
+        Id* new_id = new Id(se);
+        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        $$ = new_id;
+        delete []$1;
+    }
     ; 
 
 Exp
@@ -540,12 +566,45 @@ VarDef
         $$ = new DeclStmt(new Id(se), t3);
         delete []$1;
     }
-    // | ID ArrayIndices {
-
-    // }
-    // | ID ArrayIndices ASSIGN InitVal {
-
-    // }
+    | ID ArrayConstIndices {
+        int ret = identifiers->lookup($1);
+        // 类型检查1：变量在同一作用域下重复声明
+        if(!ret)
+        {
+            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(ret);
+        }
+        Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
+        SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+        identifier->install($1, se_var_list);
+        Id* new_Id = new Id(se);
+        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        $$ = new DeclStmt(new_Id, nullptr, false, true);
+        delete []$1;
+    }
+    | ID ArrayConstIndices ASSIGN InitVal {
+        int ret = identifiers->lookup($1);
+        // 类型检查1：变量在同一作用域下重复声明
+        if(!ret)
+        {
+            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(ret);
+        }
+        Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
+        SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+        identifier->install($1, se_var_list);
+        Id* new_Id = new Id(se);
+        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), false, true);
+        delete []$1;
+    }
+    | ID ArrayVarIndices ASSIGN InitVal {
+        fprintf(stderr, "Indices can't be variable!\n");
+        bool indices_variable = false;
+        assert(indices_variable);
+    }
     ;
 ConstDef
     : ID ASSIGN ConstInitVal {
@@ -566,48 +625,79 @@ ConstDef
         $$ = new DeclStmt(new Id(se), t3);
         delete []$1;
     }
-    // | ID ArrayIndices ASSIGN ConstInitVal {
-
-    // }
+    | ID ArrayConstIndices ASSIGN ConstInitVal {
+        int ret = identifiers->lookup($1);
+        // 类型检查1：变量在同一作用域下重复声明
+        if(!ret)
+        {
+            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(ret);
+        }
+        Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
+        SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+        identifier->install($1, se_var_list);
+        Id* new_Id = new Id(se);
+        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), true, true);
+        delete []$1;
+    }
+    | ID ArrayVarIndices ASSIGN ConstInitVal {
+        fprintf(stderr, "Indices can't be variable!\n");
+        bool indices_variable = false;
+        assert(indices_variable);
+    }
     ;
 InitVal 
     : Exp {
-        $$ = $1;
+        InitNode* new_exp = new InitNode(false);
+        new_exp->setleaf(dynamic_cast<ExprNode*>($1));
+        $$ = new_exp;
     }
     // 这样的大括号初始化方式太过灵活，需要额外检查
     | LBRACE InitValList RBRACE {
-        ;
+        $$ = $2;;
+    }
+    | LBRACE RBRACE {
+        $$ = new InitNode(true);
     }
     ;
 
 ConstInitVal
     : ConstExp {
-        $$ = $1;
+        InitNode* new_exp = new InitNode(true);
+        new_exp->setleaf(dynamic_cast<ExprNode*>($1));
+        $$ = new_exp;
     }
     | LBRACE ConstInitValList RBRACE {
-
+        $$ = $2;
+    }
+    | LBRACE RBRACE {
+        $$ = new InitNode(true);
     }
     ;
 InitValList
     : InitVal {
-        $$ = $1;
+        InitNode* new_expr = new InitNode(false);
+        new_expr->addleaf(dynamic_cast<InitNode*>($1));
+        $$ = new_expr;
     }
     | InitValList COMMA InitVal {
-        $$ = $1;
-    }
-    | %empty {
-
+        InitNode* this_expr = dynamic_cast<InitNode*>($1);
+        this_expr->addleaf(dynamic_cast<InitNode*>($3));
+        $$ = this_expr;
     }
     ;
 ConstInitValList
     : ConstInitVal {
-        $$ = $1;
+        InitNode* new_expr = new InitNode(true);
+        new_expr->addleaf(dynamic_cast<InitNode*>($1));
+        $$ = new_expr;
     }
     | ConstInitValList COMMA ConstInitVal {
-        $$ = $1;
-    }
-    | %empty{
-
+        InitNode* this_expr = dynamic_cast<InitNode*>($1);
+        this_expr->addleaf(dynamic_cast<InitNode*>($3));
+        $$ = this_expr;
     }
     ;
 FuncDef

@@ -130,12 +130,17 @@ class TemporarySymbolEntry : public SymbolEntry
 private:
     int stack_offset;
     int label;
+    bool isArray;
 
 public:
-    TemporarySymbolEntry(Type *type, int label);
+    TemporarySymbolEntry(Type *type, int label, bool isarray = false) : SymbolEntry(type, SymbolEntry::TEMPORARY) {
+        this->label = label;
+        this->isArray = isarray;
+    };
     virtual ~TemporarySymbolEntry(){};
     std::string toStr();
     int getLabel() const { return label; };
+    void setArray() { isArray = true; };
     void setOffset(int offset) { this->stack_offset = offset; };
     int getOffset() { return this->stack_offset; };
     // You can add any function you need here.
