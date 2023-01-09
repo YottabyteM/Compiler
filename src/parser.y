@@ -41,7 +41,7 @@
 
 
 %nterm <stmttype> Stmts Stmt AssignStmt ExprStmt BlockStmt NullStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt DeclStmt 
-%nterm <stmttype> VarDeclStmt ConstDeclStmt VarDef ConstDef VarDefList ConstDefList
+%nterm <stmttype> VarDeclStmt ConstDeclStmt VarDef ConstDef VarDefList ConstDefList ArrayConstIndices ArrayIndices ArrayVarIndices
 %nterm <stmttype> FuncFParams FuncRParams FuncDef 
 %nterm <exprtype> LVal Exp ConstExp Cond PrimaryExpr UnaryExpr MulDivModExpr AddSubExpr RelExpr LEqExpr LAndExpr LOrExpr 
 %nterm <stmttype> InitVal ConstInitVal InitValList ConstInitValList 
@@ -145,12 +145,12 @@ LVal
     //         delete [](char*)$1;
     //         assert(se != nullptr);
     //     }
-    //     Id* new_id = new Id(se);
+    //     Id* new_id = new Id(se, false);
     //     new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
     //     $$ = new_id;
     //     delete []$1;
     // }
-    // ; 
+    ; 
 
 Exp
     :
@@ -411,8 +411,12 @@ AssignStmt
     : LVal ASSIGN Exp SEMICOLON { // SysY不包含连续赋值的特性
         assert(convertible($3->getType(), $1->getType()));
         ExprNode *t = typeCast($3, $1->getType());
-        if($1->getType()->isConst())
+        if($1->getType()->isConst()) {
+            fprintf(stderr, "%s can't assign a constant which can only be read", dynamic_cast<IdentifierSymbolEntry*>(($1)->getSymPtr())->getName().c_str());
+            bool Rval_is_not_Written = false;
+            assert(Rval_is_not_Written);
             $1->setValue(t->getValue()); // 常量定义后应该不会再赋值，这段话不会执行
+        }
         $$ = new AssignStmt($1, t); 
     }
     ;

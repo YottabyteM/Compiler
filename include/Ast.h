@@ -158,14 +158,15 @@ class Id : public ExprNode
 {
 private:
     IndicesNode* indices;
-    bool is_array = false;
+    bool is_array = false, is_array_ele = false;
 public:
-    Id(SymbolEntry *se) : ExprNode(se){ is_array = se->getType()->isARRAY(); };
+    Id(SymbolEntry *se, bool be_array = true) : ExprNode(se){ is_array_ele = se->getType()->isARRAY() && be_array; is_array = se->getType()->isARRAY(); };
     SymbolEntry* get_Entry_of_Id() {return symbolEntry; };
     void SetIndices(IndicesNode* new_indices) { indices = new_indices; };
     IndicesNode* getIndices() { return indices; };
     void output(int level);
     bool is_Array() { return is_array; };
+    bool is_Array_Ele() { return is_array_ele; };
     // void typeCheck();
     void genCode();
     ~Id(){};
