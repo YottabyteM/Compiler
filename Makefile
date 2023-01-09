@@ -2,6 +2,7 @@ SRC_PATH ?= src
 INC_PATH += include
 BUILD_PATH ?= build
 TEST_PATH ?= test
+OPTTEST_PATH ?= opttest
 OBJ_PATH ?= $(BUILD_PATH)/obj
 BINARY ?= $(BUILD_PATH)/compiler
 SYSLIB_PATH ?= sysyruntimelibrary
@@ -19,6 +20,7 @@ OBJ = $(SRC:$(SRC_PATH)/%.cpp=$(OBJ_PATH)/%.o)
 PARSERH ?= $(INC_PATH)/$(addsuffix .h, $(notdir $(basename $(PARSER))))
 
 TESTCASE = $(shell find $(TEST_PATH) -name "*.sy")
+OPTTESTCASE = $(shell find $(OPTTEST_PATH) -name "*.sy")
 TESTCASE_NUM = $(words $(TESTCASE))
 LLVM_IR = $(addsuffix _std.ll, $(basename $(TESTCASE)))
 GCC_ASM = $(addsuffix _std.s, $(basename $(TESTCASE)))
@@ -29,8 +31,11 @@ OUTPUT_ASM = $(addsuffix .s, $(basename $(TESTCASE)))
 OUTPUT_RES = $(addsuffix .res, $(basename $(TESTCASE)))
 OUTPUT_BIN = $(addsuffix .bin, $(basename $(TESTCASE)))
 OUTPUT_LOG = $(addsuffix .log, $(basename $(TESTCASE)))
+OUTPUT_OPT_IR = $(addsuffix .ll, $(basename $(OPTTESTCASE)))
+OUTPUT_OPT_ASM = $(addsuffix .s, $(basename $(OPTTESTCASE)))
+OUTPUT_OPT_LOG = $(addsuffix .log, $(basename $(OPTTESTCASE)))
 
-.phony:all app run gdb testlexer testparser testir testasm test clean clean-all clean-test clean-app llvmir gccasm
+.phony:all app run gdb testlexer testparser testir testasm test clean clean-all clean-test clean-app llvmir gccasm testopt debug-asm
 
 all:app
 
@@ -92,6 +97,11 @@ testasm:app $(OUTPUT_ASM)
 
 .ONESHELL:
 test:app
+	@rm lastpass.log
+	@touch lastpass.log
+	@cp -r -f newpass.log lastpass.log
+	@rm newpass.log
+	@touch newpass.log
 	@success=0
 	@for file in $(sort $(TESTCASE))
 	do
@@ -106,16 +116,16 @@ test:app
 		timeout 5s $(BINARY) $${file} -o $${ASM} -S 2>$${LOG}
 		RETURN_VALUE=$$?
 		if [ $$RETURN_VALUE = 124 ]; then
-			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Timeout\033[0m"
+			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Timeout\033[0m" && echo "FAIL: $${FILE}\tCompile Timeout" >> newpass.log
 			continue
 		else if [ $$RETURN_VALUE != 0 ]; then
-			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Error\033[0m"
+			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Error\033[0m" && echo "FAIL: $${FILE}\tCompile Error" >> newpass.log
 			continue
 			fi
 		fi
 		arm-linux-gnueabihf-gcc -mcpu=cortex-a72 -o $${BIN} $${ASM} $(SYSLIB_PATH)/libsysy.a >>$${LOG} 2>&1
 		if [ $$? != 0 ]; then
-			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mAssemble Error\033[0m"
+			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mAssemble Error\033[0m" && echo "FAIL: $${FILE}\tAssemble Error" >> newpass.log
 		else
 			if [ -f "$${IN}" ]; then
 				timeout 2s qemu-arm -L /usr/arm-linux-gnueabihf $${BIN} <$${IN} >$${RES} 2>>$${LOG}
@@ -126,31 +136,50 @@ test:app
 			FINAL=`tail -c 1 $${RES}`
 			[ $${FINAL} ] && echo "\n$${RETURN_VALUE}" >> $${RES} || echo "$${RETURN_VALUE}" >> $${RES}
 			if [ "$${RETURN_VALUE}" = "124" ]; then
-				echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mExecute Timeout\033[0m"
+				echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mExecute Timeout\033[0m" && echo "FAIL: $${FILE}\tExecute Timeout" >> newpass.log
 			else if [ "$${RETURN_VALUE}" = "127" ]; then
-				echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mExecute Error\033[0m"
+				echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mExecute Error\033[0m" && echo "FAIL: $${FILE}\tExecute Error" >> newpass.log
 				else
 					diff -Z $${RES} $${OUT} >/dev/null 2>&1
 					if [ $$? != 0 ]; then
-						echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mWrong Answer\033[0m"
+						echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mWrong Answer\033[0m" && echo "FAIL: $${FILE}\tWrong Answer" >> newpass.log
 					else
 						success=$$((success + 1))
-						echo "\033[1;32mPASS:\033[0m $${FILE}"
+						echo "\033[1;32mPASS:\033[0m $${FILE}" && echo "PASS: $${FILE}" >> newpass.log
 					fi
 				fi
 			fi
 		fi
 	done
-	echo "\033[1;33mTotal: $(TESTCASE_NUM)\t\033[1;32mAccept: $${success}\t\033[1;31mFail: $$(($(TESTCASE_NUM) - $${success}))\033[0m"
-	[ $(TESTCASE_NUM) = $${success} ] && echo "\033[5;32mAll Accepted. Congratulations!\033[0m"
+	echo "\033[1;33mTotal: $(TESTCASE_NUM)\t\033[1;32mAccept: $${success}\t\033[1;31mFail: $$(($(TESTCASE_NUM) - $${success}))\033[0m" && echo "Total: $(TESTCASE_NUM)\tAccept: $${success}\tFail: $$(($(TESTCASE_NUM) - $${success}))" >> newpass.log
+	[ $(TESTCASE_NUM) = $${success} ] && echo "\033[5;32mAll Accepted. Congratulations!\033[0m" && echo "All Accepted. Congratulations!" >> newpass.log
 	:
+	diff lastpass.log newpass.log > passchange.log
+
+testopt:app
+	@for file in $(sort $(OPTTESTCASE))
+	do
+		$(BINARY) -o $${file%.*}.ll -i $${file} 2>$${file%.*}.log
+		$(BINARY) -o $${file%.*}.s -S $${file} 2>$${file%.*}.log
+	done
 
 clean-app:
 	@rm -rf $(BUILD_PATH) $(PARSER) $(LEXER) $(PARSERH)
 
 clean-test:
-	@rm -rf $(OUTPUT_TOKS) $(OUTPUT_AST) $(OUTPUT_IR) $(OUTPUT_ASM) $(OUTPUT_LOG) $(OUTPUT_BIN) $(OUTPUT_RES) $(LLVM_IR) $(GCC_ASM) ./example.ast ./example.ll ./example.s
+	@rm -rf $(OUTPUT_TOKS) $(OUTPUT_AST) $(OUTPUT_IR) $(OUTPUT_ASM) $(OUTPUT_LOG) $(OUTPUT_BIN) $(OUTPUT_RES) $(LLVM_IR) $(GCC_ASM) ./example.ast ./example.ll ./example.s ./debug.bin ./debug.log ./debug.res
 
-clean-all:clean-test clean-app
+clean-opt:
+	@rm -rf $(OUTPUT_OPT_IR) $(OUTPUT_OPT_ASM) $(OUTPUT_OPT_LOG)
+
+clean-all:clean-test clean-app clean-opt
 
 clean:clean-all
+
+debug-asm:
+	@arm-linux-gnueabihf-gcc -mcpu=cortex-a72 -o debug.bin debug.s $(SYSLIB_PATH)/libsysy.a >>debug.log 2>&1
+	if [ -f "debug.in" ]; then
+		@qemu-arm -L /usr/arm-linux-gnueabihf debug.bin <debug.in >debug.res 2>>debug.log
+	else
+		@qemu-arm -L /usr/arm-linux-gnueabihf debug.bin >debug.res 2>>debug.log
+	fi

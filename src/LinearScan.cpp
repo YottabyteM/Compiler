@@ -7,9 +7,9 @@ LinearScan::LinearScan(MachineUnit *unit)
 {
     this->unit = unit;
     for (int i = 4; i < 11; i++)
-        regs.push_back(i);
+        rregs.push_back(i);
     for (int i = 5; i < 32; i++)
-        fregs.push_back(i);
+        sregs.push_back(i);
 }
 
 void LinearScan::allocateRegisters()
@@ -173,14 +173,13 @@ void LinearScan::computeLiveIntervals()
 
 bool LinearScan::linearScanRegisterAllocation()
 {
-    // Todo
     active.clear();
-    regs.clear();
-    fregs.clear();
+    rregs.clear();
+    sregs.clear();
     for (int i = 4; i < 11; i++)
-        regs.push_back(i);
+        rregs.push_back(i);
     for (int i = 5; i < 32; i++)
-        fregs.push_back(i);
+        sregs.push_back(i);
     bool flag = true;
     for (auto &interval : intervals)
     {
@@ -192,15 +191,15 @@ bool LinearScan::linearScanRegisterAllocation()
         };
         if (interval->valType->isFloat())
         {
-            if (!fregs.size())
+            if (!sregs.size())
             {
                 spillAtInterval(interval);
                 flag = false;
             }
             else
             {
-                interval->rreg = (*fregs.rbegin());
-                fregs.pop_back();
+                interval->real_reg = (*sregs.rbegin());
+                sregs.pop_back();
                 // active.push_back(interval);
                 // sort(active.begin(), active.end(), comp);
                 auto insertPos = std::lower_bound(active.begin(), active.end(), interval, comp);
@@ -209,15 +208,15 @@ bool LinearScan::linearScanRegisterAllocation()
         }
         else
         {
-            if (!regs.size())
+            if (!rregs.size())
             {
                 spillAtInterval(interval);
                 flag = false;
             }
             else
             {
-                interval->rreg = (*regs.rbegin());
-                regs.pop_back();
+                interval->real_reg = (*rregs.rbegin());
+                rregs.pop_back();
                 // active.push_back(interval);
                 // sort(active.begin(), active.end(), comp);
                 auto insertPos = std::lower_bound(active.begin(), active.end(), interval, comp);
@@ -232,11 +231,11 @@ void LinearScan::modifyCode()
 {
     for (auto &interval : intervals)
     {
-        func->addSavedRegs(interval->rreg, interval->valType->isFloat());
+        func->addSavedRegs(interval->real_reg, interval->valType->isFloat());
         for (auto def : interval->defs)
-            def->setReg(interval->rreg);
+            def->setReg(interval->real_reg);
         for (auto use : interval->uses)
-            use->setReg(interval->rreg);
+            use->setReg(interval->real_reg);
     }
 }
 
@@ -246,7 +245,6 @@ void LinearScan::genSpillCode()
     {
         if (!interval->spill)
             continue;
-        // TODO
         /* HINT:
          * The vreg should be spilled to memory.
          * 1. insert ldr inst before the use of vreg
@@ -261,6 +259,7 @@ void LinearScan::genSpillCode()
 
         for (auto def : interval->defs)
         {
+            assert(isShifterOperandVal((unsigned)interval->disp));
             MachineBlock *block = def->getParent()->getParent();
             block->insertAfter(def->getParent(), new StoreMInstruction(block, new MachineOperand(*def), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
         }
@@ -269,23 +268,22 @@ void LinearScan::genSpillCode()
 
 void LinearScan::expireOldIntervals(Interval *interval)
 {
-    // Todo
     for (auto inter = active.begin(); inter != active.end(); inter = active.erase(find(active.begin(), active.end(), (*inter))))
     {
         if ((*inter)->end >= interval->start)
             return;
         if ((*inter)->valType->isFloat())
         {
-            auto insertPos = std::lower_bound(fregs.begin(), fregs.end(), (*inter)->rreg);
-            fregs.insert(insertPos, (*inter)->rreg);
-            // fregs.push_back((*inter)->rreg);
-            // sort(fregs.begin(), fregs.end());
+            auto insertPos = std::lower_bound(sregs.begin(), sregs.end(), (*inter)->real_reg);
+            sregs.insert(insertPos, (*inter)->real_reg);
+            // sregs.push_back((*inter)->real_reg);
+            // sort(sregs.begin(), sregs.end());
         }
         else
         {
-            auto insertPos = std::lower_bound(regs.begin(), regs.end(), (*inter)->rreg);
-            regs.insert(insertPos, (*inter)->rreg);
-            // regs.push_back((*inter)->rreg);
+            auto insertPos = std::lower_bound(rregs.begin(), rregs.end(), (*inter)->real_reg);
+            rregs.insert(insertPos, (*inter)->real_reg);
+            // regs.push_back((*inter)->real_reg);
             // sort(regs.begin(), regs.end());
         }
     }
@@ -293,11 +291,10 @@ void LinearScan::expireOldIntervals(Interval *interval)
 
 void LinearScan::spillAtInterval(Interval *interval)
 {
-    // Todo
     if ((*active.rbegin())->end > interval->end)
     {
         (*active.rbegin())->spill = true;
-        interval->rreg = (*active.rbegin())->rreg;
+        interval->real_reg = (*active.rbegin())->real_reg;
         active.pop_back();
         auto comp = [&](Interval *a, Interval *b) -> bool
         {
