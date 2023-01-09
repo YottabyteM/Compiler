@@ -818,6 +818,7 @@ void DeclStmt::genCode()
     if (expr != nullptr)
     {
         BasicBlock *bb = builder->getInsertBB();
+        assert(addr != nullptr);
         if (se->getType()->isARRAY()) {
             arrayType = se->getType();
             offset = 0;
@@ -825,7 +826,7 @@ void DeclStmt::genCode()
             expr->genCode();
         }
         else {
-            expr->genCode();
+            expr->getself()->genCode();
             Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(se)->getAddr();
             Operand *src = expr->getself()->getOperand();
             // TODO : Array
