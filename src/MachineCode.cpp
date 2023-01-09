@@ -294,7 +294,7 @@ void LoadMInstruction::output()
     // Load immediate num, eg: ldr r1, =8
     if (this->use_list[0]->isImm())
     {
-        if (this->def_list[0]->getValType()->isFloat())
+        if (this->use_list[0]->getValType()->isFloat())
         {
             float float_val = (float)this->use_list[0]->getVal();
             fprintf(yyout, "=%u\n", reinterpret_cast<unsigned &>(float_val));
@@ -500,9 +500,9 @@ StackMInstruction::StackMInstruction(MachineBlock *p, int op,
     this->op = op;
     this->cond = cond;
     this->use_list = src;
-    for (auto ope : use_list)
+    for (auto mope : use_list)
     {
-        ope->setParent(this);
+        mope->setParent(this);
     }
 }
 
@@ -534,7 +534,7 @@ void StackMInstruction::output()
             break;
         }
     }
-    // 浮点寄存器可能会很多 每次只能push/pop16个
+    // 每次只能push/pop16个
     size_t i = 0;
     while (i != use_list.size())
     {
@@ -608,16 +608,16 @@ void VcvtMInstruction::output()
     fprintf(yyout, "\n");
 }
 
-// VmrsMInstruction::VmrsMInstruction(MachineBlock *p)
-// {
-//     this->parent = p;
-//     this->type = MachineInstruction::VMRS;
-// }
+VmrsMInstruction::VmrsMInstruction(MachineBlock *p)
+{
+    this->parent = p;
+    this->type = MachineInstruction::VMRS;
+}
 
-// void VmrsMInstruction::output()
-// {
-//     fprintf(yyout, "\tvmrs APSR_nzcv, FPSCR\n");
-// }
+void VmrsMInstruction::output()
+{
+    fprintf(yyout, "\tvmrs APSR_nzcv, FPSCR\n");
+}
 
 void MachineBlock::insertBefore(MachineInstruction *pos, MachineInstruction *inst)
 {
@@ -638,20 +638,11 @@ void MachineBlock::insertAfter(MachineInstruction *pos, MachineInstruction *inst
 
 MachineOperand *MachineBlock::insertLoadImm(MachineOperand *imm)
 {
-    // if (imm->getValType()->isInt())
-    // {
-    //     auto internal_reg = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::intType);
-    //     this->InsertInst(new LoadMInstruction(this, internal_reg, imm));
-    //     return new MachineOperand(*internal_reg);
-    // }
-    // assert(imm->getValType()->isFloat());
-    // MachineOperand *internal_reg1 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::intType);
-    // this->InsertInst(new LoadMInstruction(this, internal_reg1, imm));
-    // MachineOperand *internal_reg2 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::floatType);
-    // internal_reg1 = new MachineOperand(*internal_reg1);
-    // this->InsertInst(new MovMInstruction(this, MovMInstruction::VMOV, internal_reg2, internal_reg1));
-    // return new MachineOperand(*internal_reg2);
+    // auto internal_reg = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), imm->getValType());
+    // this->InsertInst(new LoadMInstruction(this, internal_reg, imm));
+    // return new MachineOperand(*internal_reg);
 
+    // ToDo:有些浮点字面常量可以直接vldr到s寄存器
     MachineOperand *internal_reg1 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::intType);
     this->InsertInst(new LoadMInstruction(this, internal_reg1, imm));
     if (imm->getValType()->isFloat())
@@ -667,7 +658,20 @@ MachineOperand *MachineBlock::insertLoadImm(MachineOperand *imm)
 
 void MachineBlock::output()
 {
-    fprintf(yyout, ".L%d:\n", this->no);
+    fprintf(yyout, ".L%d:", this->no);
+    if (!pred.empty())
+    {
+        fprintf(yyout, "%*c@ predecessors = %%L%d", 32, '\t', pred[0]->getNo());
+        for (auto i = pred.begin() + 1; i != pred.end(); i++)
+            fprintf(yyout, ", %%L%d", (*i)->getNo());
+    }
+    if (!succ.empty())
+    {
+        fprintf(yyout, "%*c@ successors = %%L%d", 32, '\t', succ[0]->getNo());
+        for (auto i = succ.begin() + 1; i != succ.end(); ++i)
+            fprintf(yyout, ", %%L%d", (*i)->getNo());
+    }
+    fprintf(yyout, "\n");
     for (auto iter : inst_list)
         iter->output();
 }
@@ -679,10 +683,10 @@ MachineFunction::MachineFunction(MachineUnit *p, SymbolEntry *sym_ptr)
     this->stack_size = 0;
 };
 
-std::vector<MachineOperand *> MachineFunction::getSavedRegs()
+std::vector<MachineOperand *> MachineFunction::getSavedRRegs()
 {
     std::vector<MachineOperand *> regs;
-    for (auto no : saved_regs)
+    for (auto no : saved_rregs)
     {
         MachineOperand *reg = nullptr;
         reg = new MachineOperand(MachineOperand::REG, no);
@@ -691,16 +695,16 @@ std::vector<MachineOperand *> MachineFunction::getSavedRegs()
     return regs;
 }
 
-std::vector<MachineOperand *> MachineFunction::getSavedFRegs()
+std::vector<MachineOperand *> MachineFunction::getSavedSRegs()
 {
-    std::vector<MachineOperand *> fregs;
-    for (auto no : saved_fregs)
+    std::vector<MachineOperand *> sregs;
+    for (auto no : saved_sregs)
     {
-        MachineOperand *freg = nullptr;
-        freg = new MachineOperand(MachineOperand::REG, no, TypeSystem::floatType);
-        fregs.push_back(freg);
+        MachineOperand *sreg = nullptr;
+        sreg = new MachineOperand(MachineOperand::REG, no, TypeSystem::floatType);
+        sregs.push_back(sreg);
     }
-    return fregs;
+    return sregs;
 }
 
 void MachineFunction::output()
@@ -710,7 +714,7 @@ void MachineFunction::output()
     fprintf(yyout, "%s:\n", this->sym_ptr->toStr().c_str() + 1);
     // Save callee saved int registers
     fprintf(yyout, "\tpush {");
-    std::vector<MachineOperand *> regs = getSavedRegs();
+    std::vector<MachineOperand *> regs = getSavedRRegs();
     for (auto reg : regs)
     {
         reg->output();
@@ -719,22 +723,22 @@ void MachineFunction::output()
     // Save fp, lr
     fprintf(yyout, "fp, lr}\n");
     // Save callee saved float registers
-    std::vector<MachineOperand *> fregs = getSavedFRegs();
+    std::vector<MachineOperand *> sregs = getSavedSRegs();
     size_t i = 0;
-    while (i != fregs.size())
+    while (i != sregs.size())
     {
         fprintf(yyout, "\tvpush {");
-        fregs[i++]->output();
-        for (int j = 1; i != fregs.size() && j != 16; i++, j++)
+        sregs[i++]->output();
+        for (int j = 1; i != sregs.size() && j != 16; i++, j++)
         {
             fprintf(yyout, ", ");
-            fregs[i]->output();
+            sregs[i]->output();
         }
         fprintf(yyout, "}\n");
     }
     // 更新additional args的偏移
     for (auto offset : additional_args_offset)
-        offset->setVal(offset->getVal() + 4 * (regs.size() + fregs.size() + 2));
+        offset->setVal(offset->getVal() + 4 * (regs.size() + sregs.size() + 2));
     // fp = sp
     fprintf(yyout, "\tmov fp, sp\n");
     // Allocate stack space for local variable
@@ -742,7 +746,7 @@ void MachineFunction::output()
     {
         if (!isShifterOperandVal(reinterpret_cast<unsigned &>(stack_size)))
         {
-            assert((std::find(saved_regs.begin(), saved_regs.end(), 4)) != saved_regs.end());
+            assert((std::find(saved_rregs.begin(), saved_rregs.end(), 4)) != saved_rregs.end());
             fprintf(yyout, "\tldr r4,=%d\n", stack_size);
             fprintf(yyout, "\tsub sp, sp, r4\n");
         }
@@ -780,7 +784,7 @@ void MachineFunction::output()
     {
         if (!isShifterOperandVal(reinterpret_cast<unsigned &>(stack_size)))
         {
-            assert((std::find(saved_regs.begin(), saved_regs.end(), 4)) != saved_regs.end());
+            assert((std::find(saved_rregs.begin(), saved_rregs.end(), 4)) != saved_rregs.end());
             fprintf(yyout, "\tldr r4,=%d\n", stack_size);
             fprintf(yyout, "\tadd sp, sp, r4\n");
         }
@@ -789,14 +793,14 @@ void MachineFunction::output()
     }
     // Restore saved registers and fp, lr
     i = 0;
-    while (i != fregs.size())
+    while (i != sregs.size())
     {
         fprintf(yyout, "\tvpop {");
-        fregs[i++]->output();
-        for (int j = 1; i != fregs.size() && j != 16; i++, j++)
+        sregs[i++]->output();
+        for (int j = 1; i != sregs.size() && j != 16; i++, j++)
         {
             fprintf(yyout, ", ");
-            fregs[i]->output();
+            sregs[i]->output();
         }
         fprintf(yyout, "}\n");
     }
@@ -841,6 +845,7 @@ void MachineUnit::output()
      * 3. Don't forget print bridge label at the end of assembly code!! */
     fprintf(yyout, "\t.arch armv8-a\n");
     // fprintf(yyout, "\t.fpu vfpv3-d16\n");
+    // fprintf(yyout, "\t.fpu neon\n");
     fprintf(yyout, "\t.arch_extension crc\n");
     fprintf(yyout, "\t.arm\n");
     printGlobalDecl();

@@ -52,18 +52,12 @@ void BasicBlock::output() const
     }
     if (!succ.empty())
     {
-        for (auto i = succ.begin(); i != succ.end(); ++i)
+        fprintf(yyout, "%*c; successors = %%B%d", 32, '\t', succ[0]->getNo());
+        fprintf(stderr, "%*c; successors = %%B%d", 32, '\t', succ[0]->getNo());
+        for (auto i = succ.begin() + 1; i != succ.end(); ++i)
         {
-            if (i == succ.begin())
-            {
-                fprintf(yyout, "%*c; successors = %%B%d", 32, '\t', (*i)->getNo());
-                fprintf(stderr, "%*c; successors = %%B%d", 32, '\t', (*i)->getNo());
-            }
-            else
-            {
-                fprintf(yyout, ", %%B%d", (*i)->getNo());
-                fprintf(stderr, ", %%B%d", (*i)->getNo());
-            }
+            fprintf(yyout, ", %%B%d", (*i)->getNo());
+            fprintf(stderr, ", %%B%d", (*i)->getNo());
         }
     }
     fprintf(yyout, "\n");

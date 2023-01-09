@@ -943,57 +943,46 @@ void FuncDefNode::genCode()
 
 // void FuncDefNode::typeCheck()
 // {
-//     // Todo
 // }
 
 // void BinaryExpr::typeCheck()
 // {
-//     // Todo
 // }
 
 // void Constant::typeCheck()
 // {
-//     // Todo
 // }
 
 // void Id::typeCheck()
 // {
-//     // Todo
 // }
 
 // void IfStmt::typeCheck()
 // {
-//     // Todo
 // }
 
 // void IfElseStmt::typeCheck()
 // {
-//     // Todo
 // }
 
 // void CompoundStmt::typeCheck()
 // {
-//     // Todo
 // }
 
 // void SeqStmt::typeCheck()
 // {
-//     // Todo
 // }
 
 // void DeclStmt::typeCheck()
 // {
-//     // Todo
 // }
 
 // void ReturnStmt::typeCheck()
 // {
-//     // Todo
 // }
 
 // void AssignStmt::typeCheck()
 // {
-//     // Todo
 // }
 
 ExprNode *typeCast(ExprNode *fromNode, Type *to)

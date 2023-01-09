@@ -13,8 +13,7 @@
  * MachineInstruction: Single assembly instruction
  * MachineOperand: Operand in assembly instruction, such as immediate number, register, address label */
 
-/* Todo:
- * We only give the example code of "class BinaryMInstruction" and "class AccessMInstruction" (because we believe in you !!!),
+/* We only give the example code of "class BinaryMInstruction" and "class AccessMInstruction" (because we believe in you !!!),
  * You need to complete other the member function, especially "output()" ,
  * After that, you can use "output()" to print assembly code . */
 
@@ -60,8 +59,8 @@ public:
         this->reg_no = regno;
     };
     std::string getLabel() { return this->label; };
-    void setParent(MachineInstruction *p) { this->parent = p; };
     MachineInstruction *getParent() { return this->parent; };
+    void setParent(MachineInstruction *p) { this->parent = p; };
     void printReg();
     void output();
     Type *getValType() { return this->valType; };
@@ -94,7 +93,7 @@ protected:
         STACK,
         ZEXT,
         VCVT,
-        // VMRS
+        VMRS
     };
 
 public:
@@ -274,6 +273,7 @@ public:
     std::vector<MachineBlock *> &getPreds() { return pred; };
     std::vector<MachineBlock *> &getSuccs() { return succ; };
     MachineFunction *getParent() { return parent; };
+    int getNo() { return no; };
     void insertBefore(MachineInstruction *pos, MachineInstruction *inst);
     void insertAfter(MachineInstruction *pos, MachineInstruction *inst);
     MachineOperand *insertLoadImm(MachineOperand *imm);
@@ -286,8 +286,8 @@ private:
     MachineUnit *parent;
     std::vector<MachineBlock *> block_list;
     int stack_size;
-    std::set<int> saved_regs;
-    std::set<int> saved_fregs;
+    std::set<int> saved_rregs;
+    std::set<int> saved_sregs;
     SymbolEntry *sym_ptr;
     std::vector<MachineOperand *> additional_args_offset;
 
@@ -307,9 +307,9 @@ public:
         return this->stack_size;
     };
     void InsertBlock(MachineBlock *block) { this->block_list.push_back(block); };
-    void addSavedRegs(int regno, bool is_freg = false) { is_freg ? saved_fregs.insert(regno) : saved_regs.insert(regno); };
-    std::vector<MachineOperand *> getSavedRegs();
-    std::vector<MachineOperand *> getSavedFRegs();
+    void addSavedRegs(int regno, bool is_sreg = false) { is_sreg ? saved_sregs.insert(regno) : saved_rregs.insert(regno); };
+    std::vector<MachineOperand *> getSavedRRegs();
+    std::vector<MachineOperand *> getSavedSRegs();
     MachineUnit *getParent() { return parent; };
     void addArgsOffset(MachineOperand *param) { additional_args_offset.push_back(param); };
     // std::vector<MachineOperand *> getArgsOffset() { return additional_args_offset; };

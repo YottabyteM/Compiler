@@ -21,17 +21,17 @@ private:
     {
         int start;
         int end;
-        bool spill; // whether this vreg should be spilled to memory
-        int disp;   // displacement in stack
-        int rreg;   // the real register mapped from virtual register if the vreg is not spilled to memory
+        bool spill;   // whether this vreg should be spilled to memory
+        int disp;     // displacement in stack
+        int real_reg; // the real register mapped from virtual register if the vreg is not spilled to memory
         Type *valType;
         std::set<MachineOperand *> defs;
         std::set<MachineOperand *> uses;
     };
     MachineUnit *unit;
     MachineFunction *func;
-    std::vector<int> regs;
-    std::vector<int> fregs; // 浮点可分配寄存器号
+    std::vector<int> rregs;
+    std::vector<int> sregs; // 浮点可分配寄存器号
     std::map<MachineOperand *, std::set<MachineOperand *>> du_chains;
     std::vector<Interval *> intervals, active;
     static bool compareStart(Interval *a, Interval *b);

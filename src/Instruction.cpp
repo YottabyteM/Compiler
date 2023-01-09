@@ -598,7 +598,8 @@ void LoadInstruction::genMachineCode(AsmBuilder *builder)
     if (operands[1]->getEntry()->isVariable() && dynamic_cast<IdentifierSymbolEntry *>(operands[1]->getEntry())->isGlobal())
     {
         auto dst = genMachineOperand(operands[0]);
-        auto internal_reg1 = genMachineVReg();
+        // auto internal_reg1 = genMachineVReg();
+        auto internal_reg1 = dst->getValType()->isFloat() ? genMachineVReg() : new MachineOperand(*dst);
         auto internal_reg2 = new MachineOperand(*internal_reg1);
         auto src = genMachineOperand(operands[1]);
         // example: ldr r0, addr_a
@@ -619,12 +620,7 @@ void LoadInstruction::genMachineCode(AsmBuilder *builder)
         if (dynamic_cast<TemporarySymbolEntry *>(operands[1]->getEntry())->getOffset() >= 0)
             cur_block->getParent()->addArgsOffset(offset);
         if (offset->isIllegalShifterOperand())
-        {
-            auto internal_reg = genMachineVReg();
-            cur_inst = new LoadMInstruction(cur_block, internal_reg, offset);
-            cur_block->InsertInst(cur_inst);
-            offset = new MachineOperand(*internal_reg);
-        }
+            offset = cur_block->insertLoadImm(offset);
         cur_inst = new LoadMInstruction(cur_block, dst, fp, offset);
         cur_block->InsertInst(cur_inst);
     }
@@ -680,12 +676,7 @@ void StoreInstruction::genMachineCode(AsmBuilder *builder)
         auto fp = genMachineReg(11);
         auto offset = genMachineImm(dynamic_cast<TemporarySymbolEntry *>(operands[0]->getEntry())->getOffset());
         if (offset->isIllegalShifterOperand())
-        {
-            auto internal_reg = genMachineVReg();
-            cur_inst = new LoadMInstruction(cur_block, internal_reg, offset);
-            cur_block->InsertInst(cur_inst);
-            offset = new MachineOperand(*internal_reg);
-        }
+            offset = cur_block->insertLoadImm(offset);
         cur_inst = new StoreMInstruction(cur_block, src, fp, offset);
         cur_block->InsertInst(cur_inst);
     }
@@ -744,17 +735,14 @@ void BinaryInstruction::genMachineCode(AsmBuilder *builder)
     case MOD:
     {
         // a % b = a - a / b * b
-        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::DIV, dst, src1, src2);
+        auto internal_reg1 = dst;
+        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::DIV, internal_reg1, src1, src2);
         cur_block->InsertInst(cur_inst);
-        auto dst_copy = new MachineOperand(*dst);
-        dst = new MachineOperand(*dst);
-        src2 = new MachineOperand(*src2);
-        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, dst_copy, dst, src2);
+        auto internal_reg2 = new MachineOperand(*internal_reg1);
+        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, internal_reg2, internal_reg1, src2);
         cur_block->InsertInst(cur_inst);
-        dst = new MachineOperand(*dst_copy);
-        src1 = new MachineOperand(*src1);
-        dst_copy = new MachineOperand(*dst_copy);
-        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::SUB, dst, src1, dst_copy);
+        dst = new MachineOperand(*internal_reg2);
+        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::SUB, dst, src1, internal_reg2);
         break;
     }
     default:
@@ -775,11 +763,11 @@ void CmpInstruction::genMachineCode(AsmBuilder *builder)
         src2 = cur_block->insertLoadImm(src2);
     cur_inst = new CmpMInstruction(cur_block, src1, src2);
     cur_block->InsertInst(cur_inst);
-    // if (src1->getValType()->isFloat())
-    // {
-    //     cur_inst = new VmrsMInstruction(cur_block);
-    //     cur_block->InsertInst(cur_inst);
-    // }
+    if (src1->getValType()->isFloat())
+    {
+        cur_inst = new VmrsMInstruction(cur_block);
+        cur_block->InsertInst(cur_inst);
+    }
     builder->setCmpOpcode(opcode);
     // 采用条件存储的方式将1/0存储到dst中
     bool res_needed = false;
@@ -804,7 +792,7 @@ void CmpInstruction::genMachineCode(AsmBuilder *builder)
     }
 }
 
-// TODO：把真假分支的指令序列分别加上相应的条件，这样就无需（无）条件跳转指令了
+// TODO：把真假分支的指令序列分别加上相应的条件，改成bfs输出mblock，合并真假分支，这样就无需（无）条件跳转指令了
 
 void UncondBrInstruction::genMachineCode(AsmBuilder *builder)
 {
@@ -881,7 +869,8 @@ void IntFloatCastInstruction::genMachineCode(AsmBuilder *builder)
     }
     case S2F:
     {
-        auto movDst = genMachineVReg(TypeSystem::floatType);
+        // auto movDst = genMachineVReg(TypeSystem::floatType);
+        auto movDst = dst;
         cur_inst = new MovMInstruction(cur_block, MovMInstruction::VMOV, movDst, src);
         cur_block->InsertInst(cur_inst);
         auto vcvtUse = new MachineOperand(*movDst);
@@ -928,12 +917,7 @@ void FuncCallInstruction::genMachineCode(AsmBuilder *builder)
         int below_dist = (operands.size() - 5) * 4;
         auto offset = genMachineImm(below_dist);
         if (offset->isIllegalShifterOperand())
-        {
-            auto internal_reg = genMachineVReg();
-            cur_inst = new LoadMInstruction(cur_block, internal_reg, offset);
-            cur_block->InsertInst(cur_inst);
-            offset = new MachineOperand(*internal_reg);
-        }
+            offset = cur_block->insertLoadImm(offset);
         auto old_sp = genMachineReg(13);
         auto new_sp = genMachineReg(13);
         cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, new_sp, old_sp, offset);
