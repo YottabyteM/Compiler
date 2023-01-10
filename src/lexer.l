@@ -338,7 +338,7 @@ WHITE [\t ]
     yylval.strtype = lexeme;
     // std::vector<Type*> paramsType; //形参类型表
     // Type* arrayType = new IntArrayType();
-    // ((IntArrayType*)arrayType)->AddDimensions(-1);
+    // ((IntArrayType*)arrayType)->addDimensions(-1);
     // paramsType.push_back(arrayType);
     // Type* funcType = new FunctionType(TypeSystem::intType, paramsType);//返回类型int，参数[int array]
     // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
@@ -355,7 +355,7 @@ WHITE [\t ]
     yylval.strtype = lexeme;
     // std::vector<Type*> paramsType; //形参类型表
     // Type* arrayType = new FloatArrayType();
-    // ((FloatArrayType*)arrayType)->AddDimensions(-1);
+    // ((FloatArrayType*)arrayType)->addDimensions(-1);
     // paramsType.push_back(arrayType);
     // Type* funcType = new FunctionType(TypeSystem::intType, paramsType);//返回类型int，参数[float array]
     // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
@@ -418,7 +418,7 @@ WHITE [\t ]
     // std::vector<Type*> paramsType; //形参类型表
     // paramsType.push_back(TypeSystem::intType);
     // Type* arrayType = new IntArrayType();
-    // ((IntArrayType*)arrayType)->AddDimensions(-1);
+    // ((IntArrayType*)arrayType)->addDimensions(-1);
     // paramsType.push_back(arrayType);
     // Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);//返回类型void，参数表[int, int array]
     // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
@@ -436,7 +436,7 @@ WHITE [\t ]
     // std::vector<Type*> paramsType; //形参类型表
     // paramsType.push_back(TypeSystem::intType);
     // Type* arrayType = new FloatArrayType();
-    // ((FloatArrayType*)arrayType)->AddDimensions(-1);
+    // ((FloatArrayType*)arrayType)->addDimensions(-1);
     // paramsType.push_back(arrayType);
     // Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);//返回类型void，参数表[int, float array]
     // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)

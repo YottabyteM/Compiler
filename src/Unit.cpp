@@ -36,6 +36,7 @@ void Unit::genMachineCode(MachineUnit *munit)
             munit->insertGlobalVar(decl);
     for (auto &func : func_list)
         func->genMachineCode(builder);
+    delete builder;
 }
 
 Unit::~Unit()

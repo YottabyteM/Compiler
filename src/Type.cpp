@@ -30,6 +30,21 @@ PointerType::PointerType(Type *valueType) : Type(Type::PTR), valueType(valueType
     newTypes.push_back(this);
 };
 
+ArrayType::ArrayType(int eleType) : Type(eleType)
+{
+    size = 4;
+    is_pointer = false;
+    newTypes.push_back(this);
+}
+
+Type *ArrayType::getElemType()
+{
+    return isConstIntArray()     ? TypeSystem::constIntType
+           : isConstFloatArray() ? TypeSystem::constFloatType
+           : isIntArray()        ? TypeSystem::intType
+                                 : TypeSystem::floatType;
+}
+
 // to do : toStr 方法还需要修改
 
 std::string IntType::toStr()
@@ -65,7 +80,7 @@ std::string ConstFloatType::toStr()
 
 std::string IntArrayType::toStr()
 {
-     return "int array";
+    return "int array";
 }
 
 std::string ConstIntArrayType::toStr()
@@ -192,4 +207,3 @@ void clearTypes()
     for (auto type : newTypes)
         delete type;
 }
-// to do : 考虑数组Type的回收

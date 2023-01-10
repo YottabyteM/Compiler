@@ -108,6 +108,7 @@ public:
         NONE
     };
     virtual void output() = 0;
+    virtual ~MachineInstruction(){};
     bool isBranch() { return type == BRANCH; };
     void setNo(int no) { this->no = no; };
     int getNo() { return no; };
@@ -278,6 +279,11 @@ public:
     void insertAfter(MachineInstruction *pos, MachineInstruction *inst);
     MachineOperand *insertLoadImm(MachineOperand *imm);
     void output();
+    ~MachineBlock()
+    {
+        for (auto inst : inst_list)
+            delete inst;
+    }
 };
 
 class MachineFunction
@@ -307,13 +313,18 @@ public:
         return this->stack_size;
     };
     void InsertBlock(MachineBlock *block) { this->block_list.push_back(block); };
-    void addSavedRegs(int regno, bool is_sreg = false) { is_sreg ? saved_sregs.insert(regno) : saved_rregs.insert(regno); };
+    void addSavedRegs(int regno, bool is_sreg = false);
     std::vector<MachineOperand *> getSavedRRegs();
     std::vector<MachineOperand *> getSavedSRegs();
     MachineUnit *getParent() { return parent; };
     void addArgsOffset(MachineOperand *param) { additional_args_offset.push_back(param); };
     // std::vector<MachineOperand *> getArgsOffset() { return additional_args_offset; };
     void output();
+    ~MachineFunction()
+    {
+        for (auto block : block_list)
+            delete block;
+    }
 };
 
 class MachineUnit
@@ -333,6 +344,11 @@ public:
     void printBridge();
     int getLtorgNo() { return LtorgNo; };
     void output();
+    ~MachineUnit()
+    {
+        for (auto func : func_list)
+            delete func;
+    }
 };
 
 #endif

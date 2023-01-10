@@ -143,11 +143,6 @@ std::string IdentifierSymbolEntry::toStr()
     }
 }
 
-TemporarySymbolEntry::TemporarySymbolEntry(Type *type, int label) : SymbolEntry(type, SymbolEntry::TEMPORARY)
-{
-    this->label = label;
-}
-
 std::string TemporarySymbolEntry::toStr()
 {
     std::ostringstream buffer;
