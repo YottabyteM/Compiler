@@ -1,24 +1,9 @@
-// reference: https://zhuanlan.zhihu.com/p/20085048
+//test domain of global var define and local define
+int a = 3;
+int b = 5;
 
-const float e = 2.718281828459045;
-
-float my_sqrt(float x) {
-  if (x > 100) return 10.0 * my_sqrt(x / 100);
-  float t = x / 8 + 0.5 + 2 * x / (4 + x);
-  int c = 10;
-  while (c) {
-    t = (t + x / t) / 2;
-    c = c - 1;
-  }
-  return t;
-}
-
-int main() {
-  int num = getint();
-  while (num) {
-    float x = getfloat(), y = getfloat();
-    putfloat(my_sqrt(x));
-    num = num - 1;
-  }
-  return 0;
+int main(){
+    int a = 5;
+    putfloat(a);
+    return a + b;
 }
