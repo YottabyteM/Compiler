@@ -162,7 +162,7 @@ private:
     bool is_array = false, is_array_ele = false;
 
 public:
-    Id(SymbolEntry *se, bool be_array = true) : ExprNode(se)
+    Id(SymbolEntry *se, bool be_array = false) : ExprNode(se)
     {
         is_array_ele = se->getType()->isARRAY() && be_array;
         is_array = se->getType()->isARRAY();
