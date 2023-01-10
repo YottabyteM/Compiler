@@ -30,6 +30,12 @@ PointerType::PointerType(Type *valueType) : Type(Type::PTR), valueType(valueType
     newTypes.push_back(this);
 };
 
+ArrayType::ArrayType(int eleType) : Type(eleType)
+{
+    is_pointer = false;
+    newTypes.push_back(this);
+}
+
 // to do : toStr 方法还需要修改
 
 std::string IntType::toStr()
@@ -65,7 +71,7 @@ std::string ConstFloatType::toStr()
 
 std::string IntArrayType::toStr()
 {
-     return "int array";
+    return "int array";
 }
 
 std::string ConstIntArrayType::toStr()

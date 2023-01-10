@@ -145,21 +145,23 @@ class StmtNode : public Node
 class IndicesNode : public StmtNode
 {
 private:
-    std::vector<ExprNode*> exprList;
+    std::vector<ExprNode *> exprList;
+
 public:
-    IndicesNode() {};
-    void Addnew(ExprNode* new_expr) { exprList.push_back(new_expr); };
-    void Addbefore(ExprNode* new_expr) { exprList.insert(exprList.begin(), new_expr); };
+    IndicesNode(){};
+    void Addnew(ExprNode *new_expr) { exprList.push_back(new_expr); };
+    void Addbefore(ExprNode *new_expr) { exprList.insert(exprList.begin(), new_expr); };
     void output(int level);
-    std::vector<ExprNode*> getexprList() { return exprList; };
+    std::vector<ExprNode *> getexprList() { return exprList; };
     void genCode();
 };
 
 class Id : public ExprNode
 {
 private:
-    IndicesNode* indices;
+    IndicesNode *indices;
     bool is_array = false, is_array_ele = false;
+
 public:
     Id(SymbolEntry *se, bool be_array = false) : ExprNode(se, be_array){ is_array_ele = se->getType()->isARRAY() && be_array; is_array = se->getType()->isARRAY(); };
     SymbolEntry* get_Entry_of_Id() {return symbolEntry; };
@@ -176,19 +178,19 @@ class InitNode : public StmtNode
 {
 private:
     bool isconst;
-    ExprNode* leaf;
-    std::vector<InitNode*> leaves;
+    ExprNode *leaf;
+    std::vector<InitNode *> leaves;
+
 public:
-    InitNode(bool isconst = false) : 
-        isconst(isconst), leaf(nullptr){};
-    void addleaf(InitNode* next) { leaves.push_back(next); };
-    void setleaf(ExprNode* leaf1) { leaf = leaf1; };
+    InitNode(bool isconst = false) : isconst(isconst), leaf(nullptr){};
+    void addleaf(InitNode *next) { leaves.push_back(next); };
+    void setleaf(ExprNode *leaf1) { leaf = leaf1; };
     bool isLeaf() { return leaves.empty(); };
     bool isConst() const { return isconst; }
     void output(int level);
     void genCode();
-    std::vector<InitNode*> getleaves() {return leaves; };
-    ExprNode* getself() {return leaf;};
+    std::vector<InitNode *> getleaves() { return leaves; };
+    ExprNode *getself() { return leaf; };
 };
 
 class CompoundStmt : public StmtNode
@@ -237,9 +239,10 @@ private:
     bool BeArray;
 
 public:
-    DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false) : 
-            id(id), expr(expr), BeConst(isConst), BeArray(isArray) 
-                { next = nullptr; };
+    DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false) : id(id), expr(expr), BeConst(isConst), BeArray(isArray)
+    {
+        next = nullptr;
+    };
     void setNext(DeclStmt *next);
     DeclStmt *getNext();
     void output(int level);

@@ -13,8 +13,8 @@ int Node::counter = 0;
 IRBuilder *Node::builder = nullptr;
 static int height = 0;
 static int offset = 0;
-static Operand* arrayAddr;
-static Type* arrayType = nullptr;
+static Operand *arrayAddr;
+static Type *arrayType = nullptr;
 
 Node::Node()
 {
@@ -366,117 +366,128 @@ void Id::genCode()
     BasicBlock *bb = builder->getInsertBB();
     Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(symbolEntry)->getAddr();
     dst = new Operand(new TemporarySymbolEntry(dst->getType(), SymbolTable::getLabel()));
-    if (!is_Array()) 
+    if (!is_Array())
         new LoadInstruction(dst, addr, bb);
-    else 
+    else
     {
-        Operand* off = nullptr;
-        if (indices != nullptr) 
+        Operand *off = nullptr;
+        if (indices != nullptr)
         {
             indices->genCode();
             off = indices->getexprList()[0]->getOperand();
         }
         std::vector<int> d;
-        Type* type = getType();
+        Type *type = getType();
         if (type->isIntArray())
         {
             if (type->isConst())
-                d = dynamic_cast<ConstIntArrayType*>(type)->fetch();
-            else d = dynamic_cast<IntArrayType*>(type)->fetch();
+                d = dynamic_cast<ConstIntArrayType *>(type)->fetch();
+            else
+                d = dynamic_cast<IntArrayType *>(type)->fetch();
         }
         else if (type->isFloatArray())
         {
             if (type->isConst())
-                d = dynamic_cast<ConstFloatArrayType*>(type)->fetch();
-            else d = dynamic_cast<FloatArrayType*>(type)->fetch();
+                d = dynamic_cast<ConstFloatArrayType *>(type)->fetch();
+            else
+                d = dynamic_cast<FloatArrayType *>(type)->fetch();
         }
-        if (!d[0]) 
+        if (!d[0])
         {
-            TemporarySymbolEntry* se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
-            Operand* new_addr = new Operand(se);
+            TemporarySymbolEntry *se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
+            Operand *new_addr = new Operand(se);
             new LoadInstruction(new_addr, addr, bb);
             addr = new_addr;
         }
         int idx = 0;
-        for (auto expr : indices->getexprList()) {
+        for (auto expr : indices->getexprList())
+        {
             Operand *di = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, d[idx]));
-            TemporarySymbolEntry* se_row = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-            Operand* of_row = new Operand(se_row);
+            TemporarySymbolEntry *se_row = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            Operand *of_row = new Operand(se_row);
             new BinaryInstruction(BinaryInstruction::MUL, of_row, off, di, bb);
-            TemporarySymbolEntry* se_line = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            TemporarySymbolEntry *se_line = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             off = new Operand(se_line);
             new BinaryInstruction(BinaryInstruction::ADD, off, of_row, indices->getexprList()[idx]->getOperand(), bb);
-            idx ++;
+            idx++;
         }
 
-        if(indices != nullptr && indices->getexprList().size() < d.size()){
-            Operand* dim_i = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, d[indices->getexprList().size()]));
-            TemporarySymbolEntry* se1 = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-            Operand* offset1 = new Operand(se1);
-            new BinaryInstruction(BinaryInstruction::MUL, offset1, off, dim_i, bb);  //offset1 = offset * dimensions[i]
+        if (indices != nullptr && indices->getexprList().size() < d.size())
+        {
+            Operand *dim_i = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, d[indices->getexprList().size()]));
+            TemporarySymbolEntry *se1 = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            Operand *offset1 = new Operand(se1);
+            new BinaryInstruction(BinaryInstruction::MUL, offset1, off, dim_i, bb); // offset1 = offset * dimensions[i]
             off = offset1;
         }
-        Operand* offset1 = nullptr;
-        if(indices != nullptr){
-            TemporarySymbolEntry* se1 = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+        Operand *offset1 = nullptr;
+        if (indices != nullptr)
+        {
+            TemporarySymbolEntry *se1 = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             offset1 = new Operand(se1);
-            Operand* align = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 4));
-            new BinaryInstruction(BinaryInstruction::MUL, offset1, off, align, bb);  //offset1 = offset * 4
+            Operand *align = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 4));
+            new BinaryInstruction(BinaryInstruction::MUL, offset1, off, align, bb); // offset1 = offset * 4
         }
-        else{
+        else
+        {
             offset1 = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
         }
-        TemporarySymbolEntry* se2 = new TemporarySymbolEntry(getType(), SymbolTable::getLabel());
-        Operand* offset_final = new Operand(se2);
+        TemporarySymbolEntry *se2 = new TemporarySymbolEntry(getType(), SymbolTable::getLabel());
+        Operand *offset_final = new Operand(se2);
         // 全局变量地址标签不能直接参与运算，需要先load
-        if(dynamic_cast<IdentifierSymbolEntry*>(get_Entry_of_Id())->isGlobal()){
-            TemporarySymbolEntry* se3 = new TemporarySymbolEntry(getType(), SymbolTable::getLabel());
-            Operand* new_addr = new Operand(se3);
+        if (dynamic_cast<IdentifierSymbolEntry *>(getSymPtr())->isGlobal())
+        {
+            TemporarySymbolEntry *se3 = new TemporarySymbolEntry(getType(), SymbolTable::getLabel());
+            Operand *new_addr = new Operand(se3);
             new LoadInstruction(new_addr, addr, bb);
             addr = new_addr;
             se2->setArray();
-            dynamic_cast<TemporarySymbolEntry*>(dst->getEntry())->setArray();
+            dynamic_cast<TemporarySymbolEntry *>(dst->getEntry())->setArray();
         }
-        if(indices!=nullptr && indices->getexprList().size() == d.size()){
-            new BinaryInstruction(BinaryInstruction::ADD, offset_final, offset1, addr, bb); 
-            if(dst->getType()->isFloatArray() || dst->getType()->isConst() || dst->getType()->isFloatArray()){
-                dst->getEntry()->setType(new FloatType(4));
-                if(!dynamic_cast<IdentifierSymbolEntry*>(get_Entry_of_Id())->isGlobal() && d[0] != -1){
-                    dynamic_cast<FloatType*>(dst->getEntry()->getType())->need_Fp();
+        if (indices != nullptr && indices->getexprList().size() == d.size())
+        {
+            new BinaryInstruction(BinaryInstruction::ADD, offset_final, offset1, addr, bb);
+            if (dst->getType()->isFloatArray() || dst->getType()->isConst() || dst->getType()->isFloatArray())
+            {
+                dst->getEntry()->setType(TypeSystem::floatType);
+                if (!dynamic_cast<IdentifierSymbolEntry *>(getSymPtr())->isGlobal() && d[0] != -1)
+                {
+                    dynamic_cast<FloatType *>(dst->getEntry()->getType())->need_Fp();
                 }
             }
             new LoadInstruction(dst, offset_final, bb);
         }
-        else{
-            //为区分数组指针和数组值，需要置位dst的type中的pointer
-            Type* dst_type = dst->getType();
+        else
+        {
+            // 为区分数组指针和数组值，需要置位dst的type中的pointer
+            Type *dst_type = dst->getType();
             if (dst_type->isIntArray())
             {
                 if (dst_type->isConst())
                 {
-                    dst->getEntry()->setType(new ConstIntArrayType(*(dynamic_cast<ConstIntArrayType*>(dst->getType()))));
-                    dynamic_cast<ConstIntArrayType*>(dst_type)->SetPointer();
+                    dst->getEntry()->setType(new ConstIntArrayType(*(dynamic_cast<ConstIntArrayType *>(dst->getType()))));
+                    dynamic_cast<ConstIntArrayType *>(dst_type)->SetPointer();
                 }
                 else
                 {
-                    dst->getEntry()->setType(new IntArrayType(*(dynamic_cast<IntArrayType*>(dst->getType()))));
-                    dynamic_cast<IntArrayType*>(dst_type)->SetPointer();
+                    dst->getEntry()->setType(new IntArrayType(*(dynamic_cast<IntArrayType *>(dst->getType()))));
+                    dynamic_cast<IntArrayType *>(dst_type)->SetPointer();
                 }
             }
             else if (dst_type->isFloatArray())
             {
                 if (dst_type->isConst())
                 {
-                    dst->getEntry()->setType(new ConstFloatArrayType(*(dynamic_cast<ConstFloatArrayType*>(dst->getType()))));
-                    dynamic_cast<ConstFloatArrayType*>(dst_type)->SetPointer();
+                    dst->getEntry()->setType(new ConstFloatArrayType(*(dynamic_cast<ConstFloatArrayType *>(dst->getType()))));
+                    dynamic_cast<ConstFloatArrayType *>(dst_type)->SetPointer();
                 }
                 else
                 {
-                    dst->getEntry()->setType(new FloatArrayType(*(dynamic_cast<FloatArrayType*>(dst->getType()))));
-                    dynamic_cast<FloatArrayType*>(dst_type)->SetPointer();
+                    dst->getEntry()->setType(new FloatArrayType(*(dynamic_cast<FloatArrayType *>(dst->getType()))));
+                    dynamic_cast<FloatArrayType *>(dst_type)->SetPointer();
                 }
             }
-            new BinaryInstruction(BinaryInstruction::ADD, dst, offset1, addr, bb); 
+            new BinaryInstruction(BinaryInstruction::ADD, dst, offset1, addr, bb);
         }
     }
 }
@@ -670,7 +681,6 @@ void Constant::genCode()
     return;
 }
 
-
 void ImplicitCast::genCode()
 {
     BasicBlock *bb = builder->getInsertBB();
@@ -755,36 +765,39 @@ void SeqStmt::genCode()
 void InitNode::genCode()
 {
     // if it's a null {}, just generate nothing
-    if (this->leaf != nullptr) {
+    if (this->leaf != nullptr)
+    {
         this->leaf->genCode();
-        Operand* src = this->leaf->getOperand();
+        Operand *src = this->leaf->getOperand();
         int off = offset * 4;
-        Operand* offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
-        Operand* final_offset = new Operand(new TemporarySymbolEntry(arrayType, SymbolTable::getLabel()));
-        Operand* addr = arrayAddr;
+        Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
+        Operand *final_offset = new Operand(new TemporarySymbolEntry(arrayType, SymbolTable::getLabel()));
+        Operand *addr = arrayAddr;
 
         new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
         new StoreInstruction(final_offset, src, builder->getInsertBB());
     }
-    for (auto l : leaves) {
+    for (auto l : leaves)
+    {
         l->genCode();
-        offset ++;
+        offset++;
     }
 }
 
 void IndicesNode::output(int level)
 {
     fprintf(yyout, "%*cIndicesNode\n", level, ' ');
-    for(auto expr : exprList)
+    for (auto expr : exprList)
     {
-        expr->output(level+4);
+        expr->output(level + 4);
     }
 }
 
 void InitNode::output(int level)
 {
-    if (isLeaf()) leaf->output(level + 4);
-    else 
+    if (isLeaf())
+        leaf->output(level + 4);
+    else
         for (auto _initNode : leaves)
             _initNode->output(level + 4);
 }
@@ -828,13 +841,15 @@ void DeclStmt::genCode()
     {
         BasicBlock *bb = builder->getInsertBB();
         assert(addr != nullptr);
-        if (se->getType()->isARRAY()) {
+        if (se->getType()->isARRAY())
+        {
             arrayType = se->getType();
             offset = 0;
             arrayAddr = addr;
             expr->genCode();
         }
-        else {
+        else
+        {
             expr->getself()->genCode();
             Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(se)->getAddr();
             Operand *src = expr->getself()->getOperand();

@@ -405,8 +405,7 @@ AssignStmt
         ExprNode *t = typeCast($3, $1->getType());
         if($1->getType()->isConst()) {
             fprintf(stderr, "%s can't assign a constant which can only be read", dynamic_cast<IdentifierSymbolEntry*>(($1)->getSymPtr())->getName().c_str());
-            bool Rval_is_not_Written = false;
-            assert(Rval_is_not_Written);
+            assert(!$1->getType()->isConst());
             $1->setValue(t->getValue()); // 常量定义后应该不会再赋值，这段话不会执行
         }
         $$ = new AssignStmt($1, t); 
@@ -599,16 +598,6 @@ VarDef
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), false, true);
         delete []$1;
     }
-    // | ID ArrayVarIndices ASSIGN InitVal {
-    //     fprintf(stderr, "Indices can't be variable!\n");
-    //     bool indices_variable = false;
-    //     assert(indices_variable);
-    // }
-    // | ID ArrayVarIndices {
-    //     fprintf(stderr, "Indices can't be variable!\n");
-    //     bool indices_variable = false;
-    //     assert(indices_variable);
-    // }
     ;
 ConstDef
     : ID ASSIGN ConstInitVal {
@@ -649,11 +638,6 @@ ConstDef
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), true, true);
         delete []$1;
     }
-    // | ID ArrayVarIndices ASSIGN ConstInitVal {
-    //     fprintf(stderr, "Indices can't be variable!\n");
-    //     bool indices_variable = false;
-    //     assert(indices_variable);
-    // }
     ;
 InitVal 
     : Exp {
