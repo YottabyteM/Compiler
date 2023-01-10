@@ -43,8 +43,8 @@
 %nterm <stmttype> Stmts Stmt AssignStmt ExprStmt BlockStmt NullStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt DeclStmt 
 %nterm <stmttype> VarDeclStmt ConstDeclStmt VarDef ConstDef VarDefList ConstDefList ArrayConstIndices ArrayVarIndices
 %nterm <stmttype> FuncFParams FuncRParams FuncDef 
-%nterm <exprtype> LVal Exp ConstExp Cond PrimaryExpr UnaryExpr MulDivModExpr AddSubExpr RelExpr LEqExpr LAndExpr LOrExpr 
-%nterm <stmttype> InitVal ConstInitVal InitValList ConstInitValList 
+%nterm <exprtype> LRVal Exp ConstExp Cond PrimaryExpr UnaryExpr MulDivModExpr AddSubExpr RelExpr LEqExpr LAndExpr LOrExpr 
+%nterm <exprtype> InitVal ConstInitVal InitValList ConstInitValList 
 %nterm <exprtype> FuncFParam
 %nterm <type> Type 
 
@@ -113,7 +113,7 @@ ArrayVarIndices
         $$ = node;
     }
     ;
-LVal
+LRVal
     : ID {
         SymbolEntry *se;
         se = identifiers->lookup($1);
@@ -180,7 +180,7 @@ PrimaryExpr
     : LPAREN Exp RPAREN {
         $$ = $2;
     }
-    | LVal {
+    | LRVal {
         $$ = $1;
     }
     | INTEGERCONST {
@@ -400,7 +400,7 @@ LOrExpr
     }
     ;
 AssignStmt
-    : LVal ASSIGN Exp SEMICOLON { // SysY不包含连续赋值的特性
+    : LRVal ASSIGN Exp SEMICOLON { // SysY不包含连续赋值的特性
         assert(convertible($3->getType(), $1->getType()));
         ExprNode *t = typeCast($3, $1->getType());
         if($1->getType()->isConst()) {

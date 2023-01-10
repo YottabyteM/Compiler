@@ -35,8 +35,7 @@ OUTPUT_OPT_IR = $(addsuffix .ll, $(basename $(OPTTESTCASE)))
 OUTPUT_OPT_ASM = $(addsuffix .s, $(basename $(OPTTESTCASE)))
 OUTPUT_OPT_LOG = $(addsuffix .log, $(basename $(OPTTESTCASE)))
 
-.phony:all app run gdb testlexer testparser testir testasm test clean clean-all clean-test clean-app llvmir gccasm testopt debug-asm
-
+.phony:all app run gdb testlexer testparser testir testasm test clean clean-all clean-test clean-app llvmir gccasm testopt
 all:app
 
 $(LEXER):$(FLEX)
@@ -55,7 +54,7 @@ $(BINARY):$(OBJ)
 app:$(LEXER) $(PARSER) $(BINARY)
 
 run:app
-	@$(BINARY) -o example.s -S example.sy
+	@$(BINARY) -o debug.s -S debug.sy
 
 gdb:app
 	@gdb $(BINARY)
@@ -97,8 +96,6 @@ testasm:app $(OUTPUT_ASM)
 
 .ONESHELL:
 test:app
-	@rm lastpass.log
-	@touch lastpass.log
 	@cp -r -f newpass.log lastpass.log
 	@rm newpass.log
 	@touch newpass.log
@@ -175,11 +172,3 @@ clean-opt:
 clean-all:clean-test clean-app clean-opt
 
 clean:clean-all
-
-debug-asm:
-	@arm-linux-gnueabihf-gcc -mcpu=cortex-a72 -o debug.bin debug.s $(SYSLIB_PATH)/libsysy.a >>debug.log 2>&1
-	if [ -f "debug.in" ]; then
-		@qemu-arm -L /usr/arm-linux-gnueabihf debug.bin <debug.in >debug.res 2>>debug.log
-	else
-		@qemu-arm -L /usr/arm-linux-gnueabihf debug.bin >debug.res 2>>debug.log
-	fi

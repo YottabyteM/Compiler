@@ -859,22 +859,21 @@ void IntFloatCastInstruction::genMachineCode(AsmBuilder *builder)
     {
     case F2S:
     {
-        auto vcvtDst = genMachineVReg(TypeSystem::floatType);
-        cur_inst = new VcvtMInstruction(cur_block, VcvtMInstruction::F2S, vcvtDst, src);
+        auto internal_reg1 = new MachineOperand(*src);
+        cur_inst = new VcvtMInstruction(cur_block, VcvtMInstruction::F2S, internal_reg1, src); // todo：internal_reg1和src应该可以是一个寄存器
         cur_block->InsertInst(cur_inst);
-        auto movUse = new MachineOperand(*vcvtDst);
-        cur_inst = new MovMInstruction(cur_block, MovMInstruction::VMOV, dst, movUse);
+        auto internal_reg2 = new MachineOperand(*internal_reg1);
+        cur_inst = new MovMInstruction(cur_block, MovMInstruction::VMOV, dst, internal_reg2);
         cur_block->InsertInst(cur_inst);
         break;
     }
     case S2F:
     {
-        // auto movDst = genMachineVReg(TypeSystem::floatType);
-        auto movDst = dst;
-        cur_inst = new MovMInstruction(cur_block, MovMInstruction::VMOV, movDst, src);
+        auto internal_reg1 = dst;
+        cur_inst = new MovMInstruction(cur_block, MovMInstruction::VMOV, internal_reg1, src);
         cur_block->InsertInst(cur_inst);
-        auto vcvtUse = new MachineOperand(*movDst);
-        cur_inst = new VcvtMInstruction(cur_block, VcvtMInstruction::S2F, dst, vcvtUse);
+        auto internal_reg2 = new MachineOperand(*internal_reg1);
+        cur_inst = new VcvtMInstruction(cur_block, VcvtMInstruction::S2F, dst, internal_reg2);
         cur_block->InsertInst(cur_inst);
         break;
     }
