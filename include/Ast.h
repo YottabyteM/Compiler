@@ -149,11 +149,16 @@ private:
 
 public:
     IndicesNode(){};
-    void Addnew(ExprNode *new_expr) { exprList.push_back(new_expr); };
-    void Addbefore(ExprNode *new_expr) { exprList.insert(exprList.begin(), new_expr); };
+    void addNew(ExprNode *new_expr) { exprList.push_back(new_expr); };
+    void addBefore(ExprNode *new_expr) { exprList.insert(exprList.begin(), new_expr); };
     void output(int level);
     std::vector<ExprNode *> getExprList() { return exprList; };
     void genCode();
+    ~IndicesNode()
+    {
+        for (auto expr : exprList)
+            delete expr;
+    }
 };
 
 class Id : public ExprNode
@@ -165,17 +170,22 @@ private:
 public:
     Id(SymbolEntry *se, bool be_array = false) : ExprNode(se, be_array)
     {
+        indices = nullptr;
         is_array_ele = se->getType()->isARRAY() && be_array;
         is_array = se->getType()->isARRAY();
     };
-    void SetIndices(IndicesNode *new_indices) { indices = new_indices; };
+    void setIndices(IndicesNode *new_indices) { indices = new_indices; };
     IndicesNode *getIndices() { return indices; };
     void output(int level);
     bool is_Array() { return is_array; };
     bool is_Array_Ele() { return is_array_ele; };
     // void typeCheck();
     void genCode();
-    ~Id(){};
+    ~Id()
+    {
+        if (indices != nullptr)
+            delete indices;
+    };
 };
 
 class InitNode : public StmtNode
@@ -195,6 +205,13 @@ public:
     void genCode();
     std::vector<InitNode *> getleaves() { return leaves; };
     ExprNode *getself() { return leaf; };
+    ~InitNode()
+    {
+        if (leaf != nullptr)
+            delete leaf;
+        for (auto _leaf : leaves)
+            delete _leaf;
+    }
 };
 
 class CompoundStmt : public StmtNode

@@ -61,6 +61,8 @@ void Id::output(int level)
     scope = dynamic_cast<IdentifierSymbolEntry *>(symbolEntry)->getScope();
     fprintf(yyout, "%*cId \t name: %s \t scope: %d \t type: %s\n", level, ' ',
             name.c_str(), scope, type.c_str());
+    if(indices!=nullptr)
+        indices->output(level + 4);
 }
 
 void UnaryExpr::output(int level)

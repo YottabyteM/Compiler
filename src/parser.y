@@ -92,24 +92,24 @@ Type
 ArrayConstIndices
     : ArrayConstIndices LBRACKET ConstExp RBRACKET {
         IndicesNode* node = dynamic_cast<IndicesNode*>($1);
-        node->Addnew($3);
+        node->addNew($3);
         $$ = node;
     }
     | LBRACKET ConstExp RBRACKET {
         IndicesNode* node = new IndicesNode();
-        node->Addnew($2);
+        node->addNew($2);
         $$ = node;
     }
     ;
 ArrayVarIndices
     : ArrayVarIndices LBRACKET Exp RBRACKET {
         IndicesNode* node = dynamic_cast<IndicesNode*>($1);
-        node->Addnew($3);
+        node->addNew($3);
         $$ = node;
     }
     | LBRACKET Exp RBRACKET {
         IndicesNode* node = new IndicesNode();
-        node->Addnew($2);
+        node->addNew($2);
         $$ = node;
     }
     ;
@@ -138,7 +138,7 @@ LRVal
             assert(se != nullptr);
         }
         Id* new_id = new Id(se, true);
-        new_id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        new_id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new_id;
         delete []$1;
     }
@@ -579,7 +579,7 @@ VarDef
             assert(ret);
         }
         Id* new_Id = new Id(se_var_list);
-        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, nullptr, false, true);
         delete []$1;
     }
@@ -600,7 +600,7 @@ VarDef
             assert(ret);
         }
         Id* new_Id = new Id(se_var_list);
-        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), false, true);
         delete []$1;
     }
@@ -644,7 +644,7 @@ ConstDef
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         identifiers->install($1, se_var_list);
         Id* new_Id = new Id(se_var_list);
-        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), true, true);
         delete []$1;
     }
