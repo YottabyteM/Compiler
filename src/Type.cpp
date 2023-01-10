@@ -36,6 +36,14 @@ ArrayType::ArrayType(int eleType) : Type(eleType)
     newTypes.push_back(this);
 }
 
+Type *ArrayType::getElemType()
+{
+    return isConstIntArray()     ? TypeSystem::constIntType
+           : isConstFloatArray() ? TypeSystem::constFloatType
+           : isIntArray()        ? TypeSystem::intType
+                                 : TypeSystem::floatType;
+}
+
 // to do : toStr 方法还需要修改
 
 std::string IntType::toStr()

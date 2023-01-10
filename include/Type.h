@@ -41,7 +41,9 @@ public:
     bool isPTR() const { return kind == PTR; };
     int getSize() const { return (size == 32) ? 4 : 1; }; // 单位是字节数, TODO：Array
     bool isIntArray() const { return kind == INT_ARRAY || kind == CONST_INT_ARRAY; };
+    bool isConstIntArray() const { return kind == CONST_INT_ARRAY; };
     bool isFloatArray() const { return kind == FLOAT_ARRAY || kind == CONST_FLOAT_ARRAY; };
+    bool isConstFloatArray() const { return kind == CONST_FLOAT_ARRAY; };
     bool isARRAY() const { return isIntArray() || isFloatArray(); };
 };
 
@@ -121,12 +123,13 @@ protected:
     bool is_pointer;
 
 public:
-    ArrayType(int eleType);
+    ArrayType(int elemType);
     // virtual ~ArrayType(){};
     void AddDim(int d) { dim.push_back(d); };
     std::vector<int> fetch() { return dim; };
     void SetPointer() { is_pointer = true; };
     bool isPointer() { return is_pointer; };
+    Type *getElemType();
     virtual std::string toStr() = 0;
 };
 

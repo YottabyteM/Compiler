@@ -628,7 +628,11 @@ ConstDef
             delete [](char*)$1;
             assert(ret);
         }
-        Type* type = curType->isInt() ? new ConstIntArrayType() : new ConstFloatArrayType();
+        Type* type;
+        if(curType->isInt())
+            type =  new ConstIntArrayType();
+        else
+            type =  new ConstFloatArrayType();
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         identifiers->install($1, se_var_list);
         Id* new_Id = new Id(se_var_list);

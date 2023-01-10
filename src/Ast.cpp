@@ -32,13 +32,8 @@ Type *ExprNode::getType()
 {
     if (!is_array_ele)
         return symbolEntry->getType();
-    else 
-    {
-        Type* type = symbolEntry->getType(), *resType;
-        if (type->isIntArray()) resType = new IntType(4);
-        else if (type->isFloatArray()) resType = new FloatType(4);
-        return resType;
-    }
+    else
+        return dynamic_cast<ArrayType *>(symbolEntry->getType())->getElemType();
 }
 
 void ExprNode::setType(Type *type)
