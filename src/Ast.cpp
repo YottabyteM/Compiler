@@ -369,10 +369,10 @@ void Id::genCode()
         if (indices != nullptr)
         {
             indices->genCode();
-            off = indices->getexprList()[0]->getOperand();
+            off = indices->getExprList()[0]->getOperand();
         }
         std::vector<int> d;
-        Type *type = getType();
+        Type *type = symbolEntry->getType();
         if (type->isIntArray())
         {
             if (type->isConst())
@@ -395,7 +395,7 @@ void Id::genCode()
             addr = new_addr;
         }
         int idx = 0;
-        for (auto expr : indices->getexprList())
+        for (auto expr : indices->getExprList())
         {
             Operand *di = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, d[idx]));
             TemporarySymbolEntry *se_row = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
@@ -403,13 +403,13 @@ void Id::genCode()
             new BinaryInstruction(BinaryInstruction::MUL, of_row, off, di, bb);
             TemporarySymbolEntry *se_line = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             off = new Operand(se_line);
-            new BinaryInstruction(BinaryInstruction::ADD, off, of_row, indices->getexprList()[idx]->getOperand(), bb);
+            new BinaryInstruction(BinaryInstruction::ADD, off, of_row, indices->getExprList()[idx]->getOperand(), bb);
             idx++;
         }
 
-        if (indices != nullptr && indices->getexprList().size() < d.size())
+        if (indices != nullptr && indices->getExprList().size() < d.size())
         {
-            Operand *dim_i = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, d[indices->getexprList().size()]));
+            Operand *dim_i = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, d[indices->getExprList().size()]));
             TemporarySymbolEntry *se1 = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             Operand *offset1 = new Operand(se1);
             new BinaryInstruction(BinaryInstruction::MUL, offset1, off, dim_i, bb); // offset1 = offset * dimensions[i]
@@ -439,7 +439,7 @@ void Id::genCode()
             se2->setArray();
             dynamic_cast<TemporarySymbolEntry *>(dst->getEntry())->setArray();
         }
-        if (indices != nullptr && indices->getexprList().size() == d.size())
+        if (indices != nullptr && indices->getExprList().size() == d.size())
         {
             new BinaryInstruction(BinaryInstruction::ADD, offset_final, offset1, addr, bb);
             if (dst->getType()->isFloatArray() || dst->getType()->isConst() || dst->getType()->isFloatArray())
@@ -842,17 +842,17 @@ void DeclStmt::genCode()
             offset = 0;
             arrayAddr = addr;
             expr->genCode();
+            // TODO : Array
+            /***
+             * We haven't implemented array yet, the lval can only be ID. So we just store the result of the `expr` to the addr of the id.
+             * If you want to implement array, you have to caculate the address first and then store the result into it.
+             */
         }
         else
         {
             expr->getself()->genCode();
             Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(se)->getAddr();
             Operand *src = expr->getself()->getOperand();
-            // TODO : Array
-            /***
-             * We haven't implemented array yet, the lval can only be ID. So we just store the result of the `expr` to the addr of the id.
-             * If you want to implement array, you have to caculate the address first and then store the result into it.
-             */
             if (!se->isGlobal()) // bb = nullptr
                 new StoreInstruction(addr, src, bb);
         }

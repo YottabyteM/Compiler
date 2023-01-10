@@ -152,7 +152,7 @@ public:
     void Addnew(ExprNode *new_expr) { exprList.push_back(new_expr); };
     void Addbefore(ExprNode *new_expr) { exprList.insert(exprList.begin(), new_expr); };
     void output(int level);
-    std::vector<ExprNode *> getexprList() { return exprList; };
+    std::vector<ExprNode *> getExprList() { return exprList; };
     void genCode();
 };
 
@@ -163,10 +163,13 @@ private:
     bool is_array = false, is_array_ele = false;
 
 public:
-    Id(SymbolEntry *se, bool be_array = false) : ExprNode(se, be_array){ is_array_ele = se->getType()->isARRAY() && be_array; is_array = se->getType()->isARRAY(); };
-    SymbolEntry* get_Entry_of_Id() {return symbolEntry; };
-    void SetIndices(IndicesNode* new_indices) { indices = new_indices; };
-    IndicesNode* getIndices() { return indices; };
+    Id(SymbolEntry *se, bool be_array = false) : ExprNode(se, be_array)
+    {
+        is_array_ele = se->getType()->isARRAY() && be_array;
+        is_array = se->getType()->isARRAY();
+    };
+    void SetIndices(IndicesNode *new_indices) { indices = new_indices; };
+    IndicesNode *getIndices() { return indices; };
     void output(int level);
     bool is_Array() { return is_array; };
     bool is_Array_Ele() { return is_array_ele; };

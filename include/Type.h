@@ -39,7 +39,7 @@ public:
     bool isConstFloat() const { return kind == CONST_FLOAT; };
     bool isConst() const { return (kind == CONST_INT) || (kind == CONST_FLOAT) || (kind == CONST_INT_ARRAY) || (kind == CONST_FLOAT_ARRAY); };
     bool isPTR() const { return kind == PTR; };
-    int getSize() const { return (size == 32) ? 4 : 1; }; // 单位是字节数, TODO：Array
+    int getSize() const { return (size - 1) / 4 + 1; }; // 单位是字节数, TODO：Array
     bool isIntArray() const { return kind == INT_ARRAY || kind == CONST_INT_ARRAY; };
     bool isConstIntArray() const { return kind == CONST_INT_ARRAY; };
     bool isFloatArray() const { return kind == FLOAT_ARRAY || kind == CONST_FLOAT_ARRAY; };
@@ -125,7 +125,11 @@ protected:
 public:
     ArrayType(int elemType);
     // virtual ~ArrayType(){};
-    void AddDim(int d) { dim.push_back(d); };
+    void addDim(int d)
+    {
+        dim.push_back(d);
+        size *= 4 * d;
+    };
     std::vector<int> fetch() { return dim; };
     void SetPointer() { is_pointer = true; };
     bool isPointer() { return is_pointer; };

@@ -556,9 +556,9 @@ VarDef
             delete [](char*)$1;
             assert(ret);
         }
-        // // 常量传播起点
-        // if((dynamic_cast<InitNode*>($3))->getself()->getType()->isConst())
-        //     se->setValue((dynamic_cast<InitNode*>($3))->getself()->getValue());
+        // 常量传播起点
+        if((dynamic_cast<InitNode*>($3))->getself()->getType()->isConst())
+            se->setValue((dynamic_cast<InitNode*>($3))->getself()->getValue());
         $$ = new DeclStmt(new Id(se), (dynamic_cast<InitNode*>($3)));
         delete []$1;
     }
@@ -566,7 +566,10 @@ VarDef
         Type* type;
         if (curType->isInt())
             type = new IntArrayType();
-        else type = new FloatArrayType();
+        else 
+            type = new FloatArrayType();
+        for(auto exp : dynamic_cast<IndicesNode*>($2)->getExprList())
+            dynamic_cast<ArrayType*>(type)->addDim((int)exp->getValue());
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         int ret = identifiers->install($1, se_var_list);
         if (!ret)
@@ -584,7 +587,10 @@ VarDef
         Type* type;
         if (curType->isInt())
             type = new IntArrayType();
-        else type = new FloatArrayType();
+        else 
+            type = new FloatArrayType();
+        for(auto exp : dynamic_cast<IndicesNode*>($2)->getExprList())
+            dynamic_cast<ArrayType*>(type)->addDim((int)exp->getValue());
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         int ret = identifiers->install($1, se_var_list);
         if (!ret)
@@ -633,6 +639,8 @@ ConstDef
             type =  new ConstIntArrayType();
         else
             type =  new ConstFloatArrayType();
+        for(auto exp : dynamic_cast<IndicesNode*>($2)->getExprList())
+            dynamic_cast<ArrayType*>(type)->addDim((int)exp->getValue());
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         identifiers->install($1, se_var_list);
         Id* new_Id = new Id(se_var_list);

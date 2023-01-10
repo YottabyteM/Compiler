@@ -32,6 +32,7 @@ PointerType::PointerType(Type *valueType) : Type(Type::PTR), valueType(valueType
 
 ArrayType::ArrayType(int eleType) : Type(eleType)
 {
+    size = 1;
     is_pointer = false;
     newTypes.push_back(this);
 }
