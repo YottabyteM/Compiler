@@ -89,18 +89,18 @@ Type
     }
     // 需要额外检查，比如 VOID 不能出现在声明语句。
     ;
-// ArrayConstIndices
-//     : ArrayConstIndices LBRACKET ConstExp RBRACKET {
-//         IndicesNode* node = dynamic_cast<IndicesNode*>($1);
-//         node->Addnew($3);
-//         $$ = node;
-//     }
-//     | LBRACKET ConstExp RBRACKET {
-//         IndicesNode* node = new IndicesNode();
-//         node->Addnew($2);
-//         $$ = node;
-//     }
-//     ;
+ArrayConstIndices
+    : ArrayConstIndices LBRACKET ConstExp RBRACKET {
+        IndicesNode* node = dynamic_cast<IndicesNode*>($1);
+        node->Addnew($3);
+        $$ = node;
+    }
+    | LBRACKET ConstExp RBRACKET {
+        IndicesNode* node = new IndicesNode();
+        node->Addnew($2);
+        $$ = node;
+    }
+    ;
 // ArrayVarIndices
 //     : ArrayVarIndices LBRACKET Exp RBRACKET {
 //         IndicesNode* node = dynamic_cast<IndicesNode*>($1);
@@ -413,8 +413,7 @@ AssignStmt
         ExprNode *t = typeCast($3, $1->getType());
         if($1->getType()->isConst()) {
             fprintf(stderr, "%s can't assign a constant which can only be read", dynamic_cast<IdentifierSymbolEntry*>(($1)->getSymPtr())->getName().c_str());
-            bool Rval_is_not_Written = false;
-            assert(Rval_is_not_Written);
+            assert(!$1->getType()->isConst());
             $1->setValue(t->getValue()); // 常量定义后应该不会再赋值，这段话不会执行
         }
         $$ = new AssignStmt($1, t); 
@@ -571,46 +570,41 @@ VarDef
         $$ = new DeclStmt(new Id(se), (dynamic_cast<InitNode*>($3)));
         delete []$1;
     }
-    // | ID ArrayConstIndices {
-    //     int ret = identifiers->lookup($1);
-    //     // 类型检查1：变量在同一作用域下重复声明
-    //     if(!ret)
-    //     {
-    //         fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
-    //         delete [](char*)$1;
-    //         assert(ret);
-    //     }
-    //     Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
-    //     SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
-    //     identifier->install($1, se_var_list);
-    //     Id* new_Id = new Id(se);
-    //     new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
-    //     $$ = new DeclStmt(new_Id, nullptr, false, true);
-    //     delete []$1;
-    // }
-    // | ID ArrayConstIndices ASSIGN InitVal {
-    //     int ret = identifiers->lookup($1);
-    //     // 类型检查1：变量在同一作用域下重复声明
-    //     if(!ret)
-    //     {
-    //         fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
-    //         delete [](char*)$1;
-    //         assert(ret);
-    //     }
-    //     Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
-    //     SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
-    //     identifier->install($1, se_var_list);
-    //     Id* new_Id = new Id(se);
-    //     new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
-    //     $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), false, true);
-    //     delete []$1;
-    // }
-    // | ID ArrayVarIndices ASSIGN InitVal {
-    //     fprintf(stderr, "Indices can't be variable!\n");
-    //     bool indices_variable = false;
-    //     assert(indices_variable);
-    // }
-    // ;
+    | ID ArrayConstIndices {
+        int ret = identifiers->lookup($1);
+        // 类型检查1：变量在同一作用域下重复声明
+        if(!ret)
+        {
+            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(ret);
+        }
+        Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
+        SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+        identifier->install($1, se_var_list);
+        Id* new_Id = new Id(se);
+        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        $$ = new DeclStmt(new_Id, nullptr, false, true);
+        delete []$1;
+    }
+    | ID ArrayConstIndices ASSIGN InitVal {
+        int ret = identifiers->lookup($1);
+        // 类型检查1：变量在同一作用域下重复声明
+        if(!ret)
+        {
+            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(ret);
+        }
+        Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
+        SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+        identifier->install($1, se_var_list);
+        Id* new_Id = new Id(se);
+        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), false, true);
+        delete []$1;
+    }
+    ;
 ConstDef
     : ID ASSIGN ConstInitVal {
         curType = Var2Const(curType);
@@ -630,28 +624,23 @@ ConstDef
         $$ = new DeclStmt(new Id(se), (dynamic_cast<InitNode*>($3)));
         delete []$1;
     }
-    // | ID ArrayConstIndices ASSIGN ConstInitVal {
-    //     int ret = identifiers->lookup($1);
-    //     // 类型检查1：变量在同一作用域下重复声明
-    //     if(!ret)
-    //     {
-    //         fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
-    //         delete [](char*)$1;
-    //         assert(ret);
-    //     }
-    //     Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
-    //     SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
-    //     identifier->install($1, se_var_list);
-    //     Id* new_Id = new Id(se);
-    //     new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
-    //     $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), true, true);
-    //     delete []$1;
-    // }
-    // | ID ArrayVarIndices ASSIGN ConstInitVal {
-    //     fprintf(stderr, "Indices can't be variable!\n");
-    //     bool indices_variable = false;
-    //     assert(indices_variable);
-    // }
+    | ID ArrayConstIndices ASSIGN ConstInitVal {
+        int ret = identifiers->lookup($1);
+        // 类型检查1：变量在同一作用域下重复声明
+        if(!ret)
+        {
+            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(ret);
+        }
+        Type* type = curType->isInt() ? new IntArrayType() : new FloatArrayType();
+        SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+        identifier->install($1, se_var_list);
+        Id* new_Id = new Id(se);
+        new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
+        $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), true, true);
+        delete []$1;
+    }
     ;
 InitVal 
     : Exp {
