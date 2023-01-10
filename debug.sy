@@ -4,6 +4,6 @@ int b = 5;
 
 int main(){
     int a = 5;
-    putfloat(a);
+    float c = a;
     return a + b;
 }
