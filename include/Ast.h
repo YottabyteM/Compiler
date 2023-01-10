@@ -174,6 +174,7 @@ public:
     void genCode();
     ~Id(){};
 };
+
 class InitNode : public StmtNode
 {
 private:

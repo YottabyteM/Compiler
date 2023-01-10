@@ -44,7 +44,7 @@
 %nterm <stmttype> VarDeclStmt ConstDeclStmt VarDef ConstDef VarDefList ConstDefList ArrayConstIndices ArrayVarIndices
 %nterm <stmttype> FuncFParams FuncRParams FuncDef 
 %nterm <exprtype> LRVal Exp ConstExp Cond PrimaryExpr UnaryExpr MulDivModExpr AddSubExpr RelExpr LEqExpr LAndExpr LOrExpr 
-%nterm <exprtype> InitVal ConstInitVal InitValList ConstInitValList 
+%nterm <stmttype> InitVal ConstInitVal InitValList ConstInitValList 
 %nterm <exprtype> FuncFParam
 %nterm <type> Type 
 
@@ -556,9 +556,9 @@ VarDef
             delete [](char*)$1;
             assert(ret);
         }
-        // 常量传播起点
-        if((dynamic_cast<InitNode*>($3))->getself()->getType()->isConst())
-            se->setValue((dynamic_cast<InitNode*>($3))->getself()->getValue());
+        // // 常量传播起点
+        // if((dynamic_cast<InitNode*>($3))->getself()->getType()->isConst())
+        //     se->setValue((dynamic_cast<InitNode*>($3))->getself()->getValue());
         $$ = new DeclStmt(new Id(se), (dynamic_cast<InitNode*>($3)));
         delete []$1;
     }
@@ -604,6 +604,7 @@ ConstDef
         curType = Var2Const(curType);
         assert(convertible((dynamic_cast<InitNode*>($3))->getself()->getType(), curType));
         ExprNode *t3 = typeCast((dynamic_cast<InitNode*>($3))->getself(), curType);
+        (dynamic_cast<InitNode*>($3))->setleaf(t3);
         SymbolEntry *se = new IdentifierSymbolEntry(curType, $1, identifiers->getLevel());
         // 常量传播起点
         se->setValue((dynamic_cast<InitNode*>($3))->getself()->getValue());
@@ -627,10 +628,7 @@ ConstDef
             delete [](char*)$1;
             assert(ret);
         }
-        Type* type;
-        if (curType->isInt())
-            type = new ConstIntArrayType();
-        else type = new ConstFloatArrayType();
+        Type* type = curType->isInt() ? new ConstIntArrayType() : new ConstFloatArrayType();
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         identifiers->install($1, se_var_list);
         Id* new_Id = new Id(se_var_list);
