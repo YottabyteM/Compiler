@@ -128,7 +128,7 @@ public:
     void addDim(int d)
     {
         dim.push_back(d);
-        size *= 4 * d;
+        size *= d;
     };
     std::vector<int> fetch() { return dim; };
     void SetPointer() { is_pointer = true; };

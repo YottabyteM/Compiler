@@ -32,7 +32,7 @@ PointerType::PointerType(Type *valueType) : Type(Type::PTR), valueType(valueType
 
 ArrayType::ArrayType(int eleType) : Type(eleType)
 {
-    size = 1;
+    size = 4;
     is_pointer = false;
     newTypes.push_back(this);
 }
@@ -207,4 +207,3 @@ void clearTypes()
     for (auto type : newTypes)
         delete type;
 }
-// to do : 考虑数组Type的回收

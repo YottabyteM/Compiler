@@ -1,6 +1,8 @@
 #include "MachineCode.h"
 extern FILE *yyout;
 
+static std::vector<MachineOperand *> newMachineOperands; // 用来回收new出来的SymbolEntry
+
 // 合法的第二操作数循环移位偶数位后可以用8bit表示
 bool isShifterOperandVal(unsigned bin_val)
 {
@@ -21,6 +23,7 @@ MachineOperand::MachineOperand(int tp, double val, Type *valType)
     else
         this->reg_no = (int)val;
     this->valType = valType;
+    newMachineOperands.push_back(this);
 }
 
 MachineOperand::MachineOperand(std::string label)
@@ -28,6 +31,7 @@ MachineOperand::MachineOperand(std::string label)
     this->type = MachineOperand::LABEL;
     this->label = label;
     this->valType = TypeSystem::intType;
+    newMachineOperands.push_back(this);
 }
 
 bool MachineOperand::operator==(const MachineOperand &a) const
@@ -683,6 +687,24 @@ MachineFunction::MachineFunction(MachineUnit *p, SymbolEntry *sym_ptr)
     this->stack_size = 0;
 };
 
+void MachineFunction::addSavedRegs(int regno, bool is_sreg)
+{
+    if (is_sreg)
+        saved_sregs.insert(regno);
+    else
+    {
+        saved_rregs.insert(regno);
+        // if (regno <= 11 && regno % 2 != 0)
+        // {
+        //     saved_rregs.insert(regno + 1);
+        // }
+        // else if (regno <= 11 && regno > 0 && regno % 2 == 0)
+        // {
+        //     saved_rregs.insert(regno - 1);
+        // }
+    }
+}
+
 std::vector<MachineOperand *> MachineFunction::getSavedRRegs()
 {
     std::vector<MachineOperand *> regs;
@@ -878,4 +900,10 @@ void MachineUnit::printBridge()
         fprintf(yyout, "\t.word %s\n", sym_ptr->toStr().c_str());
     }
     LtorgNo++;
+}
+
+void clearMachineOperands()
+{
+    for (auto mope : newMachineOperands)
+        delete mope;
 }

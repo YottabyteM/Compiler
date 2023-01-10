@@ -828,7 +828,7 @@ void DeclStmt::genCode()
         type = new PointerType(se->getType());
         addr_se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
         addr = new Operand(addr_se);
-        alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack.
+        alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack. TODO：Alloc指令考虑数组
         entry->insertFront(alloca);               // allocate instructions should be inserted into the begin of the entry block.
         se->setAddr(addr);                        // set the addr operand in symbol entry so that we can use it in subsequent code generation.
     }
@@ -842,11 +842,12 @@ void DeclStmt::genCode()
             offset = 0;
             arrayAddr = addr;
             expr->genCode();
-            // TODO : Array
-            /***
-             * We haven't implemented array yet, the lval can only be ID. So we just store the result of the `expr` to the addr of the id.
-             * If you want to implement array, you have to caculate the address first and then store the result into it.
-             */
+            // TODO : store指令考虑数组
+            if (!se->isGlobal()) // bb = nullptr
+            {
+                // Operand *src = expr->getself()->getOperand();
+                // new StoreInstruction(arrayAddr, src, bb);
+            }
         }
         else
         {
