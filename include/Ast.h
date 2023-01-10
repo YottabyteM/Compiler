@@ -46,9 +46,10 @@ class ExprNode : public Node
 protected:
     SymbolEntry *symbolEntry;
     Operand *dst; // The result of the subtree is stored into dst.
+    bool is_array_ele = false;
 
 public:
-    ExprNode(SymbolEntry *symbolEntry) : symbolEntry(symbolEntry), dst(new Operand(symbolEntry)){};
+    ExprNode(SymbolEntry *symbolEntry, bool be_array = false) : symbolEntry(symbolEntry), dst(new Operand(symbolEntry)), is_array_ele(be_array){};
     Type *getType();
     void setType(Type *type);
     double getValue();
@@ -160,7 +161,7 @@ private:
     IndicesNode* indices;
     bool is_array = false, is_array_ele = false;
 public:
-    Id(SymbolEntry *se, bool be_array = false) : ExprNode(se){ is_array_ele = se->getType()->isARRAY() && be_array; is_array = se->getType()->isARRAY(); };
+    Id(SymbolEntry *se, bool be_array = false) : ExprNode(se, be_array){ is_array_ele = se->getType()->isARRAY() && be_array; is_array = se->getType()->isARRAY(); };
     SymbolEntry* get_Entry_of_Id() {return symbolEntry; };
     void SetIndices(IndicesNode* new_indices) { indices = new_indices; };
     IndicesNode* getIndices() { return indices; };

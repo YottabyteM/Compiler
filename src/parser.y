@@ -564,40 +564,36 @@ VarDef
         delete []$1;
     }
     | ID ArrayConstIndices {
-        auto ret = identifiers->lookup($1);
-        // 类型检查1：变量在同一作用域下重复声明
-        if(!ret)
-        {
-            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
-            delete [](char*)$1;
-            assert(ret);
-        }
         Type* type;
         if (curType->isInt())
             type = new IntArrayType();
         else type = new FloatArrayType();
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
-        identifiers->install($1, se_var_list);
+        int ret = identifiers->install($1, se_var_list);
+        if (!ret)
+        {
+            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(ret);
+        }
         Id* new_Id = new Id(se_var_list);
         new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, nullptr, false, true);
         delete []$1;
     }
     | ID ArrayConstIndices ASSIGN InitVal {
-        auto ret = identifiers->lookup($1);
-        // 类型检查1：变量在同一作用域下重复声明
-        if(!ret)
-        {
-            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
-            delete [](char*)$1;
-            assert(ret);
-        }
         Type* type;
         if (curType->isInt())
             type = new IntArrayType();
         else type = new FloatArrayType();
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
-        identifiers->install($1, se_var_list);
+        int ret = identifiers->install($1, se_var_list);
+        if (!ret)
+        {
+            fprintf(stderr, "identifier \"%s\" is redefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(ret);
+        }
         Id* new_Id = new Id(se_var_list);
         new_Id->SetIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), false, true);
@@ -644,8 +640,8 @@ ConstDef
         }
         Type* type;
         if (curType->isInt())
-            type = new IntArrayType();
-        else type = new FloatArrayType();
+            type = new ConstIntArrayType();
+        else type = new ConstFloatArrayType();
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         identifiers->install($1, se_var_list);
         Id* new_Id = new Id(se_var_list);

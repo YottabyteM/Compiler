@@ -1,34 +1,12 @@
-/*
-// reference: https://zhuanlan.zhihu.com/p/20085048
-
-const float e = 2.718281828459045;
-
-float my_sqrt(float x) {
-  if (x > 100) return 10.0 * my_sqrt(x / 100);
-  float t = x / 8 + 0.5 + 2 * x / (4 + x);
-  int c = 10;
-  while (c) {
-    t = (t + x / t) / 2;
-    c = c - 1;
-  }
-  return t;
-}
-
 int main() {
-  int num = getint();
-  while (num) {
-    float x = getfloat(), y = getfloat();
-    putfloat(my_sqrt(x));
-    num = num - 1;
+  int arr[100], i = 0, sum = 0;
+  while (/*getint()*/i) {
+  	arr[i] = getint();
+    i = i + 1;
   }
-  return 0;
-}
-*/
-//test global var define
-const int a = 3;
-int b = 5;
-
-int main(){
-    a = 2;
-    return a + b;
+	while (i) {
+    i = i - 1;
+    // sum = sum + arr[i];
+  }
+  return sum % 79;
 }

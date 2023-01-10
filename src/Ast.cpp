@@ -30,7 +30,15 @@ void Ast::output()
 
 Type *ExprNode::getType()
 {
-    return symbolEntry->getType();
+    if (!is_array_ele)
+        return symbolEntry->getType();
+    else 
+    {
+        Type* type = symbolEntry->getType(), *resType;
+        if (type->isIntArray()) resType = new IntType(4);
+        else if (type->isFloatArray()) resType = new FloatType(4);
+        return resType;
+    }
 }
 
 void ExprNode::setType(Type *type)
@@ -347,6 +355,7 @@ void Ast::genCode(Unit *unit)
 {
     IRBuilder *builder = new IRBuilder(unit);
     Node::setIRBuilder(builder);
+    assert(root != nullptr);
     root->genCode();
 }
 
