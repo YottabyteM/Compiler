@@ -15,6 +15,7 @@ extern FILE *yyin;
 extern FILE *yyout;
 extern void clearSymbolEntries();
 extern void clearTypes();
+extern void clearMachineOperands();
 int yyparse();
 
 char outfile[256] = "a.out";
@@ -101,5 +102,6 @@ int main(int argc, char *argv[])
     }
     clearSymbolEntries();
     clearTypes();
+    clearMachineOperands();
     return 0;
 }

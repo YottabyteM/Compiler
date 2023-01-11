@@ -48,7 +48,7 @@ WHITE [\t ]
 %%
 {commentblockbegin} {BEGIN BLOCKCOMMENT;}
 <BLOCKCOMMENT>{commentelement} {}
-<BLOCKCOMMENT>{commentblockend} {/*这样写不支持块注释嵌套*/BEGIN INITIAL;}
+<BLOCKCOMMENT>{commentblockend} {/*/*/**/BEGIN INITIAL;}
 
 "int" {
     if(dump_tokens){

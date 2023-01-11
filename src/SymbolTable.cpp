@@ -117,7 +117,7 @@ IdentifierSymbolEntry::IdentifierSymbolEntry(Type *type, std::string name, int s
 {
     this->scope = scope;
     addr = nullptr;
-    this->is8BytesAligned = type->isFunc() && isLibFunc() && name != "getint" && name != "putint"; // ToDo ：getarray和putarray、getch和putch需要8字节对齐嘛？
+    this->is8BytesAligned = type->isFunc() && isLibFunc() && name != "getint" && name != "putint" && name != "getch" && name != "putch"; // ToDo ：getarray和putarray需要8字节对齐嘛？
 }
 
 std::string IdentifierSymbolEntry::toStr()
