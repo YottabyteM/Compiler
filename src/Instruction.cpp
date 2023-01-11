@@ -904,6 +904,7 @@ void FuncCallInstruction::genMachineCode(AsmBuilder *builder)
             cur_block->InsertInst(cur_inst);
         }
     }
+    cur_block->getParent()->addSavedRegs(14); // lr
     // 生成跳转指令进入callee函数，保存返回地址到r14(lr)
     cur_inst = new BranchMInstruction(cur_block, BranchMInstruction::BL, new MachineOperand(func_se->toStr()));
     cur_block->InsertInst(cur_inst);

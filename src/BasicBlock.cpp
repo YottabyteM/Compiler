@@ -88,6 +88,22 @@ void BasicBlock::removePred(BasicBlock *bb)
     pred.erase(std::find(pred.begin(), pred.end(), bb));
 }
 
+void BasicBlock::merge(BasicBlock *succ_bb)
+{
+    assert(end()->isUncond());
+    assert(succ_bb->getNumOfPred() == 1);
+    removeSucc(succ_bb);
+    for (auto succ_succ = succ_bb->succ_begin(); succ_succ != succ_bb->succ_end(); succ_succ++)
+        addSucc(*succ_succ);
+    for (auto inst = succ_bb->begin(); inst != succ_bb->end(); inst = inst->getNext())
+    {
+        succ_bb->remove(inst);
+        insertBefore(inst, head);
+    }
+    parent->remove(succ_bb);
+    delete succ_bb;
+}
+
 void BasicBlock::genMachineCode(AsmBuilder *builder)
 {
     auto cur_func = builder->getFunction();

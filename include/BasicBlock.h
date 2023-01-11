@@ -44,6 +44,7 @@ public:
     bb_iterator pred_end() { return pred.end(); };
     int getNumOfPred() const { return pred.size(); };
     int getNumOfSucc() const { return succ.size(); };
+    void merge(BasicBlock *succ_bb);
     void genMachineCode(AsmBuilder *);
 };
 

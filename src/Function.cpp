@@ -88,5 +88,6 @@ void Function::genMachineCode(AsmBuilder *builder)
         for (auto succ = block->succ_begin(); succ != block->succ_end(); succ++)
             mblock->addSucc(map[*succ]);
     }
+    cur_func->addSavedRegs(11); // fp
     cur_unit->insertFunc(cur_func);
 }

@@ -690,10 +690,13 @@ MachineFunction::MachineFunction(MachineUnit *p, SymbolEntry *sym_ptr)
 void MachineFunction::addSavedRegs(int regno, bool is_sreg)
 {
     if (is_sreg)
+    {
         saved_sregs.insert(regno);
+    }
     else
     {
-        saved_rregs.insert(regno);
+        auto insertPos = std::lower_bound(saved_rregs.begin(), saved_rregs.end(), regno);
+        saved_rregs.insert(insertPos, regno);
         // if (regno <= 11 && regno % 2 != 0)
         // {
         //     saved_rregs.insert(regno + 1);
@@ -737,16 +740,17 @@ void MachineFunction::output()
     // Save callee saved int registers
     fprintf(yyout, "\tpush {");
     std::vector<MachineOperand *> regs = getSavedRRegs();
-    for (auto reg : regs)
+    regs[0]->output();
+    size_t i;
+    for (i = 1; i != regs.size(); i++)
     {
-        reg->output();
         fprintf(yyout, ", ");
+        regs[i]->output();
     }
-    // Save fp, lr
-    fprintf(yyout, "fp, lr}\n");
+    fprintf(yyout, "}\n");
     // Save callee saved float registers
     std::vector<MachineOperand *> sregs = getSavedSRegs();
-    size_t i = 0;
+    i = 0;
     while (i != sregs.size())
     {
         fprintf(yyout, "\tvpush {");
@@ -760,7 +764,7 @@ void MachineFunction::output()
     }
     // 更新additional args的偏移
     for (auto offset : additional_args_offset)
-        offset->setVal(offset->getVal() + 4 * (regs.size() + sregs.size() + 2));
+        offset->setVal(offset->getVal() + 4 * (regs.size() + sregs.size()));
     // fp = sp
     fprintf(yyout, "\tmov fp, sp\n");
     // Allocate stack space for local variable
@@ -801,7 +805,7 @@ void MachineFunction::output()
     // output endLabel
     if (outputEndLabel)
         fprintf(yyout, ".L%s_END:\n", this->sym_ptr->toStr().erase(0, 1).c_str()); // skip '@'
-    // Restore callee saved registers
+    // recycle stack space
     if (stack_size)
     {
         if (!isShifterOperandVal(reinterpret_cast<unsigned &>(stack_size)))
@@ -813,7 +817,7 @@ void MachineFunction::output()
         else
             fprintf(yyout, "\tadd sp, sp, #%d\n", stack_size);
     }
-    // Restore saved registers and fp, lr
+    // Restore saved registers
     i = 0;
     while (i != sregs.size())
     {
@@ -827,12 +831,13 @@ void MachineFunction::output()
         fprintf(yyout, "}\n");
     }
     fprintf(yyout, "\tpop {");
-    for (auto reg : regs)
+    regs[0]->output();
+    for (i = 1; i != regs.size(); i++)
     {
-        reg->output();
         fprintf(yyout, ", ");
+        regs[i]->output();
     }
-    fprintf(yyout, "fp, lr}\n");
+    fprintf(yyout, "}\n");
     // Generate bx instruction
     fprintf(yyout, "\tbx lr\n\n");
 }
