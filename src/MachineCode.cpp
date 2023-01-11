@@ -104,7 +104,7 @@ void MachineOperand::output()
     case IMM:
         if (valType->isFloat())
         {
-            float float_val = (float)this->val;
+            float float_val = (float)(this->val);
             fprintf(yyout, "#%u", reinterpret_cast<unsigned &>(float_val));
         }
         else
@@ -271,7 +271,7 @@ void LoadMInstruction::output()
     // // 小的立即数用MOV优化一下，arm汇编器会自动做?
     // if ((this->use_list.size() == 1) && this->use_list[0]->isImm() && !this->use_list[0]->isIllegalShifterOperand())
     // {
-    //     if (this->def_list[0]->isFloat())
+    //     if (this->def_list[0]->getValType()->isFloat())
     //         fprintf(yyout, "\tvmov.f32");
     //     else
     //         fprintf(yyout, "\tmov");
@@ -300,7 +300,7 @@ void LoadMInstruction::output()
     {
         if (this->use_list[0]->getValType()->isFloat())
         {
-            float float_val = (float)this->use_list[0]->getVal();
+            float float_val = (float)(this->use_list[0]->getVal());
             fprintf(yyout, "=%u\n", reinterpret_cast<unsigned &>(float_val));
         }
         else
@@ -691,20 +691,14 @@ void MachineFunction::addSavedRegs(int regno, bool is_sreg)
 {
     if (is_sreg)
     {
-        saved_sregs.insert(regno);
+        // saved_sregs.insert(regno);
+        auto insertPos = std::lower_bound(saved_sregs.begin(), saved_sregs.end(), regno);
+        saved_sregs.insert(insertPos, regno);
     }
     else
     {
         auto insertPos = std::lower_bound(saved_rregs.begin(), saved_rregs.end(), regno);
         saved_rregs.insert(insertPos, regno);
-        // if (regno <= 11 && regno % 2 != 0)
-        // {
-        //     saved_rregs.insert(regno + 1);
-        // }
-        // else if (regno <= 11 && regno > 0 && regno % 2 == 0)
-        // {
-        //     saved_rregs.insert(regno - 1);
-        // }
     }
 }
 
@@ -767,6 +761,9 @@ void MachineFunction::output()
         offset->setVal(offset->getVal() + 4 * (regs.size() + sregs.size()));
     // fp = sp
     fprintf(yyout, "\tmov fp, sp\n");
+    if (dynamic_cast<IdentifierSymbolEntry *>(sym_ptr)->need8BytesAligned() &&
+        (4 * (regs.size() + sregs.size() + std::max(0, (int)dynamic_cast<FunctionType *>(sym_ptr->getType())->getParamsType().size() - 4)) + stack_size) % 8)
+        stack_size += 4;
     // Allocate stack space for local variable
     if (stack_size)
     {

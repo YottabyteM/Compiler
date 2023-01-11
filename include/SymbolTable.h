@@ -88,8 +88,9 @@ private:
     };
     std::string name;
     int scope;
-    Operand *addr; // The address of the identifier.
-    int paramNo; // if is param
+    Operand *addr;        // The address of the identifier.
+    int paramNo;          // if is param
+    bool is8BytesAligned; // func sp needs to be 8 bytes aligned for public interface call  https://www.cse.scu.edu/~dlewis/book3/docs/StackAlignment.pdf
     // You can add any field you need here.
 
 public:
@@ -103,11 +104,13 @@ public:
     void setAddr(Operand *addr) { this->addr = addr; };
     Operand *getAddr() { return addr; };
     // You can add any function you need here.
-    void setParamNo(int paramNo) {this->paramNo = paramNo;};
-    int getParamNo() {return paramNo;};
+    void setParamNo(int paramNo) { this->paramNo = paramNo; };
+    int getParamNo() { return paramNo; };
     std::string getName() const { return name; };
     bool isLibFunc();
     void decl_code();
+    bool need8BytesAligned() { return this->is8BytesAligned; };
+    void set8BytesAligned() { this->is8BytesAligned = true; };
 };
 
 /*
@@ -136,7 +139,8 @@ private:
     bool isArray;
 
 public:
-    TemporarySymbolEntry(Type *type, int label, bool isarray = false) : SymbolEntry(type, SymbolEntry::TEMPORARY) {
+    TemporarySymbolEntry(Type *type, int label, bool isarray = false) : SymbolEntry(type, SymbolEntry::TEMPORARY)
+    {
         this->label = label;
         this->isArray = isarray;
     };

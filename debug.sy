@@ -1,11 +1,6 @@
 // reference: https://zhuanlan.zhihu.com/p/20085048
 
-const float e = 2.718281828459045;
-
-float my_fabs(float x) {
-  if (x > 0) return x;
-  return -x;
-}
+/*const float e = 2.718281828459045;
 
 float my_pow(float a, int n) {
   if (n < 0) return 1 / my_pow(a, -n);
@@ -16,9 +11,9 @@ float my_pow(float a, int n) {
     n = n / 2;
   }
   return res;
-}
+}*/
 
-float my_sqrt(float x) {
+/*float my_sqrt(float x) {
   if (x > 100) return 10.0 * my_sqrt(x / 100);
   float t = x / 8 + 0.5 + 2 * x / (4 + x);
   int c = 10;
@@ -27,9 +22,9 @@ float my_sqrt(float x) {
     c = c - 1;
   }
   return t;
-}
+}*/
 
-float F1(float x) { return 1 / x; }
+/*float F1(float x) { return 1 / x; }
 
 float F2(float x) { return 1 / my_sqrt(1 - x * x); }
 
@@ -71,33 +66,15 @@ float my_exp(float x) {
 
 float my_ln(float x) { return asr4(1, x, 1e-8, 1); }
 
-float my_log(float a, float N) { return my_ln(N) / my_ln(a); }
-
-float my_powf(float a, float x) { return my_exp(x * my_ln(a)); }
+float my_powf(float a, float x) { return my_exp(x * my_ln(a)); } */
 
 int main() {
-  int num = getint();
+  /*int num = getint();
   while (num) {
     float x = getfloat(), y = getfloat();
-    putfloat(my_fabs(x));
-    putch(32);
-    putfloat(my_pow(x, 2));
-    putch(32);
     putfloat(my_sqrt(x));
-    putch(32);
+    /*putch(32);
     putfloat(my_exp(x));
-    putch(32);
-    if (x > 0) {
-      putfloat(my_ln(x));
-    } else {
-      putch(45);
-    }
-    putch(32);
-    if (x > 0 && y > 0) {
-      putfloat(my_log(x, y));
-    } else {
-      putch(45);
-    }
     putch(32);
     if (x > 0) {
       putfloat(my_powf(x, y));
@@ -106,6 +83,8 @@ int main() {
     }
     putch(10);
     num = num - 1;
-  }
+  }*/
+  float m = 0.5;
+  putfloat(m);
   return 0;
 }

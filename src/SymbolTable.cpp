@@ -25,25 +25,26 @@ std::string Double2HexStr(double val)
     return "0x" + std::string(hex_str, hex_str + 9) + std::string(7, '0');
 }
 
-std::string lib_fun[14] = {"getint",
-                           "getch",
-                           "getfloat",
-                           "getdouble",
-                           "getarray",
-                           "getfarray",
-                           "putint",
-                           "putch",
-                           "putfloat",
-                           "putarray",
-                           "putfarray",
-                           "putf",
-                           "starttime",
-                           "stoptime"};
+std::vector<std::string> lib_funcs{
+    "getint",
+    "getch",
+    "getfloat",
+    "getarray",
+    "getfarray",
+    "putint",
+    "putch",
+    "putfloat",
+    "putarray",
+    "putfarray",
+    //    "putf",
+    //    "starttime",
+    //    "stoptime"
+};
 
 bool IdentifierSymbolEntry::isLibFunc()
 {
-    for (int i = 0; i < 14; i++)
-        if (name == lib_fun[i])
+    for (auto lib_func : lib_funcs)
+        if (name == lib_func)
             return true;
     return false;
 }
@@ -116,6 +117,7 @@ IdentifierSymbolEntry::IdentifierSymbolEntry(Type *type, std::string name, int s
 {
     this->scope = scope;
     addr = nullptr;
+    this->is8BytesAligned = type->isFunc() && isLibFunc() && name != "getint" && name != "putint"; // ToDo ：getarray和putarray、getch和putch需要8字节对齐嘛？
 }
 
 std::string IdentifierSymbolEntry::toStr()

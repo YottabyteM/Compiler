@@ -48,7 +48,7 @@ WHITE [\t ]
 %%
 {commentblockbegin} {BEGIN BLOCKCOMMENT;}
 <BLOCKCOMMENT>{commentelement} {}
-<BLOCKCOMMENT>{commentblockend} {BEGIN INITIAL;}
+<BLOCKCOMMENT>{commentblockend} {/*这样写不支持块注释嵌套*/BEGIN INITIAL;}
 
 "int" {
     if(dump_tokens){
@@ -442,13 +442,6 @@ WHITE [\t ]
     // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
     // globals->install(yytext, se);
     // return ID;
-}
-"putf" {
-    if(dump_tokens){
-        DEBUG_FOR_LEX("ID", "putf");
-        offset += strlen(yytext);
-    }
-        /*todo: implement putf*/
 }
 {DECIMAL} {
     if(dump_tokens){

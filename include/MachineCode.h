@@ -50,7 +50,7 @@ public:
     bool isReg() { return this->type == REG; };
     bool isVReg() { return this->type == VREG; };
     bool isLabel() { return this->type == LABEL; };
-    int getVal() { return this->val; };
+    double getVal() { return this->val; };
     void setVal(double val) { this->val = val; }; // 目前仅用于spilled reg更新栈内偏移
     int getReg() { return this->reg_no; };
     void setReg(int regno)
@@ -317,8 +317,9 @@ public:
     std::vector<MachineOperand *> getSavedRRegs();
     std::vector<MachineOperand *> getSavedSRegs();
     MachineUnit *getParent() { return parent; };
-    void addArgsOffset(MachineOperand *param) { additional_args_offset.push_back(param); };
-    // std::vector<MachineOperand *> getArgsOffset() { return additional_args_offset; };
+    SymbolEntry *getSymPtr() { return sym_ptr; };
+    void addAdditionalArgsOffset(MachineOperand *param) { additional_args_offset.push_back(param); };
+    // std::vector<MachineOperand *> getAdditionalArgsOffset() { return additional_args_offset; };
     void output();
     ~MachineFunction()
     {

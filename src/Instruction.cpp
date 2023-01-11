@@ -616,9 +616,9 @@ void LoadInstruction::genMachineCode(AsmBuilder *builder)
         auto dst = genMachineOperand(operands[0]);
         auto fp = genMachineReg(11);
         auto offset = genMachineImm(dynamic_cast<TemporarySymbolEntry *>(operands[1]->getEntry())->getOffset());
-        // 如果是函数参数，由于函数栈帧初始化时会将一些寄存器压栈，在FuncDef打印时还需要偏移一个值
+        // 如果是函数参数(第四个以后)，由于函数栈帧初始化时会将一些寄存器压栈，在FuncDef打印时还需要偏移一个值，这里保存未偏移前的值，方便后续调整
         if (dynamic_cast<TemporarySymbolEntry *>(operands[1]->getEntry())->getOffset() >= 0)
-            cur_block->getParent()->addArgsOffset(offset);
+            cur_block->getParent()->addAdditionalArgsOffset(offset);
         if (offset->isIllegalShifterOperand())
             offset = cur_block->insertLoadImm(offset);
         cur_inst = new LoadMInstruction(cur_block, dst, fp, offset);
@@ -904,10 +904,13 @@ void FuncCallInstruction::genMachineCode(AsmBuilder *builder)
             cur_block->InsertInst(cur_inst);
         }
     }
-    cur_block->getParent()->addSavedRegs(14); // lr
-    // 生成跳转指令进入callee函数，保存返回地址到r14(lr)
+    // 生成跳转指令进入callee函数，保存pc到lr，callee要保存lr
     cur_inst = new BranchMInstruction(cur_block, BranchMInstruction::BL, new MachineOperand(func_se->toStr()));
     cur_block->InsertInst(cur_inst);
+    cur_block->getParent()->addSavedRegs(14); // lr
+    // 传递是否需要8 bytes aligned
+    if (func_se->need8BytesAligned())
+        dynamic_cast<IdentifierSymbolEntry *>(cur_block->getParent()->getSymPtr())->set8BytesAligned();
     // 如果之前通过压栈的方式传递了参数，需要恢复 SP 寄存器
     if (operands.size() > 5)
     {
@@ -924,7 +927,7 @@ void FuncCallInstruction::genMachineCode(AsmBuilder *builder)
         cur_block->InsertInst(cur_inst);
     }
     // 如果函数执行结果被用到，还需要保存 R0 寄存器中的返回值。
-    if (operands[0]->getType() != TypeSystem::voidType) // TODO：这个判断并不精准，返回值非void不代表一定用到,需要增加无用寄存器删除优化
+    if (operands[0]->getType() != TypeSystem::voidType) // TODO：这个判断并不精准，返回值非void不代表一定用到,后续可以通过窥孔优化删除无用指令
     {
         auto dst = genMachineOperand(operands[0]);
         auto src = new MachineOperand(MachineOperand::REG, 0, dst->getValType()); // r0/s0

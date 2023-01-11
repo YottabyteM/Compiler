@@ -3,6 +3,11 @@
 
 #include "Unit.h"
 
+/*
+    control flow optimization for IR:
+        1)
+        2)
+*/
 class ControlFlowOpt
 {
     Unit *unit;
@@ -10,7 +15,7 @@ class ControlFlowOpt
 
 public:
     ControlFlowOpt(Unit *unit) : unit(unit){};
-    void dfs(BasicBlock* bb);
+    void dfs(BasicBlock *bb);
     void pass();
 };
 
