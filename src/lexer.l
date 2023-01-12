@@ -48,7 +48,7 @@ WHITE [\t ]
 %%
 {commentblockbegin} {BEGIN BLOCKCOMMENT;}
 <BLOCKCOMMENT>{commentelement} {}
-<BLOCKCOMMENT>{commentblockend} {/*/*/**/BEGIN INITIAL;}
+<BLOCKCOMMENT>{commentblockend} {/*/**/BEGIN INITIAL;}
 
 "int" {
     if(dump_tokens){

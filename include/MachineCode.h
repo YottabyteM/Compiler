@@ -51,7 +51,7 @@ public:
     bool isVReg() { return this->type == VREG; };
     bool isLabel() { return this->type == LABEL; };
     double getVal() { return this->val; };
-    void setVal(double val) { this->val = val; }; // 目前仅用于spilled reg更新栈内偏移
+    void setVal(double val) { this->val = val; }; // 目前仅用于函数参数（第四个以后）更新栈内偏移
     int getReg() { return this->reg_no; };
     void setReg(int regno)
     {

@@ -22,6 +22,8 @@ MachineOperand::MachineOperand(int tp, double val, Type *valType)
         this->val = val;
     else
         this->reg_no = (int)val;
+    // this->valType = valType->isARRAY() ? dynamic_cast<ArrayType *>(valType)->getElemType() : valType;
+    assert(!valType->isARRAY()); // TODO：数组的情况传int型还是元素类型？
     this->valType = valType;
     newMachineOperands.push_back(this);
 }
@@ -40,7 +42,9 @@ bool MachineOperand::operator==(const MachineOperand &a) const
         return false;
     if (this->type == IMM)
         return this->val == a.val;
-    return this->reg_no == a.reg_no /*&& ((this->valType->isFloat() && a.valType->isFloat()) || (this->valType->isInt() && a.valType->isInt()))*/;
+    if (this->type == LABEL)
+        return true;
+    return this->reg_no == a.reg_no && ((this->valType->isFloat() && a.valType->isFloat()) || (this->valType->isInt() && a.valType->isInt()));
 }
 
 bool MachineOperand::operator<(const MachineOperand &a) const
@@ -49,8 +53,14 @@ bool MachineOperand::operator<(const MachineOperand &a) const
     {
         if (this->type == IMM)
             return this->val < a.val;
-        // assert(this->type == VREG || this->type == REG); // 不太理解比较label的意义
-        return /*(this->valType->isInt() && a.valType->isFloat()) || */ this->reg_no < a.reg_no;
+        // assert(this->type == VREG || this->type == REG);
+        if (this->type == LABEL)
+            return false; // 不太理解比较label的意义
+        if (this->valType->isInt() && a.valType->isFloat())
+            return true;
+        if (this->valType->isFloat() && a.valType->isInt())
+            return false;
+        return this->reg_no < a.reg_no;
     }
     return this->type < a.type;
 }

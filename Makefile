@@ -96,7 +96,7 @@ testasm:app $(OUTPUT_ASM)
 
 .ONESHELL:
 test:app
-	@cp -f newpass.log lastpass.log
+	@sudo cp -arf ./newpass.log ./lastpass.log
 	@rm newpass.log
 	@touch newpass.log
 	@success=0
