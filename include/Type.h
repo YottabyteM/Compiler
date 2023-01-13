@@ -133,6 +133,7 @@ public:
     std::vector<int> fetch() { return dim; };
     void SetPointer() { is_pointer = true; };
     bool isPointer() { return is_pointer; };
+    int getLength() { return dim.size(); }; 
     Type *getElemType();
     virtual std::string toStr() = 0;
 };

@@ -178,6 +178,7 @@ void BinaryInstruction::output() const
     }
     else
     {
+        fprintf(stderr, "oprendType is Array : %d", operands[0]->getType()->isARRAY());
         assert(operands[0]->getType() == TypeSystem::floatType);
         switch (opcode)
         {
@@ -934,4 +935,140 @@ void FuncCallInstruction::genMachineCode(AsmBuilder *builder)
         cur_inst = new MovMInstruction(cur_block, dst->getValType()->isFloat() ? MovMInstruction::VMOV : MovMInstruction::MOV, dst, src);
         cur_block->InsertInst(cur_inst);
     }
+}
+
+GepInstruction::GepInstruction(Operand* dst,
+                               Operand* arr,
+                               Operand* idx,
+                               BasicBlock* insert_bb,
+                               bool paramFirst)
+    : Instruction(GEP, insert_bb), paramFirst(paramFirst) {
+    operands.push_back(dst);
+    operands.push_back(arr);
+    operands.push_back(idx);
+    dst->setDef(this);
+    arr->addUse(this);
+    idx->addUse(this);
+    first = false;
+    init = nullptr;
+    last = false;
+}
+
+void GepInstruction::output() const {
+    Operand* dst = operands[0];
+    Operand* arr = operands[1];
+    Operand* idx = operands[2];
+    std::string arrType = arr->getType()->toStr();
+    if (paramFirst)
+        fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 %s\n",
+                dst->toStr().c_str(),
+                arrType.substr(0, arrType.size() - 1).c_str(), arrType.c_str(),
+                arr->toStr().c_str(), idx->toStr().c_str());
+    else
+        fprintf(
+            yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
+            dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+            arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
+}
+
+GepInstruction::~GepInstruction() {
+    operands[0]->setDef(nullptr);
+    if (operands[0]->usersNum() == 0)
+        delete operands[0];
+    operands[1]->removeUse(this);
+    operands[2]->removeUse(this);
+}
+
+void GepInstruction::genMachineCode(AsmBuilder* builder) {
+    // auto cur_block = builder->getBlock();
+    // MachineInstruction* cur_inst;
+    // auto dst = genMachineOperand(operands[0]);
+    // auto idx = genMachineOperand(operands[2]);
+    // if(init){
+    //     if(last){
+    //         auto base = genMachineOperand(init);
+    //         cur_inst = new BinaryMInstruction(
+    //             cur_block, BinaryMInstruction::ADD, dst, base, genMachineImm(4));
+    //         cur_block->InsertInst(cur_inst);
+    //     }
+    //     return;
+    // }
+    // MachineOperand* base = nullptr;
+    // int size;
+    // auto idx1 = genMachineVReg();
+    // if (idx->isImm()) {
+    //     if (idx->getVal() < 255) {
+    //         cur_inst =
+    //             new MovMInstruction(cur_block, MovMInstruction::MOV, idx1, idx);
+    //     } else {
+    //         cur_inst = new LoadMInstruction(cur_block, idx1, idx);
+    //     }
+    //     idx = new MachineOperand(*idx1);
+    //     cur_block->InsertInst(cur_inst);
+    // }
+    // if (paramFirst) {
+    //     size =
+    //         ((PointerType*)(operands[1]->getType()))->getType()->getSize() / 8;
+    // } else {
+    //     if (first) {
+    //         base = genMachineVReg();
+    //         if (operands[1]->getEntry()->isVariable() &&
+    //             ((IdentifierSymbolEntry*)(operands[1]->getEntry()))
+    //                 ->isGlobal()) {
+    //             auto src = genMachineOperand(operands[1]);
+    //             cur_inst = new LoadMInstruction(cur_block, base, src);
+    //         } else {
+    //             int offset = ((TemporarySymbolEntry*)(operands[1]->getEntry()))
+    //                              ->getOffset();
+    //             if (offset > -255 && offset < 255) {
+    //                 cur_inst =
+    //                     new MovMInstruction(cur_block, MovMInstruction::MOV,
+    //                                         base, genMachineImm(offset));
+    //             } else {
+    //                 cur_inst = new LoadMInstruction(cur_block, base,
+    //                                                 genMachineImm(offset));
+    //             }
+    //         }
+    //         cur_block->InsertInst(cur_inst);
+    //     }
+    //     ArrayType* type =
+    //         (ArrayType*)(((PointerType*)(operands[1]->getType()))->getType());
+    //     size = type->getElemType()->getSize() / 8;
+    // }
+    // auto size1 = genMachineVReg();
+    // if (size > -255 && size < 255) {
+    //     cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, size1,
+    //                                    genMachineImm(size));
+    // } else {
+    //     cur_inst = new LoadMInstruction(cur_block, size1, genMachineImm(size));
+    // }
+    // cur_block->InsertInst(cur_inst);
+    // auto off = genMachineVReg();
+    // cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, off,
+    //                                   idx, size1);
+    // off = new MachineOperand(*off);
+    // cur_block->InsertInst(cur_inst);
+    // if (paramFirst || !first) {
+    //     auto arr = genMachineOperand(operands[1]);
+    //     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD,
+    //                                       dst, arr, off);
+    //     cur_block->InsertInst(cur_inst);
+    // } else {
+    //     auto addr = genMachineVReg();
+    //     auto base1 = new MachineOperand(*base);
+    //     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD,
+    //                                       addr, base1, off);
+    //     cur_block->InsertInst(cur_inst);
+    //     addr = new MachineOperand(*addr);
+    //     if (operands[1]->getEntry()->isVariable() &&
+    //         ((IdentifierSymbolEntry*)(operands[1]->getEntry()))->isGlobal()) {
+    //         cur_inst =
+    //             new MovMInstruction(cur_block, MovMInstruction::MOV, dst, addr);
+    //     } else {
+    //         auto fp = genMachineReg(11);
+    //         cur_inst = new BinaryMInstruction(
+    //             cur_block, BinaryMInstruction::ADD, dst, fp, addr);
+    //     }
+    //     cur_block->InsertInst(cur_inst);
+    // }
 }

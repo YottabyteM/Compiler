@@ -80,7 +80,31 @@ std::string ConstFloatType::toStr()
 
 std::string IntArrayType::toStr()
 {
-    return "int array";
+    std::vector<std::string> vec;
+    Type* temp = this;
+    int count = 0;
+    bool flag = false;
+    while (temp && temp->isARRAY()) {
+        std::ostringstream buffer;
+        if (((ArrayType*)temp)->getSize() == -1) {
+            flag = true;
+        } else {
+            buffer << "[" << ((ArrayType*)temp)->getSize() << " x ";
+            count++;
+            vec.push_back(buffer.str());
+        }
+        temp = ((ArrayType*)temp)->getElemType();
+    }
+    assert(temp->isInt());
+    std::ostringstream buffer;
+    for (auto it = vec.begin(); it != vec.end(); it++)
+        buffer << *it;
+    buffer << "i32";
+    while (count--)
+        buffer << ']';
+    if (flag)
+        buffer << '*';
+    return buffer.str();
 }
 
 std::string ConstIntArrayType::toStr()
