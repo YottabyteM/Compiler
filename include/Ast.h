@@ -201,7 +201,7 @@ public:
     void setleaf(ExprNode *leaf1) { leaf = leaf1; };
     bool isLeaf() { return leaves.empty(); };
     void fill(int level, std::vector<int> d, Type* type);
-    int getSize() { return leaf == nullptr ? leaves.size() : 1; };
+    int getSize(int d_cur, int d_nxt);
     bool isConst() const { return isconst; }
     void output(int level);
     void genCode();
@@ -266,6 +266,7 @@ public:
     {
         next = nullptr;
         if (expr != nullptr) {
+            fprintf(stderr, "---------------------------\n");
             if (id->getType()->isARRAY()) {
                 std::vector<int> origin_dim = ((ArrayType*)(id->getType()))->fetch();
                 expr->fill(0, origin_dim, ((ArrayType*)(id->getType()))->getElemType());

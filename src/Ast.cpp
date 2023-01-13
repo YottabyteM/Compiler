@@ -1183,14 +1183,36 @@ ExprNode *typeCast(ExprNode *fromNode, Type *to)
 }
 
 void InitNode::fill(int level, std::vector<int> d, Type* type) {
-    if (level + 1 == d.size()) {
-        setleaf(new Constant(new ConstantSymbolEntry(type, 0)));
+    if (level == d.size() || leaf != nullptr) {
+        fprintf(stderr, "ADD 0\n");
+        if (leaf == nullptr) {
+            setleaf(new Constant(new ConstantSymbolEntry(type, 0)));
+        }
         return;
     }
-    while (getSize() != d[level]) {
+    int i = 0;
+    while (level < d.size() - 1 && getSize(d[level], d[level + 1]) < d[level]) {
+        fprintf(stderr, "iteraator is %d level is %d, size if %d\n", i++, level, getSize(d[level], d[level + 1]));
+        // fprintf(stderr, "leaves.size() is %d\n", leaves.size());
         addleaf(new InitNode(true));
     }
-    for (auto l : leaves) {
-        l -> fill(level + 1, d, type);
+    if (level == d.size() - 1) {
+        while (leaves.size() < d[level]) addleaf(new InitNode(true));
     }
+    for (auto l : leaves) { 
+        l -> fill(level + 1, d, type);
+        fprintf(stderr, "level is %d\n", level + 1);
+    }
+}
+int InitNode::getSize(int d_cur, int d_nxt) {
+    int num = 0, cur_fit = 0;
+    for (auto l : leaves) {
+        if (l->leaf != nullptr) {
+            num ++;
+        }
+        else {
+            cur_fit++;
+        }
+    }
+    return cur_fit + num / d_nxt;
 }

@@ -178,8 +178,8 @@ void BinaryInstruction::output() const
     }
     else
     {
-        fprintf(stderr, "oprendType is Array : %d", operands[0]->getType()->isARRAY());
-        assert(operands[0]->getType() == TypeSystem::floatType);
+        // fprintf(stderr, "oprendType is Array : %d", operands[0]->getType()->isARRAY());
+        // assert(operands[0]->getType() == TypeSystem::floatType);
         switch (opcode)
         {
         case ADD:
