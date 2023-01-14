@@ -114,6 +114,7 @@ private:
 public:
     PointerType(Type *valueType);
     std::string toStr();
+    Type* getType() {return valueType; };
 };
 
 class ArrayType : public Type
@@ -132,6 +133,7 @@ public:
     };
     std::vector<int> fetch() { return dim; };
     void SetPointer() { is_pointer = true; };
+    void SetDim(std::vector<int> d) { dim = d;};
     bool isPointer() { return is_pointer; };
     int getLength() { return dim.size(); }; 
     Type *getElemType();

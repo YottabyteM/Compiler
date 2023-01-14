@@ -14,7 +14,14 @@ IRBuilder *Node::builder = nullptr;
 static int height = 0;
 static int offset = 0;
 static Operand *arrayAddr;
+static Operand* lastAddr;
 static Type *arrayType = nullptr;
+static Type *tmp_arrayType = nullptr;
+static int depth = 0;
+static std::vector<int> d;
+static std::vector<int> recover;
+std::vector<int> cur_dim;
+ArrayType* cur_type;
 
 Node::Node()
 {
@@ -720,16 +727,30 @@ void InitNode::genCode()
         Operand *src = this->leaf->getOperand();
         int off = offset * 4;
         Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
-        Operand *final_offset = new Operand(new TemporarySymbolEntry(arrayType, SymbolTable::getLabel()));
+        Operand *final_offset = new Operand(new TemporarySymbolEntry(cur_type, SymbolTable::getLabel()));
         Operand *addr = arrayAddr;
-
-        new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
         new StoreInstruction(final_offset, src, builder->getInsertBB());
+        // new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
+        // new StoreInstruction(final_offset, src, builder->getInsertBB());
     }
+    int off= 0;
     for (auto l : leaves)
     {
+        cur_type->SetDim(cur_dim);
+        recover.push_back(cur_dim[0]);
+        cur_dim.erase(cur_dim.begin());
+        Operand* tmp_addr = lastAddr;
+        Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
+        Operand *final_offset = new Operand(new TemporarySymbolEntry(((ArrayType*)cur_type)->getElemType(), SymbolTable::getLabel()));
+        Operand *addr = lastAddr;
+        Operand* cur_off = new Operand(new TemporarySymbolEntry(cur_type, SymbolTable::getLabel()));
+        new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
+        lastAddr = final_offset;
         l->genCode();
-        offset++;
+        lastAddr = tmp_addr;
+        cur_dim.insert(cur_dim.begin(), (*recover.rbegin()));
+        recover.pop_back();
+        off ++;
     }
 }
 
@@ -775,8 +796,9 @@ void DeclStmt::genCode()
         addr = new Operand(addr_se);
         se->setAddr(addr);
         this->builder->getUnit()->insertDecl(se);
+        
     }
-    else if (se->isLocal())
+    else if (se->isLocal() || se->isParam())
     {
         Function *func = builder->getInsertBB()->getParent();
         BasicBlock *entry = func->getEntry();
@@ -789,36 +811,49 @@ void DeclStmt::genCode()
         alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack. TODO：Alloc指令考虑数组
         entry->insertFront(alloca);               // allocate instructions should be inserted into the begin of the entry block.
         se->setAddr(addr);                        // set the addr operand in symbol entry so that we can use it in subsequent code generation.
-    }
-    if (expr != nullptr)
-    {
-        BasicBlock *bb = builder->getInsertBB();
-        assert(addr != nullptr);
-        if (se->getType()->isARRAY())
+        Operand* temp = nullptr;
+        if (se->isParam())
+            temp = se->getAddr();
+        if (expr != nullptr)
         {
-            arrayType = se->getType();
-            // fprintf(stderr, "dimentions is ");
-            // for (auto di : ((ArrayType*)arrayType)->fetch()) {
-            //     fprintf(stderr, "[%d]", di);
-            // }
-            // fprintf(stderr, "\n");
-            offset = 0;
-            arrayAddr = addr;
-            expr->genCode();
-            // TODO : store指令考虑数组
-            if (!se->isGlobal()) // bb = nullptr
+            BasicBlock *bb = builder->getInsertBB();
+            assert(addr != nullptr);
+            // a[k1][k2][,,,][kn] on a[n1][n2][...][nn], off = k1 * n2 * ... * nn + k2 * n3 * .... * nn + kn * 1
+            // off = kn * b1 + kn-1 * b2 + ... + k1 * bn, bn = bn - 1 nn-1
+            if (se->getType()->isARRAY())
             {
-                // Operand *src = expr->getself()->getOperand();
-                // new StoreInstruction(arrayAddr, src, bb);
+                arrayType = se->getType();
+                Type* type = ((ArrayType*)arrayType)->getElemType();
+                if (type->isInt()) {
+                    if (type->isConst()) cur_type = new ConstIntArrayType();
+                    else cur_type = new IntArrayType(); 
+                }
+                else {
+                    if (type->isConst()) cur_type = new ConstFloatArrayType();
+                    else cur_type = new FloatArrayType();
+                }
+                cur_dim = ((ArrayType*)arrayType)->fetch();
+                d = ((ArrayType*)arrayType)->fetch();
+                d.push_back(1), d.erase(d.begin());
+                for (int i = d.size() - 2; i >= 0; i -- )
+                    d[i] = d[i + 1] * d[i];
+                offset = 0;
+                arrayAddr = addr;
+                lastAddr = arrayAddr;
+                expr->genCode();
+            }
+            else
+            {
+                expr->getself()->genCode();
+                Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(se)->getAddr();
+                Operand *src = expr->getself()->getOperand();
+                if (!se->isGlobal()) // bb = nullptr
+                    new StoreInstruction(addr, src, bb);
             }
         }
-        else
-        {
-            expr->getself()->genCode();
-            Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(se)->getAddr();
-            Operand *src = expr->getself()->getOperand();
-            if (!se->isGlobal()) // bb = nullptr
-                new StoreInstruction(addr, src, bb);
+        if (se->isParam()) {
+            BasicBlock* bb = builder->getInsertBB();
+            new StoreInstruction(addr, temp, bb);
         }
     }
     if (next != nullptr)
