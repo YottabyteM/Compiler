@@ -199,10 +199,10 @@ private:
 public:
     InitNode(bool isconst = false) : isconst(isconst), leaf(nullptr) {};
     void addleaf(InitNode *next) { leaves.push_back(next); };
-    void setleaf(ExprNode *leaf1) { leaf = leaf1; };
+    void setleaf(ExprNode *leaf1) { leaf = leaf1; leaves.clear(); };
     bool isLeaf() { return leaves.empty(); };
     void fill(int level, std::vector<int> d, Type* type);
-    int getSize(int d_cur, int d_nxt);
+    int getSize(int d_nxt);
     bool isFull();
     bool isConst() const { return isconst; }
     void output(int level);

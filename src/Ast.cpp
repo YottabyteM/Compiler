@@ -753,6 +753,7 @@ void InitNode::genCode(int level)
             new PointerType(((ArrayType *)cur_type)->getElemType()), 
             dynamic_cast<TemporarySymbolEntry *>(final_offset->getEntry())->getLabel()));
         new StoreInstruction(final_offset, src, builder->getInsertBB());
+        curr_dim.clear();
         // assert(cur_dim.empty());
     }
     // }
@@ -1264,32 +1265,34 @@ ExprNode *typeCast(ExprNode *fromNode, Type *to)
 
 void InitNode::fill(int level, std::vector<int> d, Type *type)
 {
-    if (level == d.size() || leaf != nullptr)
-    {
-        fprintf(stderr, "ADD 0\n");
-        if (leaf == nullptr)
+    if (level == d.size()) {
+        if (leaf == nullptr) {
             setleaf(new Constant(new ConstantSymbolEntry(Var2Const(type), 0)));
+        }
         return;
     }
-    int i = 0;
-    while (level < d.size() - 1 && getSize(d[level], d[level + 1]) < d[level])
-    {
-        fprintf(stderr, "iteraator is %d level is %d, size if %d\n", i++, level, getSize(d[level], d[level + 1]));
-        // fprintf(stderr, "leaves.size() is %d\n", leaves.size());
-        addleaf(new InitNode(true));
+    int cap = 1, num = 0;
+    for (int i = level + 1; i < d.size(); i ++ )
+        cap *= d[i];
+    for (int i = leaves.size() - 1; i >= 0; i -- )
+        if (leaves[i]->isLeaf()) num ++;
+        else break;
+    while (num % cap) {
+        InitNode* new_const_node = new InitNode(true);
+        new_const_node->setleaf(new Constant(new ConstantSymbolEntry(Var2Const(type), 0)));
+        addleaf(new_const_node);
     }
-    if (level == d.size() - 1)
-    {
-        while (leaves.size() < d[level])
-            addleaf(new InitNode(true));
+    int t = getSize(cap);
+    while (t < d[level]) {
+        InitNode* new_node = new InitNode(true);
+        addleaf(new_node);
+        t ++;
     }
-    for (auto l : leaves)
-    {
+    for (auto l : leaves) {
         l->fill(level + 1, d, type);
-        fprintf(stderr, "level is %d\n", level + 1);
     }
 }
-int InitNode::getSize(int d_cur, int d_nxt)
+int InitNode::getSize(int d_nxt)
 {
     int num = 0, cur_fit = 0;
     for (auto l : leaves)
@@ -1301,6 +1304,10 @@ int InitNode::getSize(int d_cur, int d_nxt)
         else
         {
             cur_fit++;
+        }
+        if (num == d_nxt) {
+            cur_fit ++;
+            num = 0;
         }
     }
     return cur_fit + num / d_nxt;
