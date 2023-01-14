@@ -392,8 +392,7 @@ void Id::genCode()
             {
                 if (((ArrayType *)type1)->getLength() == -1)
                 {
-                    Operand *dst1 = new Operand(new TemporarySymbolEntry(
-                        new PointerType(type), SymbolTable::getLabel()));
+                    Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel()));
                     tempSrc = dst1;
                     new LoadInstruction(dst1, addr, bb);
                     flag = true;
@@ -401,10 +400,8 @@ void Id::genCode()
                 }
                 if (!idx)
                 {
-                    Operand *dst1 = new Operand(new TemporarySymbolEntry(
-                        new PointerType(type), SymbolTable::getLabel()));
-                    Operand *idx = new Operand(
-                        new ConstantSymbolEntry(TypeSystem::intType, 0));
+                    Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel()));
+                    Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                     new GepInstruction(dst1, tempSrc, idx, bb);
                     tempDst = dst1;
                     pointer = true;
@@ -412,8 +409,7 @@ void Id::genCode()
                 }
 
                 idx->genCode();
-                auto gep = new GepInstruction(tempDst, tempSrc,
-                                              idx->getOperand(), bb, flag);
+                auto gep = new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb, flag);
                 if (!flag && firstFlag)
                 {
                     gep->setFirst();
@@ -421,20 +417,17 @@ void Id::genCode()
                 }
                 if (flag)
                     flag = false;
-                if (type == TypeSystem::intType ||
-                    type == TypeSystem::constIntType)
+                if (type == TypeSystem::intType || type == TypeSystem::constIntType)
                     break;
                 type = ((ArrayType *)type)->getElemType();
                 type1 = ((ArrayType *)type1)->getElemType();
                 tempSrc = tempDst;
-                tempDst = new Operand(new TemporarySymbolEntry(
-                    new PointerType(type), SymbolTable::getLabel()));
+                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel()));
             }
             dst = tempDst;
             if (!pointer)
             {
-                Operand *dst1 = new Operand(new TemporarySymbolEntry(
-                    TypeSystem::intType, SymbolTable::getLabel()));
+                Operand *dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
                 new LoadInstruction(dst1, dst, bb);
                 dst = dst1;
             }
@@ -449,8 +442,7 @@ void Id::genCode()
             }
             else
             {
-                Operand *idx = new Operand(
-                    new ConstantSymbolEntry(TypeSystem::intType, 0));
+                Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                 auto gep = new GepInstruction(dst, addr, idx, bb);
                 gep->setFirst();
             }
@@ -737,8 +729,7 @@ void InitNode::genCode()
         Operand *src = this->leaf->getOperand();
         int off = offset * 4;
         Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
-        Operand *final_offset = new Operand(new TemporarySymbolEntry(cur_type, SymbolTable::getLabel()));
-        Operand *addr = arrayAddr;
+        Operand *final_offset = new Operand(new TemporarySymbolEntry(new PointerType(((ArrayType *)cur_type)->getElemType()), dynamic_cast<TemporarySymbolEntry *>(lastAddr->getEntry())->getLabel()));
         new StoreInstruction(final_offset, src, builder->getInsertBB());
         // new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
         // new StoreInstruction(final_offset, src, builder->getInsertBB());
@@ -751,7 +742,7 @@ void InitNode::genCode()
         cur_dim.erase(cur_dim.begin());
         Operand *tmp_addr = lastAddr;
         Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
-        Operand *final_offset = new Operand(new TemporarySymbolEntry(((ArrayType *)cur_type)->getElemType(), SymbolTable::getLabel()));
+        Operand *final_offset = new Operand(new TemporarySymbolEntry(new PointerType(cur_type), SymbolTable::getLabel()));
         Operand *addr = lastAddr;
         Operand *cur_off = new Operand(new TemporarySymbolEntry(cur_type, SymbolTable::getLabel()));
         new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
@@ -760,7 +751,7 @@ void InitNode::genCode()
         lastAddr = tmp_addr;
         cur_dim.insert(cur_dim.begin(), (*recover.rbegin()));
         recover.pop_back();
-        off++;
+        off = l->isLeaf() ? off : (off + 1);
     }
 }
 
@@ -1240,9 +1231,7 @@ void InitNode::fill(int level, std::vector<int> d, Type *type)
     {
         fprintf(stderr, "ADD 0\n");
         if (leaf == nullptr)
-        {
-            setleaf(new Constant(new ConstantSymbolEntry(type, 0)));
-        }
+            setleaf(new Constant(new ConstantSymbolEntry(Var2Const(type), 0)));
         return;
     }
     int i = 0;

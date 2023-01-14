@@ -84,7 +84,7 @@ void ElimPHI::pass()
                 if (!found)
                 {
                     auto freshOp = new Operand(new TemporarySymbolEntry(restInsts[0]->getDef()[0]->getType(), SymbolTable::getLabel()));
-                    seq.push_back(new BinaryInstruction(BinaryInstruction::ADD, restInsts[0]->getDef()[0], freshOp, new Operand(new ConstantSymbolEntry(freshOp->getType(), 0))));
+                    seq.push_back(new BinaryInstruction(BinaryInstruction::ADD, restInsts[0]->getDef()[0], freshOp, new Operand(new ConstantSymbolEntry(Var2Const(freshOp->getType()), 0))));
                     restInsts[0]->getDef()[0] = freshOp;
                 }
             }

@@ -131,6 +131,7 @@ void StoreInstruction::output() const
     std::string dst = use_list[0]->toStr();
     std::string src = use_list[1]->toStr();
     std::string dst_type = use_list[0]->getType()->toStr();
+    // assert(use_list[0]->getType()->isPTR());
     std::string src_type = use_list[1]->getType()->toStr();
     fprintf(yyout, "  store %s %s, %s %s, align 4\n", src_type.c_str(), src.c_str(), dst_type.c_str(), dst.c_str());
     fprintf(stderr, "  store %s %s, %s %s, align 4\n", src_type.c_str(), src.c_str(), dst_type.c_str(), dst.c_str());

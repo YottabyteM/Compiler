@@ -107,7 +107,7 @@ std::string ConstantSymbolEntry::toStr()
         return std::to_string((int)value);
     else
     {
-        //assert(type->isConstFloat());
+        assert(type->isConstFloat());
         // return std::to_string((float)value);
         return Double2HexStr(value);
     }
