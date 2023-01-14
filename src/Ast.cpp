@@ -22,6 +22,17 @@ static std::vector<int> d;
 static std::vector<int> recover;
 std::vector<int> cur_dim;
 ArrayType *cur_type;
+std::vector<ExprNode*> vec_val;
+static void get_vec_val(InitNode* cur_node) {
+    if (cur_node->isLeaf()) {
+        vec_val.push_back(cur_node->getself());
+    }
+    else {
+        for (auto l : cur_node->getleaves()) {
+            get_vec_val(l);
+        }
+    }
+}
 
 Node::Node()
 {
@@ -720,39 +731,63 @@ void SeqStmt::genCode()
         stmt->genCode();
 }
 
-void InitNode::genCode()
+void InitNode::genCode(int level)
 {
-    // if it's a null {}, just generate nothing
-    if (this->leaf != nullptr)
-    {
-        this->leaf->genCode();
-        Operand *src = this->leaf->getOperand();
-        int off = offset * 4;
-        Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
-        Operand *final_offset = new Operand(new TemporarySymbolEntry(new PointerType(((ArrayType *)cur_type)->getElemType()), dynamic_cast<TemporarySymbolEntry *>(lastAddr->getEntry())->getLabel()));
+
+    for (int i = 0; i < vec_val.size(); i ++ ) {
+        int pos = i;
+        std::vector<int> curr_dim(cur_dim);
+        Operand* final_offset = arrayAddr;
+        for (int j = 0; j < d.size(); j ++ ) {
+            cur_type->SetDim(curr_dim);
+            curr_dim.erase(curr_dim.begin());
+            Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, pos / d[j]));
+            Operand *addr = final_offset;
+            final_offset = new Operand(new TemporarySymbolEntry(new PointerType(cur_type), SymbolTable::getLabel()));
+            new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
+            pos %= d[j];
+        }
+        Operand* src = vec_val[i]->getOperand();
+        vec_val[i]->genCode();
+        final_offset = new Operand(new TemporarySymbolEntry(
+            new PointerType(((ArrayType *)cur_type)->getElemType()), 
+            dynamic_cast<TemporarySymbolEntry *>(final_offset->getEntry())->getLabel()));
         new StoreInstruction(final_offset, src, builder->getInsertBB());
-        // new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
-        // new StoreInstruction(final_offset, src, builder->getInsertBB());
+        // assert(cur_dim.empty());
     }
-    int off = 0;
-    for (auto l : leaves)
-    {
-        cur_type->SetDim(cur_dim);
-        recover.push_back(cur_dim[0]);
-        cur_dim.erase(cur_dim.begin());
-        Operand *tmp_addr = lastAddr;
-        Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
-        Operand *final_offset = new Operand(new TemporarySymbolEntry(new PointerType(cur_type), SymbolTable::getLabel()));
-        Operand *addr = lastAddr;
-        Operand *cur_off = new Operand(new TemporarySymbolEntry(cur_type, SymbolTable::getLabel()));
-        new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
-        lastAddr = final_offset;
-        l->genCode();
-        lastAddr = tmp_addr;
-        cur_dim.insert(cur_dim.begin(), (*recover.rbegin()));
-        recover.pop_back();
-        off = l->isLeaf() ? off : (off + 1);
-    }
+    // }
+    // // if it's a null {}, just generate nothing
+    // if (this->leaf != nullptr)
+    // {
+    //     this->leaf->genCode();
+    //     Operand *src = this->leaf->getOperand();
+    //     Operand *final_offset = new Operand(new TemporarySymbolEntry(new PointerType(((ArrayType *)cur_type)->getElemType()), dynamic_cast<TemporarySymbolEntry *>(lastAddr->getEntry())->getLabel()));
+    //     new StoreInstruction(final_offset, src, builder->getInsertBB());
+    //     // new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
+    //     // new StoreInstruction(final_offset, src, builder->getInsertBB());
+    //     return;
+    // }
+    // // for (int i = 0; i < leaves.size(); i ++ ) {
+
+    // // }
+    // int off = 0;
+    // for (auto l : leaves)
+    // {
+    //     cur_type->SetDim(cur_dim);
+    //     recover.push_back(cur_dim[0]);
+    //     cur_dim.erase(cur_dim.begin());
+    //     Operand *tmp_addr = lastAddr;
+    //     Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
+    //     Operand *final_offset = new Operand(new TemporarySymbolEntry(new PointerType(cur_type), SymbolTable::getLabel()));
+    //     Operand *addr = lastAddr;
+    //     new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
+    //     lastAddr = final_offset;
+    //     l->genCode(level + 1);
+    //     lastAddr = tmp_addr;
+    //     cur_dim.insert(cur_dim.begin(), (*recover.rbegin()));
+    //     recover.pop_back();
+    //     off ++;
+    // }
 }
 
 void IndicesNode::output(int level)
@@ -839,6 +874,8 @@ void DeclStmt::genCode()
                     else
                         cur_type = new FloatArrayType();
                 }
+                vec_val.clear();
+                get_vec_val(expr);
                 cur_dim = ((ArrayType *)arrayType)->fetch();
                 d = ((ArrayType *)arrayType)->fetch();
                 d.push_back(1), d.erase(d.begin());
@@ -847,7 +884,7 @@ void DeclStmt::genCode()
                 offset = 0;
                 arrayAddr = addr;
                 lastAddr = arrayAddr;
-                expr->genCode();
+                expr->genCode(0);
             }
             else
             {
@@ -1264,6 +1301,10 @@ int InitNode::getSize(int d_cur, int d_nxt)
         else
         {
             cur_fit++;
+        }
+        if (num == d_nxt) {
+            cur_fit ++;
+            num = 0;
         }
     }
     return cur_fit + num / d_nxt;
