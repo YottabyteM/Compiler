@@ -688,15 +688,15 @@ void MachineBlock::output()
     fprintf(yyout, ".L%d:", this->no);
     if (!pred.empty())
     {
-        fprintf(yyout, "%*c@ predecessors = %%L%d", 32, '\t', pred[0]->getNo());
+        fprintf(yyout, "%*c@ predecessors = .L%d", 32, '\t', pred[0]->getNo());
         for (auto i = pred.begin() + 1; i != pred.end(); i++)
-            fprintf(yyout, ", %%L%d", (*i)->getNo());
+            fprintf(yyout, ", .L%d", (*i)->getNo());
     }
     if (!succ.empty())
     {
-        fprintf(yyout, "%*c@ successors = %%L%d", 32, '\t', succ[0]->getNo());
+        fprintf(yyout, "%*c@ successors = .L%d", 32, '\t', succ[0]->getNo());
         for (auto i = succ.begin() + 1; i != succ.end(); ++i)
-            fprintf(yyout, ", %%L%d", (*i)->getNo());
+            fprintf(yyout, ", .L%d", (*i)->getNo());
     }
     fprintf(yyout, "\n");
     for (auto iter : inst_list)

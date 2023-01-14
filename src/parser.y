@@ -214,7 +214,7 @@ UnaryExpr
             dynamic_cast<FuncCallParamsNode *>$3->setParams(RParams);
         }
         Type *retType = dynamic_cast<FunctionType *>(se->getType())->getRetType();
-        SymbolEntry *t = new TemporarySymbolEntry(retType, SymbolTable::getLabel()); // 1.函数调用没做常量传播 2.某些函数调用无需返回值，但这里也分配了一个临时符号
+        SymbolEntry *t = new TemporarySymbolEntry(retType, SymbolTable::getLabel()); // 1.函数调用没做常量传播，可考虑自动内联 2.某些函数调用无需返回值，但这里也分配了一个临时符号
         $$ = new FuncCallNode(t, new Id(se), (FuncCallParamsNode*)$3);
     }
     | ADD UnaryExpr {

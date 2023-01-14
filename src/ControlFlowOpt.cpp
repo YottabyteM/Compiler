@@ -31,9 +31,10 @@ void ControlFlowOpt::pass()
                 for (auto pred : preds)
                 {
                     pred->removeSucc(bb);
-                    if (pred->rbegin()->isCond())
+                    auto lastInst = pred->rbegin();
+                    if (lastInst->isCond())
                     {
-                        CondBrInstruction *branch = (CondBrInstruction *)(pred->rbegin());
+                        CondBrInstruction *branch = (CondBrInstruction *)(lastInst);
                         if (branch->getTrueBranch() == bb)
                             branch->setTrueBranch(succs[0]); // toDO ： 真假分支一样
                         else
@@ -41,10 +42,10 @@ void ControlFlowOpt::pass()
                     }
                     else
                     {
-                        assert(pred->rbegin()->isUncond());
-                        freeInsts.insert(pred->rbegin());
-                        pred->remove(pred->rbegin());
-                        pred->insertBefore(new UncondBrInstruction(bb, pred), pred->end());
+                        assert(lastInst->isUncond());
+                        freeInsts.insert(lastInst);
+                        pred->remove(lastInst);
+                        new UncondBrInstruction(succs[0], pred);
                     }
                     pred->addSucc(succs[0]);
                     succs[0]->removePred(bb);
@@ -57,12 +58,16 @@ void ControlFlowOpt::pass()
             {
                 auto pred = *(bb->pred_begin());
                 pred->removeSucc(bb);
-                assert(pred->rbegin()->isUncond());
-                freeInsts.insert(pred->rbegin());
-                pred->remove(pred->rbegin());
+                auto lastInst = pred->rbegin();
+                assert(lastInst->isUncond() || (lastInst->isCond() && ((CondBrInstruction *)(lastInst))->getTrueBranch() == ((CondBrInstruction *)(lastInst))->getFalseBranch()));
+                freeInsts.insert(lastInst);
+                pred->remove(lastInst);
                 for (auto succ : succs)
                     pred->addSucc(succ);
+                auto insts = std::vector<Instruction *>();
                 for (auto inst = bb->begin(); inst != bb->end(); inst = inst->getNext())
+                    insts.push_back(inst);
+                for (auto inst : insts)
                 {
                     bb->remove(inst);
                     pred->insertBefore(inst, pred->end());
@@ -89,6 +94,12 @@ void ControlFlowOpt::pass()
             if (!is_visited[bb])
             {
                 func->remove(bb);
+                std::vector<BasicBlock *> preds(bb->pred_begin(), bb->pred_end());
+                std::vector<BasicBlock *> succs(bb->succ_begin(), bb->succ_end());
+                for (auto pred : preds)
+                    pred->removeSucc(bb);
+                for (auto succ : succs)
+                    succ->removePred(bb);
                 freeList.insert(bb);
             }
     }

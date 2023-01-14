@@ -989,14 +989,12 @@ void GepInstruction::output() const
     std::string arrType = arr->getType()->toStr();
     if (paramFirst)
         fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 %s\n",
-                dst->toStr().c_str(),
-                arrType.substr(0, arrType.size() - 1).c_str(), arrType.c_str(),
-                arr->toStr().c_str(), idx->toStr().c_str());
+                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+                arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
     else
-        fprintf(
-            yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
-            dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
-            arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
+        fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
+                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+                arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
 }
 
 void GepInstruction::genMachineCode(AsmBuilder *builder)
@@ -1017,101 +1015,57 @@ void GepInstruction::genMachineCode(AsmBuilder *builder)
     }
     MachineOperand *base = nullptr;
     int size;
-    auto idx1 = genMachineVReg();
     if (idx->isImm())
-    {
-        if (idx->getVal() < 255)
-        {
-            cur_inst =
-                new MovMInstruction(cur_block, MovMInstruction::MOV, idx1, idx);
-        }
-        else
-        {
-            cur_inst = new LoadMInstruction(cur_block, idx1, idx);
-        }
-        idx = new MachineOperand(*idx1);
-        cur_block->insertInst(cur_inst);
-    }
+        idx = cur_block->insertLoadImm(idx);
     if (paramFirst)
-    {
-        size = ((PointerType *)(use_list[0]->getType()))->getValType()->getSize() / 8;
-    }
+        size = ((PointerType *)(use_list[0]->getType()))->getValType()->getSize();
     else
     {
         if (first)
         {
             base = genMachineVReg();
-            if (use_list[0]->getEntry()->isVariable() &&
-                ((IdentifierSymbolEntry *)(use_list[0]->getEntry()))
-                    ->isGlobal())
+            if (use_list[0]->getEntry()->isVariable() && ((IdentifierSymbolEntry *)(use_list[0]->getEntry()))->isGlobal())
             {
                 auto src = genMachineOperand(use_list[0]);
                 cur_inst = new LoadMInstruction(cur_block, base, src);
             }
             else
             {
-                int offset = ((TemporarySymbolEntry *)(use_list[0]->getEntry()))
-                                 ->getOffset();
-                if (offset > -255 && offset < 255)
-                {
-                    cur_inst =
-                        new MovMInstruction(cur_block, MovMInstruction::MOV,
-                                            base, genMachineImm(offset));
-                }
+                auto offset = genMachineImm(((TemporarySymbolEntry *)(use_list[0]->getEntry()))->getOffset());
+                if (offset->isIllegalShifterOperand())
+                    cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, base, offset);
                 else
-                {
-                    cur_inst = new LoadMInstruction(cur_block, base,
-                                                    genMachineImm(offset));
-                }
+                    cur_inst = new LoadMInstruction(cur_block, base, offset);
             }
             cur_block->insertInst(cur_inst);
         }
-        ArrayType *type =
-            (ArrayType *)(((PointerType *)(use_list[0]->getType()))->getValType());
-        size = type->getElemType()->getSize() / 8;
+        ArrayType *type = (ArrayType *)(((PointerType *)(use_list[0]->getType()))->getValType());
+        size = type->getElemType()->getSize();
     }
-    auto size1 = genMachineVReg();
-    if (size > -255 && size < 255)
-    {
-        cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, size1,
-                                       genMachineImm(size));
-    }
-    else
-    {
-        cur_inst = new LoadMInstruction(cur_block, size1, genMachineImm(size));
-    }
-    cur_block->insertInst(cur_inst);
+    auto size1 = cur_block->insertLoadImm(genMachineImm(size));
     auto off = genMachineVReg();
-    cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, off,
-                                      idx, size1);
+    cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, off, idx, size1);
     off = new MachineOperand(*off);
     cur_block->insertInst(cur_inst);
     if (paramFirst || !first)
     {
         auto arr = genMachineOperand(use_list[0]);
-        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD,
-                                          dst, arr, off);
+        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, arr, off);
         cur_block->insertInst(cur_inst);
     }
     else
     {
         auto addr = genMachineVReg();
         auto base1 = new MachineOperand(*base);
-        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD,
-                                          addr, base1, off);
+        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, addr, base1, off);
         cur_block->insertInst(cur_inst);
         addr = new MachineOperand(*addr);
-        if (use_list[0]->getEntry()->isVariable() &&
-            ((IdentifierSymbolEntry *)(use_list[0]->getEntry()))->isGlobal())
-        {
-            cur_inst =
-                new MovMInstruction(cur_block, MovMInstruction::MOV, dst, addr);
-        }
+        if (use_list[0]->getEntry()->isVariable() && ((IdentifierSymbolEntry *)(use_list[0]->getEntry()))->isGlobal())
+            cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, dst, addr);
         else
         {
             auto fp = genMachineReg(11);
-            cur_inst = new BinaryMInstruction(
-                cur_block, BinaryMInstruction::ADD, dst, fp, addr);
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, fp, addr);
         }
         cur_block->insertInst(cur_inst);
     }
