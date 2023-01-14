@@ -21,6 +21,7 @@ class MachineUnit;
 class MachineFunction;
 class MachineBlock;
 class MachineInstruction;
+class MachineOperand;
 
 bool isShifterOperandVal(unsigned bin_val);
 
@@ -108,7 +109,7 @@ public:
         NONE
     };
     virtual void output() = 0;
-    virtual ~MachineInstruction(){};
+    virtual ~MachineInstruction();
     bool isBranch() { return type == BRANCH; };
     void setNo(int no) { this->no = no; };
     int getNo() { return no; };
@@ -266,7 +267,8 @@ public:
         this->parent = p;
         this->no = no;
     };
-    void InsertInst(MachineInstruction *inst) { this->inst_list.push_back(inst); };
+    void insertInst(MachineInstruction *inst) { this->inst_list.push_back(inst); };
+    void removeInst(MachineInstruction *inst) { inst_list.erase(std::find(inst_list.begin(), inst_list.end(), inst)); };
     void addPred(MachineBlock *p) { this->pred.push_back(p); };
     void addSucc(MachineBlock *s) { this->succ.push_back(s); };
     std::set<MachineOperand *> &getLiveIn() { return live_in; };
@@ -279,11 +281,7 @@ public:
     void insertAfter(MachineInstruction *pos, MachineInstruction *inst);
     MachineOperand *insertLoadImm(MachineOperand *imm);
     void output();
-    ~MachineBlock()
-    {
-        for (auto inst : inst_list)
-            delete inst;
-    }
+    ~MachineBlock();
 };
 
 class MachineFunction
@@ -312,7 +310,8 @@ public:
         this->stack_size += size;
         return this->stack_size;
     };
-    void InsertBlock(MachineBlock *block) { this->block_list.push_back(block); };
+    void insertBlock(MachineBlock *block) { this->block_list.push_back(block); };
+    void removeBlock(MachineBlock *block) { this->block_list.erase(std::find(block_list.begin(), block_list.end(), block)); };
     void addSavedRegs(int regno, bool is_sreg = false);
     std::vector<MachineOperand *> getSavedRRegs();
     std::vector<MachineOperand *> getSavedSRegs();
@@ -321,11 +320,7 @@ public:
     void addAdditionalArgsOffset(MachineOperand *param) { additional_args_offset.push_back(param); };
     // std::vector<MachineOperand *> getAdditionalArgsOffset() { return additional_args_offset; };
     void output();
-    ~MachineFunction()
-    {
-        for (auto block : block_list)
-            delete block;
-    }
+    ~MachineFunction();
 };
 
 class MachineUnit
@@ -340,6 +335,7 @@ public:
     std::vector<MachineFunction *>::iterator begin() { return func_list.begin(); };
     std::vector<MachineFunction *>::iterator end() { return func_list.end(); };
     void insertFunc(MachineFunction *func) { func_list.push_back(func); };
+    void removeFunc(MachineFunction *func) { func_list.erase(std::find(func_list.begin(), func_list.end(), func)); };
     void insertGlobalVar(IdentifierSymbolEntry *sym_ptr) { global_var_list.push_back(sym_ptr); };
     void printGlobalDecl();
     void printBridge();
@@ -347,7 +343,8 @@ public:
     void output();
     ~MachineUnit()
     {
-        for (auto func : func_list)
+        auto delete_list = func_list;
+        for (auto func : delete_list)
             delete func;
     }
 };

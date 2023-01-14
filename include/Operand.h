@@ -20,16 +20,18 @@ private:
 public:
     Operand(SymbolEntry *se) : se(se) { def = nullptr; };
     void setDef(Instruction *inst) { def = inst; };
-    void addUse(Instruction *inst) { assert(inst != nullptr); uses.push_back(inst); };
+    void addUse(Instruction *inst) { uses.push_back(inst); };
     void removeUse(Instruction *inst);
     int usersNum() const { return uses.size(); };
+    bool operator==(const Operand &) const;
+    bool operator<(const Operand &) const;
 
     use_iterator use_begin() { return uses.begin(); };
     use_iterator use_end() { return uses.end(); };
     Type *getType() { return se->getType(); };
     std::string toStr() const;
     Instruction *getDef() { return def; };
-    std::vector<Instruction *> getUses() { return uses;};
+    std::vector<Instruction *> getUses() { return uses; };
     SymbolEntry *getEntry() { return se; };
 };
 

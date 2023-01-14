@@ -15,10 +15,13 @@ public:
     Instruction(unsigned instType, BasicBlock *insert_bb = nullptr);
     virtual ~Instruction();
     BasicBlock *getParent();
+    bool isLoad() const { return instType == LOAD; };
+    bool isStore() const { return instType == STORE; };
     bool isUncond() const { return instType == UNCOND; };
     bool isCond() const { return instType == COND; };
     bool isRet() const { return instType == RET; };
-    bool isAlloc() const { return instType == ALLOCA; };
+    bool isAlloca() const { return instType == ALLOCA; };
+    bool isPHI() const { return instType == PHI; };
     void setParent(BasicBlock *);
     void setNext(Instruction *);
     void setPrev(Instruction *);
@@ -31,6 +34,9 @@ public:
     MachineOperand *genMachineImm(double val, Type *valType = TypeSystem::intType);
     MachineOperand *genMachineLabel(int block_no);
     virtual void genMachineCode(AsmBuilder *) = 0;
+    virtual std::vector<Operand *> &getDef() { return def_list; };
+    virtual std::vector<Operand *> &getUses() { return use_list; };
+    void replaceAllUsesWith(Operand *); // Mem2Reg
 
 protected:
     unsigned instType;
@@ -38,7 +44,9 @@ protected:
     Instruction *prev;
     Instruction *next;
     BasicBlock *parent;
-    std::vector<Operand *> operands;
+    std::vector<Operand *> def_list; // size <= 1;
+    std::vector<Operand *> use_list;
+    // std::vector<Operand *> operands;
     enum
     {
         BINARY,
@@ -51,7 +59,8 @@ protected:
         ALLOCA,
         ZEXT,
         IFCAST,
-        CALL
+        CALL,
+        PHI
     };
 };
 
@@ -68,7 +77,6 @@ class AllocaInstruction : public Instruction
 {
 public:
     AllocaInstruction(Operand *dst, SymbolEntry *se, BasicBlock *insert_bb = nullptr);
-    ~AllocaInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
 
@@ -80,16 +88,16 @@ class LoadInstruction : public Instruction
 {
 public:
     LoadInstruction(Operand *dst, Operand *src_addr, BasicBlock *insert_bb = nullptr);
-    ~LoadInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
 };
+
+// TODO : GepInstruction and getDef、getUses
 
 class StoreInstruction : public Instruction
 {
 public:
     StoreInstruction(Operand *dst_addr, Operand *src, BasicBlock *insert_bb = nullptr);
-    ~StoreInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
 };
@@ -98,7 +106,6 @@ class BinaryInstruction : public Instruction
 {
 public:
     BinaryInstruction(unsigned opcode, Operand *dst, Operand *src1, Operand *src2, BasicBlock *insert_bb = nullptr);
-    ~BinaryInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
     enum
@@ -115,7 +122,6 @@ class CmpInstruction : public Instruction
 {
 public:
     CmpInstruction(unsigned opcode, Operand *dst, Operand *src1, Operand *src2, BasicBlock *insert_bb = nullptr);
-    ~CmpInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
     enum
@@ -148,7 +154,6 @@ class CondBrInstruction : public Instruction
 {
 public:
     CondBrInstruction(BasicBlock *, BasicBlock *, Operand *, BasicBlock *insert_bb = nullptr);
-    ~CondBrInstruction();
     void output() const;
     void setTrueBranch(BasicBlock *);
     BasicBlock *getTrueBranch();
@@ -165,7 +170,6 @@ class RetInstruction : public Instruction
 {
 public:
     RetInstruction(Operand *src, BasicBlock *insert_bb = nullptr);
-    ~RetInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
 };
@@ -174,7 +178,6 @@ class ZextInstruction : public Instruction
 {
 public:
     ZextInstruction(Operand *dst, Operand *src, BasicBlock *insert_bb = nullptr);
-    ~ZextInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
 };
@@ -183,7 +186,6 @@ class IntFloatCastInstruction : public Instruction
 {
 public:
     IntFloatCastInstruction(unsigned opcode, Operand *dst, Operand *src, BasicBlock *insert_bb = nullptr);
-    ~IntFloatCastInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
     enum
@@ -200,9 +202,26 @@ private:
 
 public:
     FuncCallInstruction(Operand *dst, std::vector<Operand *> params, IdentifierSymbolEntry *funcse, BasicBlock *insert_bb);
-    ~FuncCallInstruction();
     void output() const;
     void genMachineCode(AsmBuilder *);
+};
+
+class PhiInstruction : public Instruction
+{
+private:
+    std::map<BasicBlock *, Operand *> srcs;
+    Operand *addr; // old PTR
+
+public:
+    PhiInstruction(Operand *dst, BasicBlock *insert_bb = nullptr);
+    ~PhiInstruction();
+    void output() const;
+    void updateDst(Operand *);
+    void addEdge(BasicBlock *block, Operand *src);
+    Operand *getAddr() { return addr; };
+    Operand *getSrc(BasicBlock *bb) { return srcs[bb]; };
+
+    void genMachineCode(AsmBuilder *){};
 };
 
 #endif

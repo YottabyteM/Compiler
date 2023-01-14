@@ -1,0 +1,40 @@
+int foo(int t) {
+    if (t > 0)
+        return foo(t - 1) + t;
+    return 0;
+}
+
+int a = 10;
+
+void foo() {
+    a = a + 1;
+}
+
+int bar() {
+    return foo(10) + 123;
+}
+
+int bar(int c) {
+    if (c == 1)
+        return 10;
+    else
+        return 5;
+}
+
+/*int foo(int t) {
+    if (t == 1) {
+        return 5;
+    } else {
+        return 10;
+    }
+}*/
+
+int main() {
+   putint(bar());
+   int b = 5;
+   foo();
+   foo();
+   b = a + bar(2);
+   return b;
+   //return foo(0) + foo(1);
+}

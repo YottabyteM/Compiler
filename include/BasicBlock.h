@@ -9,17 +9,21 @@ class Function;
 
 class BasicBlock
 {
-    typedef std::vector<BasicBlock *>::iterator bb_iterator;
+    typedef std::set<BasicBlock *>::iterator bb_iterator;
 
 private:
-    std::vector<BasicBlock *> pred, succ;
+    std::set<BasicBlock *> pred, succ;
     Instruction *head;
     Function *parent;
     int no;
+    std::set<Operand *> live_in;
+    std::set<Operand *> live_out;
 
 public:
     BasicBlock(Function *);
     ~BasicBlock();
+    std::set<Operand *> &getLiveIn() { return live_in; };
+    std::set<Operand *> &getLiveOut() { return live_out; };
     void insertFront(Instruction *);
     void insertBack(Instruction *);
     void insertBefore(Instruction *, Instruction *);
@@ -44,7 +48,6 @@ public:
     bb_iterator pred_end() { return pred.end(); };
     int getNumOfPred() const { return pred.size(); };
     int getNumOfSucc() const { return succ.size(); };
-    void merge(BasicBlock *succ_bb);
     void genMachineCode(AsmBuilder *);
 };
 

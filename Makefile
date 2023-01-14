@@ -35,7 +35,7 @@ OUTPUT_OPT_IR = $(addsuffix .ll, $(basename $(OPTTESTCASE)))
 OUTPUT_OPT_ASM = $(addsuffix .s, $(basename $(OPTTESTCASE)))
 OUTPUT_OPT_LOG = $(addsuffix .log, $(basename $(OPTTESTCASE)))
 
-.phony:all app run gdb testlexer testparser testir testasm test clean clean-all clean-test clean-app llvmir gccasm testopt
+.phony:all app run gdb testlexer testparser testir testasm test clean clean-all clean-test clean-app llvmir gccasm testopt lltest
 all:app
 
 $(LEXER):$(FLEX)
@@ -182,3 +182,58 @@ clean-opt:
 clean-all:clean-test clean-app clean-opt
 
 clean:clean-all
+
+.ONESHELL:
+lltest:app
+	@success=0
+	@for file in $(sort $(TESTCASE))
+	do
+		IR=$${file%.*}.ll
+		LOG=$${file%.*}.log
+		BIN=$${file%.*}.bin
+		RES=$${file%.*}.res
+		IN=$${file%.*}.in
+		OUT=$${file%.*}.out
+		FILE=$${file##*/}
+		FILE=$${FILE%.*}
+		timeout 300s $(BINARY) $${file} -o $${IR} -O2 -i 2>$${LOG}
+		RETURN_VALUE=$$?
+		if [ $$RETURN_VALUE = 124 ]; then
+			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Timeout\033[0m"
+			continue
+		else if [ $$RETURN_VALUE != 0 ]; then
+			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Error\033[0m"
+			continue
+			fi
+		fi
+		clang -o $${BIN} $${IR} $(SYSLIB_PATH)/sylib.c >>$${LOG} 2>&1
+		if [ $$? != 0 ]; then
+			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mAssemble Error\033[0m"
+		else
+			if [ -f "$${IN}" ]; then
+				timeout 50s $${BIN} <$${IN} >$${RES} 2>>$${LOG}
+			else
+				timeout 50s $${BIN} >$${RES} 2>>$${LOG}
+			fi
+			RETURN_VALUE=$$?
+			FINAL=`tail -c 1 $${RES}`
+			[ $${FINAL} ] && echo "\n$${RETURN_VALUE}" >> $${RES} || echo "$${RETURN_VALUE}" >> $${RES}
+			if [ "$${RETURN_VALUE}" = "124" ]; then
+				echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mExecute Timeout\033[0m"
+			else if [ "$${RETURN_VALUE}" = "127" ]; then
+				echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mExecute Error\033[0m"
+				else
+					diff -Z $${RES} $${OUT} >/dev/null 2>&1
+					if [ $$? != 0 ]; then
+						echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mWrong Answer\033[0m"
+					else
+						success=$$((success + 1))
+						echo "\033[1;32mPASS:\033[0m $${FILE}"
+					fi
+				fi
+			fi
+		fi
+	done
+	echo "\033[1;33mTotal: $(TESTCASE_NUM)\t\033[1;32mAccept: $${success}\t\033[1;31mFail: $$(($(TESTCASE_NUM) - $${success}))\033[0m"
+	[ $(TESTCASE_NUM) = $${success} ] && echo "\033[5;32mAll Accepted. Congratulations!\033[0m"
+	:

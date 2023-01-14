@@ -61,7 +61,7 @@ void Id::output(int level)
     scope = dynamic_cast<IdentifierSymbolEntry *>(symbolEntry)->getScope();
     fprintf(yyout, "%*cId \t name: %s \t scope: %d \t type: %s\n", level, ' ',
             name.c_str(), scope, type.c_str());
-    if(indices!=nullptr)
+    if (indices != nullptr)
         indices->output(level + 4);
 }
 
@@ -362,7 +362,8 @@ void Id::genCode()
         return;
     BasicBlock *bb = builder->getInsertBB();
     Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(symbolEntry)->getAddr();
-    dst = new Operand(new TemporarySymbolEntry(dst->getType(), SymbolTable::getLabel()));
+    delete dst;
+    dst = new Operand(new TemporarySymbolEntry(symbolEntry->getType(), SymbolTable::getLabel()));
     if (!is_Array())
         new LoadInstruction(dst, addr, bb);
     else
@@ -1095,7 +1096,7 @@ void FuncDefNode::genCode()
             {
                 while (index != (*bb)->rbegin())
                 {
-                    (*bb)->remove(index->getNext());
+                    delete (index->getNext());
                 }
                 break;
             }

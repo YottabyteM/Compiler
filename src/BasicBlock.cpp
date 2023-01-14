@@ -42,9 +42,11 @@ void BasicBlock::output() const
 
     if (!pred.empty())
     {
-        fprintf(yyout, "%*c; predecessors = %%B%d", 32, '\t', pred[0]->getNo());
-        fprintf(stderr, "%*c; predecessors = %%B%d", 32, '\t', pred[0]->getNo());
-        for (auto i = pred.begin() + 1; i != pred.end(); i++)
+        auto i = pred.begin();
+        fprintf(yyout, "%*c; predecessors = %%B%d", 32, '\t', (*i)->getNo());
+        fprintf(stderr, "%*c; predecessors = %%B%d", 32, '\t', (*i)->getNo());
+        i++;
+        for (; i != pred.end(); i++)
         {
             fprintf(yyout, ", %%B%d", (*i)->getNo());
             fprintf(stderr, ", %%B%d", (*i)->getNo());
@@ -52,9 +54,11 @@ void BasicBlock::output() const
     }
     if (!succ.empty())
     {
-        fprintf(yyout, "%*c; successors = %%B%d", 32, '\t', succ[0]->getNo());
-        fprintf(stderr, "%*c; successors = %%B%d", 32, '\t', succ[0]->getNo());
-        for (auto i = succ.begin() + 1; i != succ.end(); ++i)
+        auto i = succ.begin();
+        fprintf(yyout, "%*c; successors = %%B%d", 32, '\t', (*i)->getNo());
+        fprintf(stderr, "%*c; successors = %%B%d", 32, '\t', (*i)->getNo());
+        i++;
+        for (; i != succ.end(); ++i)
         {
             fprintf(yyout, ", %%B%d", (*i)->getNo());
             fprintf(stderr, ", %%B%d", (*i)->getNo());
@@ -68,40 +72,24 @@ void BasicBlock::output() const
 
 void BasicBlock::addSucc(BasicBlock *bb)
 {
-    succ.push_back(bb);
+    succ.insert(bb);
 }
 
 // remove the successor basicclock bb.
 void BasicBlock::removeSucc(BasicBlock *bb)
 {
-    succ.erase(std::find(succ.begin(), succ.end(), bb));
+    succ.erase(bb);
 }
 
 void BasicBlock::addPred(BasicBlock *bb)
 {
-    pred.push_back(bb);
+    pred.insert(bb);
 }
 
 // remove the predecessor basicblock bb.
 void BasicBlock::removePred(BasicBlock *bb)
 {
-    pred.erase(std::find(pred.begin(), pred.end(), bb));
-}
-
-void BasicBlock::merge(BasicBlock *succ_bb)
-{
-    assert(end()->isUncond());
-    assert(succ_bb->getNumOfPred() == 1);
-    removeSucc(succ_bb);
-    for (auto succ_succ = succ_bb->succ_begin(); succ_succ != succ_bb->succ_end(); succ_succ++)
-        addSucc(*succ_succ);
-    for (auto inst = succ_bb->begin(); inst != succ_bb->end(); inst = inst->getNext())
-    {
-        succ_bb->remove(inst);
-        insertBefore(inst, head);
-    }
-    parent->remove(succ_bb);
-    delete succ_bb;
+    pred.erase(bb);
 }
 
 void BasicBlock::genMachineCode(AsmBuilder *builder)
@@ -113,7 +101,7 @@ void BasicBlock::genMachineCode(AsmBuilder *builder)
     {
         i->genMachineCode(builder);
     }
-    cur_func->InsertBlock(cur_block);
+    cur_func->insertBlock(cur_block);
 }
 
 BasicBlock::BasicBlock(Function *f)

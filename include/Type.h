@@ -114,6 +114,7 @@ private:
 public:
     PointerType(Type *valueType);
     std::string toStr();
+    Type *getValType() { return valueType; };
 };
 
 class ArrayType : public Type

@@ -6,6 +6,8 @@
 #include "MachineCode.h"
 #include "LinearScan.h"
 #include "ControlFlowOpt.h"
+#include "Mem2Reg.h"
+#include "ElimPHI.h"
 using namespace std;
 
 Ast ast;
@@ -78,18 +80,29 @@ int main(int argc, char *argv[])
         ast.output();
         fprintf(stderr, "ast output ok\n");
     }
+    // ast.typeCheck();
+    ast.genCode(&unit);
+    fprintf(stderr, "ir generated\n");
+    if (dump_ir && !optimize)
+    {
+        unit.output();
+        fprintf(stderr, "ir output ok\n");
+    }
     if (optimize)
     {
         ControlFlowOpt cf(&unit);
         cf.pass();
+        // unit.output();
+        // Mem2Reg m2r(&unit);
+        // m2r.pass();
+        // ElimPHI ep(&unit);
+        // ep.pass();
     }
-    // ast.typeCheck();
-    ast.genCode(&unit);
-    fprintf(stderr, "ir generated\n");
-    if (dump_ir)
+    fprintf(stderr, "opt ir generated\n");
+    if (dump_ir && optimize)
     {
         unit.output();
-        fprintf(stderr, "ir output ok\n");
+        fprintf(stderr, "opt ir output ok\n");
     }
     unit.genMachineCode(&mUnit);
     LinearScan linearScan(&mUnit);

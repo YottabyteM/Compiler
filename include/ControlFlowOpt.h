@@ -5,17 +5,17 @@
 
 /*
     control flow optimization for IR:
-        1)
-        2)
+        1) 删除不可达的基本块。
+        2) 如果仅有一个前驱且该前驱仅有一个后继，将基本块与前驱合并。
+        3) 消除空的基本块和仅包含无条件分支的基本块。
 */
 class ControlFlowOpt
 {
+private:
     Unit *unit;
-    // std::set<BasicBlock*> visited;
 
 public:
     ControlFlowOpt(Unit *unit) : unit(unit){};
-    void dfs(BasicBlock *bb);
     void pass();
 };
 

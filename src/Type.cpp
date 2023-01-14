@@ -27,6 +27,7 @@ FunctionType::FunctionType(Type *returnType, std::vector<Type *> paramsType) : T
 
 PointerType::PointerType(Type *valueType) : Type(Type::PTR), valueType(valueType)
 {
+    size = 4;
     newTypes.push_back(this);
 };
 

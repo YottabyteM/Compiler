@@ -34,7 +34,8 @@ public:
     Type *getType() { return type; };
     void setType(Type *type) { this->type = type; };
     double getValue() { return value; };
-    void setValue(double val) { value = val; }
+    void setValue(double val) { value = val; };
+    int getKind() { return kind; };
     virtual std::string toStr() = 0;
     // You can add any function you need here.
 };

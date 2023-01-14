@@ -180,6 +180,11 @@ void MachineInstruction::printCond()
     }
 }
 
+MachineInstruction::~MachineInstruction()
+{
+    parent->removeInst(this);
+}
+
 BinaryMInstruction::BinaryMInstruction(
     MachineBlock *p, int op,
     MachineOperand *dst, MachineOperand *src1, MachineOperand *src2,
@@ -650,20 +655,28 @@ void MachineBlock::insertAfter(MachineInstruction *pos, MachineInstruction *inst
     inst_list.insert(p + 1, inst);
 }
 
+MachineBlock::~MachineBlock()
+{
+    auto delete_list = inst_list;
+    for (auto inst : delete_list)
+        delete inst;
+    parent->removeBlock(this);
+}
+
 MachineOperand *MachineBlock::insertLoadImm(MachineOperand *imm)
 {
     // auto internal_reg = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), imm->getValType());
-    // this->InsertInst(new LoadMInstruction(this, internal_reg, imm));
+    // this->insertInst(new LoadMInstruction(this, internal_reg, imm));
     // return new MachineOperand(*internal_reg);
 
     // ToDo:有些浮点字面常量可以直接vldr到s寄存器
     MachineOperand *internal_reg1 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::intType);
-    this->InsertInst(new LoadMInstruction(this, internal_reg1, imm));
+    this->insertInst(new LoadMInstruction(this, internal_reg1, imm));
     if (imm->getValType()->isFloat())
     {
         MachineOperand *internal_reg2 = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel(), TypeSystem::floatType);
         internal_reg1 = new MachineOperand(*internal_reg1);
-        this->InsertInst(new MovMInstruction(this, MovMInstruction::VMOV, internal_reg2, internal_reg1));
+        this->insertInst(new MovMInstruction(this, MovMInstruction::VMOV, internal_reg2, internal_reg1));
         return new MachineOperand(*internal_reg2);
     }
     assert(imm->getValType()->isInt());
@@ -847,6 +860,14 @@ void MachineFunction::output()
     fprintf(yyout, "}\n");
     // Generate bx instruction
     fprintf(yyout, "\tbx lr\n\n");
+}
+
+MachineFunction::~MachineFunction()
+{
+    auto delete_list = block_list;
+    for (auto block : delete_list)
+        delete block;
+    parent->removeFunc(this);
 }
 
 void MachineUnit::printGlobalDecl()

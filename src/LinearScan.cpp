@@ -33,7 +33,7 @@ void LinearScan::allocateRegisters()
 
 void LinearScan::makeDuChains()
 {
-    LiveVariableAnalysis lva;
+    MLiveVariableAnalysis lva;
     lva.pass(func);
     du_chains.clear();
     int i = 0;
