@@ -1302,10 +1302,6 @@ int InitNode::getSize(int d_cur, int d_nxt)
         {
             cur_fit++;
         }
-        if (num == d_nxt) {
-            cur_fit ++;
-            num = 0;
-        }
     }
     return cur_fit + num / d_nxt;
 }

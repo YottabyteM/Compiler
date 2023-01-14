@@ -203,14 +203,6 @@ public:
     bool isLeaf() { return leaves.empty(); };
     void fill(int level, std::vector<int> d, Type* type);
     int getSize(int d_cur, int d_nxt);
-    int UpdateSize() {
-        if (isLeaf()) cur_size = 1;
-        else {
-            for (auto l : leaves)
-                cur_size += l->UpdateSize();
-        }
-        return cur_size;
-    };
     bool isFull();
     bool isConst() const { return isconst; }
     void output(int level);
