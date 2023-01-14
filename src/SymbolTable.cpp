@@ -102,12 +102,12 @@ ConstantSymbolEntry::ConstantSymbolEntry(Type *type, double value) : SymbolEntry
 
 std::string ConstantSymbolEntry::toStr()
 {
-    assert(type->isConst());
+    // assert(type->isConst());
     if (type->isConstInt()) // const int / const bool
         return std::to_string((int)value);
     else
     {
-        assert(type->isConstFloat());
+        //assert(type->isConstFloat());
         // return std::to_string((float)value);
         return Double2HexStr(value);
     }

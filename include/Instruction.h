@@ -60,7 +60,8 @@ protected:
         ZEXT,
         IFCAST,
         CALL,
-        PHI
+        PHI,
+        GEP
     };
 };
 
@@ -224,4 +225,25 @@ public:
     void genMachineCode(AsmBuilder *){};
 };
 
+class GepInstruction : public Instruction
+{
+private:
+    bool paramFirst;
+    bool first;
+    bool last;
+    Operand *init;
+
+public:
+    GepInstruction(Operand *dst,
+                   Operand *arr,
+                   Operand *idx,
+                   BasicBlock *insert_bb = nullptr,
+                   bool paramFirst = false);
+    void output() const;
+    void genMachineCode(AsmBuilder *);
+    void setFirst() { first = true; };
+    void setLast() { last = true; };
+    Operand *getInit() const { return init; };
+    void setInit(Operand *init) { this->init = init; };
+};
 #endif

@@ -14,7 +14,14 @@ IRBuilder *Node::builder = nullptr;
 static int height = 0;
 static int offset = 0;
 static Operand *arrayAddr;
+static Operand *lastAddr;
 static Type *arrayType = nullptr;
+static Type *tmp_arrayType = nullptr;
+static int depth = 0;
+static std::vector<int> d;
+static std::vector<int> recover;
+std::vector<int> cur_dim;
+ArrayType *cur_type;
 
 Node::Node()
 {
@@ -362,130 +369,91 @@ void Id::genCode()
         return;
     BasicBlock *bb = builder->getInsertBB();
     Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(symbolEntry)->getAddr();
-    delete dst;
-    dst = new Operand(new TemporarySymbolEntry(symbolEntry->getType(), SymbolTable::getLabel()));
     if (!is_Array())
+    {
+        // delete dst;
+        dst = new Operand(new TemporarySymbolEntry(dst->getType(), SymbolTable::getLabel()));
         new LoadInstruction(dst, addr, bb);
+    }
     else
     {
-        Operand *off = nullptr;
+        SymbolEntry *temp = new TemporarySymbolEntry(new PointerType(((ArrayType *)getType())->getElemType()), SymbolTable::getLabel());
+        dst = new Operand(temp);
         if (indices != nullptr)
         {
-            indices->genCode();
-            off = indices->getExprList()[0]->getOperand();
-        }
-        std::vector<int> d;
-        Type *type = symbolEntry->getType();
-        if (type->isIntArray())
-        {
-            if (type->isConst())
-                d = dynamic_cast<ConstIntArrayType *>(type)->fetch();
-            else
-                d = dynamic_cast<IntArrayType *>(type)->fetch();
-        }
-        else if (type->isFloatArray())
-        {
-            if (type->isConst())
-                d = dynamic_cast<ConstFloatArrayType *>(type)->fetch();
-            else
-                d = dynamic_cast<FloatArrayType *>(type)->fetch();
-        }
-        if (!d[0])
-        {
-            TemporarySymbolEntry *se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
-            Operand *new_addr = new Operand(se);
-            new LoadInstruction(new_addr, addr, bb);
-            addr = new_addr;
-        }
-        int idx = 0;
-        for (auto expr : indices->getExprList())
-        {
-            Operand *di = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, d[idx]));
-            TemporarySymbolEntry *se_row = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-            Operand *of_row = new Operand(se_row);
-            new BinaryInstruction(BinaryInstruction::MUL, of_row, off, di, bb);
-            TemporarySymbolEntry *se_line = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-            off = new Operand(se_line);
-            new BinaryInstruction(BinaryInstruction::ADD, off, of_row, indices->getExprList()[idx]->getOperand(), bb);
-            idx++;
-        }
+            Type *type = ((ArrayType *)(this->getType()))->getElemType();
+            Type *type1 = this->getType();
+            Operand *tempSrc = addr;
+            Operand *tempDst = dst;
+            bool flag = false;
+            bool pointer = false;
+            bool firstFlag = true;
+            for (auto idx : indices->getExprList())
+            {
+                if (((ArrayType *)type1)->getLength() == -1)
+                {
+                    Operand *dst1 = new Operand(new TemporarySymbolEntry(
+                        new PointerType(type), SymbolTable::getLabel()));
+                    tempSrc = dst1;
+                    new LoadInstruction(dst1, addr, bb);
+                    flag = true;
+                    firstFlag = false;
+                }
+                if (!idx)
+                {
+                    Operand *dst1 = new Operand(new TemporarySymbolEntry(
+                        new PointerType(type), SymbolTable::getLabel()));
+                    Operand *idx = new Operand(
+                        new ConstantSymbolEntry(TypeSystem::intType, 0));
+                    new GepInstruction(dst1, tempSrc, idx, bb);
+                    tempDst = dst1;
+                    pointer = true;
+                    break;
+                }
 
-        if (indices != nullptr && indices->getExprList().size() < d.size())
-        {
-            Operand *dim_i = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, d[indices->getExprList().size()]));
-            TemporarySymbolEntry *se1 = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-            Operand *offset1 = new Operand(se1);
-            new BinaryInstruction(BinaryInstruction::MUL, offset1, off, dim_i, bb); // offset1 = offset * dimensions[i]
-            off = offset1;
-        }
-        Operand *offset1 = nullptr;
-        if (indices != nullptr)
-        {
-            TemporarySymbolEntry *se1 = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-            offset1 = new Operand(se1);
-            Operand *align = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 4));
-            new BinaryInstruction(BinaryInstruction::MUL, offset1, off, align, bb); // offset1 = offset * 4
+                idx->genCode();
+                auto gep = new GepInstruction(tempDst, tempSrc,
+                                              idx->getOperand(), bb, flag);
+                if (!flag && firstFlag)
+                {
+                    gep->setFirst();
+                    firstFlag = false;
+                }
+                if (flag)
+                    flag = false;
+                if (type == TypeSystem::intType ||
+                    type == TypeSystem::constIntType)
+                    break;
+                type = ((ArrayType *)type)->getElemType();
+                type1 = ((ArrayType *)type1)->getElemType();
+                tempSrc = tempDst;
+                tempDst = new Operand(new TemporarySymbolEntry(
+                    new PointerType(type), SymbolTable::getLabel()));
+            }
+            dst = tempDst;
+            if (!pointer)
+            {
+                Operand *dst1 = new Operand(new TemporarySymbolEntry(
+                    TypeSystem::intType, SymbolTable::getLabel()));
+                new LoadInstruction(dst1, dst, bb);
+                dst = dst1;
+            }
         }
         else
         {
-            offset1 = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
-        }
-        TemporarySymbolEntry *se2 = new TemporarySymbolEntry(getType(), SymbolTable::getLabel());
-        Operand *offset_final = new Operand(se2);
-        // 全局变量地址标签不能直接参与运算，需要先load
-        if (dynamic_cast<IdentifierSymbolEntry *>(getSymPtr())->isGlobal())
-        {
-            TemporarySymbolEntry *se3 = new TemporarySymbolEntry(getType(), SymbolTable::getLabel());
-            Operand *new_addr = new Operand(se3);
-            new LoadInstruction(new_addr, addr, bb);
-            addr = new_addr;
-            se2->setArray();
-            dynamic_cast<TemporarySymbolEntry *>(dst->getEntry())->setArray();
-        }
-        if (indices != nullptr && indices->getExprList().size() == d.size())
-        {
-            new BinaryInstruction(BinaryInstruction::ADD, offset_final, offset1, addr, bb);
-            if (dst->getType()->isFloatArray() || dst->getType()->isConst() || dst->getType()->isFloatArray())
+            if (((ArrayType *)(this->getType()))->getLength() == -1)
             {
-                dst->getEntry()->setType(TypeSystem::floatType);
-                if (!dynamic_cast<IdentifierSymbolEntry *>(getSymPtr())->isGlobal() && d[0] != -1)
-                {
-                    dynamic_cast<FloatType *>(dst->getEntry()->getType())->need_Fp();
-                }
+                Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(((ArrayType *)(this->getType()))->getElemType()), SymbolTable::getLabel()));
+                new LoadInstruction(dst1, addr, bb);
+                dst = dst1;
             }
-            new LoadInstruction(dst, offset_final, bb);
-        }
-        else
-        {
-            // 为区分数组指针和数组值，需要置位dst的type中的pointer
-            Type *dst_type = dst->getType();
-            if (dst_type->isIntArray())
+            else
             {
-                if (dst_type->isConst())
-                {
-                    dst->getEntry()->setType(new ConstIntArrayType(*(dynamic_cast<ConstIntArrayType *>(dst->getType()))));
-                    dynamic_cast<ConstIntArrayType *>(dst_type)->SetPointer();
-                }
-                else
-                {
-                    dst->getEntry()->setType(new IntArrayType(*(dynamic_cast<IntArrayType *>(dst->getType()))));
-                    dynamic_cast<IntArrayType *>(dst_type)->SetPointer();
-                }
+                Operand *idx = new Operand(
+                    new ConstantSymbolEntry(TypeSystem::intType, 0));
+                auto gep = new GepInstruction(dst, addr, idx, bb);
+                gep->setFirst();
             }
-            else if (dst_type->isFloatArray())
-            {
-                if (dst_type->isConst())
-                {
-                    dst->getEntry()->setType(new ConstFloatArrayType(*(dynamic_cast<ConstFloatArrayType *>(dst->getType()))));
-                    dynamic_cast<ConstFloatArrayType *>(dst_type)->SetPointer();
-                }
-                else
-                {
-                    dst->getEntry()->setType(new FloatArrayType(*(dynamic_cast<FloatArrayType *>(dst->getType()))));
-                    dynamic_cast<FloatArrayType *>(dst_type)->SetPointer();
-                }
-            }
-            new BinaryInstruction(BinaryInstruction::ADD, dst, offset1, addr, bb);
         }
     }
 }
@@ -769,16 +737,30 @@ void InitNode::genCode()
         Operand *src = this->leaf->getOperand();
         int off = offset * 4;
         Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
-        Operand *final_offset = new Operand(new TemporarySymbolEntry(arrayType, SymbolTable::getLabel()));
+        Operand *final_offset = new Operand(new TemporarySymbolEntry(cur_type, SymbolTable::getLabel()));
         Operand *addr = arrayAddr;
-
-        new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
         new StoreInstruction(final_offset, src, builder->getInsertBB());
+        // new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
+        // new StoreInstruction(final_offset, src, builder->getInsertBB());
     }
+    int off = 0;
     for (auto l : leaves)
     {
+        cur_type->SetDim(cur_dim);
+        recover.push_back(cur_dim[0]);
+        cur_dim.erase(cur_dim.begin());
+        Operand *tmp_addr = lastAddr;
+        Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
+        Operand *final_offset = new Operand(new TemporarySymbolEntry(((ArrayType *)cur_type)->getElemType(), SymbolTable::getLabel()));
+        Operand *addr = lastAddr;
+        Operand *cur_off = new Operand(new TemporarySymbolEntry(cur_type, SymbolTable::getLabel()));
+        new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
+        lastAddr = final_offset;
         l->genCode();
-        offset++;
+        lastAddr = tmp_addr;
+        cur_dim.insert(cur_dim.begin(), (*recover.rbegin()));
+        recover.pop_back();
+        off++;
     }
 }
 
@@ -793,11 +775,16 @@ void IndicesNode::output(int level)
 
 void InitNode::output(int level)
 {
-    if (isLeaf())
+    std::string constStr = isconst ? "true" : "false";
+    fprintf(yyout, "%*cInitValNode\tisConst:%s\n", level, ' ', constStr.c_str());
+    for (auto l : leaves)
+    {
+        l->output(level + 4);
+    }
+    if (leaf != nullptr)
+    {
         leaf->output(level + 4);
-    else
-        for (auto _initNode : leaves)
-            _initNode->output(level + 4);
+    }
 }
 
 void IndicesNode::genCode()
@@ -821,7 +808,7 @@ void DeclStmt::genCode()
         se->setAddr(addr);
         this->builder->getUnit()->insertDecl(se);
     }
-    else if (se->isLocal())
+    else if (se->isLocal() || se->isParam())
     {
         Function *func = builder->getInsertBB()->getParent();
         BasicBlock *entry = func->getEntry();
@@ -834,31 +821,56 @@ void DeclStmt::genCode()
         alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack. TODO：Alloc指令考虑数组
         entry->insertFront(alloca);               // allocate instructions should be inserted into the begin of the entry block.
         se->setAddr(addr);                        // set the addr operand in symbol entry so that we can use it in subsequent code generation.
-    }
-    if (expr != nullptr)
-    {
-        BasicBlock *bb = builder->getInsertBB();
-        assert(addr != nullptr);
-        if (se->getType()->isARRAY())
+        Operand *temp = nullptr;
+        if (se->isParam())
+            temp = se->getAddr();
+        if (expr != nullptr)
         {
-            arrayType = se->getType();
-            offset = 0;
-            arrayAddr = addr;
-            expr->genCode();
-            // TODO : store指令考虑数组
-            if (!se->isGlobal()) // bb = nullptr
+            BasicBlock *bb = builder->getInsertBB();
+            assert(addr != nullptr);
+            // a[k1][k2][,,,][kn] on a[n1][n2][...][nn], off = k1 * n2 * ... * nn + k2 * n3 * .... * nn + kn * 1
+            // off = kn * b1 + kn-1 * b2 + ... + k1 * bn, bn = bn - 1 nn-1
+            if (se->getType()->isARRAY())
             {
-                // Operand *src = expr->getself()->getOperand();
-                // new StoreInstruction(arrayAddr, src, bb);
+                arrayType = se->getType();
+                Type *type = ((ArrayType *)arrayType)->getElemType();
+                if (type->isInt())
+                {
+                    if (type->isConst())
+                        cur_type = new ConstIntArrayType();
+                    else
+                        cur_type = new IntArrayType();
+                }
+                else
+                {
+                    if (type->isConst())
+                        cur_type = new ConstFloatArrayType();
+                    else
+                        cur_type = new FloatArrayType();
+                }
+                cur_dim = ((ArrayType *)arrayType)->fetch();
+                d = ((ArrayType *)arrayType)->fetch();
+                d.push_back(1), d.erase(d.begin());
+                for (int i = d.size() - 2; i >= 0; i--)
+                    d[i] = d[i + 1] * d[i];
+                offset = 0;
+                arrayAddr = addr;
+                lastAddr = arrayAddr;
+                expr->genCode();
+            }
+            else
+            {
+                expr->getself()->genCode();
+                Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(se)->getAddr();
+                Operand *src = expr->getself()->getOperand();
+                if (!se->isGlobal()) // bb = nullptr
+                    new StoreInstruction(addr, src, bb);
             }
         }
-        else
+        if (se->isParam())
         {
-            expr->getself()->genCode();
-            Operand *addr = dynamic_cast<IdentifierSymbolEntry *>(se)->getAddr();
-            Operand *src = expr->getself()->getOperand();
-            if (!se->isGlobal()) // bb = nullptr
-                new StoreInstruction(addr, src, bb);
+            BasicBlock *bb = builder->getInsertBB();
+            new StoreInstruction(addr, temp, bb);
         }
     }
     if (next != nullptr)
@@ -1220,4 +1232,50 @@ ExprNode *typeCast(ExprNode *fromNode, Type *to)
     }
     else
         return fromNode;
+}
+
+void InitNode::fill(int level, std::vector<int> d, Type *type)
+{
+    if (level == d.size() || leaf != nullptr)
+    {
+        fprintf(stderr, "ADD 0\n");
+        if (leaf == nullptr)
+        {
+            setleaf(new Constant(new ConstantSymbolEntry(type, 0)));
+        }
+        return;
+    }
+    int i = 0;
+    while (level < d.size() - 1 && getSize(d[level], d[level + 1]) < d[level])
+    {
+        fprintf(stderr, "iteraator is %d level is %d, size if %d\n", i++, level, getSize(d[level], d[level + 1]));
+        // fprintf(stderr, "leaves.size() is %d\n", leaves.size());
+        addleaf(new InitNode(true));
+    }
+    if (level == d.size() - 1)
+    {
+        while (leaves.size() < d[level])
+            addleaf(new InitNode(true));
+    }
+    for (auto l : leaves)
+    {
+        l->fill(level + 1, d, type);
+        fprintf(stderr, "level is %d\n", level + 1);
+    }
+}
+int InitNode::getSize(int d_cur, int d_nxt)
+{
+    int num = 0, cur_fit = 0;
+    for (auto l : leaves)
+    {
+        if (l->leaf != nullptr)
+        {
+            num++;
+        }
+        else
+        {
+            cur_fit++;
+        }
+    }
+    return cur_fit + num / d_nxt;
 }

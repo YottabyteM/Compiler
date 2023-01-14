@@ -44,7 +44,7 @@
 %nterm <stmttype> VarDeclStmt ConstDeclStmt VarDef ConstDef VarDefList ConstDefList ArrayConstIndices ArrayVarIndices
 %nterm <stmttype> FuncFParams FuncRParams FuncDef 
 %nterm <exprtype> LRVal Exp ConstExp Cond PrimaryExpr UnaryExpr MulDivModExpr AddSubExpr RelExpr LEqExpr LAndExpr LOrExpr 
-%nterm <stmttype> InitVal ConstInitVal InitValList ConstInitValList 
+%nterm <stmttype> InitVal ConstInitVal InitValList ConstInitValList FuncArrayIndices
 %nterm <exprtype> FuncFParam
 %nterm <type> Type 
 
@@ -761,17 +761,34 @@ FuncFParam
         $$ = new Id(se);
         delete []$2;
     }
-    // | Type ID FuncArrayIndices
+    | Type ID FuncArrayIndices {
+        Type* arrayType; 
+        if($1==TypeSystem::intType){
+            arrayType = new IntArrayType();
+        }
+        else if($1==TypeSystem::floatType){
+            arrayType = new FloatArrayType();
+        }
+        SymbolEntry *se = new IdentifierSymbolEntry(arrayType, $2, identifiers->getLevel());
+        identifiers->install($2, se);
+        Id* id = new Id(se);
+        id->setIndices(dynamic_cast<IndicesNode*>($3));
+        $$ = id;
+    }
     ;
-// FuncArrayIndices
-//     // SysY官方文档里是Exp而不是ConstExp
-//     : FuncFParamArrayIndices LBRACKET ConstExp RBRACKET {
-
-//     }
-//     | LBRACKET RBRACKET {
-
-//     }
-//     ;
+FuncArrayIndices
+    // SysY官方文档里是Exp而不是ConstExp
+    : FuncArrayIndices LBRACKET ConstExp RBRACKET {
+        dynamic_cast<IndicesNode*>($1)->addNew($3);
+        $$ = $1;
+    }
+    | LBRACKET RBRACKET {
+        SymbolEntry *addDim = new ConstantSymbolEntry(TypeSystem::constIntType, -1);
+        IndicesNode* indice = new IndicesNode();
+        indice->addNew(new Constant(addDim));
+        $$ = indice;
+    }
+    ;
 %%
 
 int yyerror(char const *message)

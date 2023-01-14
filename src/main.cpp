@@ -90,8 +90,8 @@ int main(int argc, char *argv[])
     }
     if (optimize)
     {
-        ControlFlowOpt cf(&unit);
-        cf.pass();
+        // ControlFlowOpt cf(&unit);
+        // cf.pass();
         // unit.output();
         // Mem2Reg m2r(&unit);
         // m2r.pass();
