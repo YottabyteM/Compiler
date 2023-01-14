@@ -194,17 +194,27 @@ private:
     bool isconst;
     ExprNode *leaf;
     std::vector<InitNode *> leaves;
+    int cur_size = 0;
 
 public:
-    InitNode(bool isconst = false) : isconst(isconst), leaf(nullptr){};
+    InitNode(bool isconst = false) : isconst(isconst), leaf(nullptr) {};
     void addleaf(InitNode *next) { leaves.push_back(next); };
     void setleaf(ExprNode *leaf1) { leaf = leaf1; };
     bool isLeaf() { return leaves.empty(); };
     void fill(int level, std::vector<int> d, Type* type);
     int getSize(int d_cur, int d_nxt);
+    int UpdateSize() {
+        if (isLeaf()) cur_size = 1;
+        else {
+            for (auto l : leaves)
+                cur_size += l->UpdateSize();
+        }
+        return cur_size;
+    };
+    bool isFull();
     bool isConst() const { return isconst; }
     void output(int level);
-    void genCode();
+    void genCode(int level);
     std::vector<InitNode *> getleaves() { return leaves; };
     ExprNode *getself() { return leaf; };
     ~InitNode()
