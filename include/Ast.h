@@ -166,9 +166,10 @@ class Id : public ExprNode
 private:
     IndicesNode *indices;
     bool is_array = false, is_array_ele = false; // is_array is array. is_array_ele is array ele
+    bool isleft;
 
 public:
-    Id(SymbolEntry *se, bool be_array = false) : ExprNode(se, be_array)
+    Id(SymbolEntry *se, bool be_array = false, bool isleft = false) : ExprNode(se, be_array)
     {
         indices = nullptr;
         is_array_ele = se->getType()->isARRAY() && be_array;
@@ -199,18 +200,10 @@ private:
 public:
     InitNode(bool isconst = false) : isconst(isconst), leaf(nullptr) {};
     void addleaf(InitNode *next) { leaves.push_back(next); };
-    void setleaf(ExprNode *leaf1) { leaf = leaf1; };
+    void setleaf(ExprNode *leaf1) { leaf = leaf1; leaves.clear(); };
     bool isLeaf() { return leaves.empty(); };
     void fill(int level, std::vector<int> d, Type* type);
-    int getSize(int d_cur, int d_nxt);
-    int UpdateSize() {
-        if (isLeaf()) cur_size = 1;
-        else {
-            for (auto l : leaves)
-                cur_size += l->UpdateSize();
-        }
-        return cur_size;
-    };
+    int getSize(int d_nxt);
     bool isFull();
     bool isConst() const { return isconst; }
     void output(int level);
@@ -275,6 +268,8 @@ public:
     DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false) : id(id), expr(expr), BeConst(isConst), BeArray(isArray)
     {
         next = nullptr;
+        if (expr == nullptr && isArray) { expr = new InitNode(true);}
+        
         if (expr != nullptr) {
             fprintf(stderr, "---------------------------\n");
             if (id->getType()->isARRAY()) {

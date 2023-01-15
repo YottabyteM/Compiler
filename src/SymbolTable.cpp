@@ -103,7 +103,7 @@ ConstantSymbolEntry::ConstantSymbolEntry(Type *type, double value) : SymbolEntry
 std::string ConstantSymbolEntry::toStr()
 {
     // assert(type->isConst());
-    if (type->isConstInt()) // const int / const bool
+    if (type->isConstInt() || type->isConstIntArray()) // const int / const bool
         return std::to_string((int)value);
     else
     {
@@ -138,10 +138,13 @@ std::string IdentifierSymbolEntry::toStr()
     {
         return type->isFunc() ? "@" + name : name;
     }
-    else
+    else if (isParam())
     {
         assert(isParam());
         return "%" + name;
+    }
+    else if (type->isARRAY()) {
+        return "%" + std::to_string(SymbolTable::getLabel());
     }
 }
 

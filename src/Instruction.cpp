@@ -141,6 +141,7 @@ void StoreInstruction::output() const
 {
     // TODO : Array
     std::string dst = use_list[0]->toStr();
+    fprintf(stderr, "Operend is %f", use_list[1]->getEntry()->getValue());
     std::string src = use_list[1]->toStr();
     std::string dst_type = use_list[0]->getType()->toStr();
     // assert(use_list[0]->getType()->isPTR());

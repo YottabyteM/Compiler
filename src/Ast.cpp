@@ -25,7 +25,7 @@ ArrayType *cur_type;
 std::vector<ExprNode *> vec_val;
 static void get_vec_val(InitNode *cur_node)
 {
-    if (cur_node->isLeaf())
+    if (cur_node->isLeaf() || cur_node->getself() != nullptr)
     {
         vec_val.push_back(cur_node->getself());
     }
@@ -753,12 +753,13 @@ void InitNode::genCode(int level)
             new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
             pos %= d[j];
         }
-        Operand *src = vec_val[i]->getOperand();
         vec_val[i]->genCode();
+        Operand *src = vec_val[i]->getOperand();
         final_offset = new Operand(new TemporarySymbolEntry(
             new PointerType(((ArrayType *)cur_type)->getElemType()),
             dynamic_cast<TemporarySymbolEntry *>(final_offset->getEntry())->getLabel()));
         new StoreInstruction(final_offset, src, builder->getInsertBB());
+        curr_dim.clear();
         // assert(cur_dim.empty());
     }
     // }
@@ -833,12 +834,18 @@ void DeclStmt::genCode()
     IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(id->getSymPtr());
     if (se->isGlobal())
     {
-        SymbolEntry *addr_se;
-        addr_se = new IdentifierSymbolEntry(*se);
-        addr_se->setType(new PointerType(se->getType()));
-        addr = new Operand(addr_se);
-        se->setAddr(addr);
-        this->builder->getUnit()->insertDecl(se);
+        if (!(id->getType()->isARRAY()))
+        {
+            SymbolEntry *addr_se;
+            addr_se = new IdentifierSymbolEntry(*se);
+            addr_se->setType(new PointerType(se->getType()));
+            addr = new Operand(addr_se);
+            se->setAddr(addr);
+            this->builder->getUnit()->insertDecl(se);
+        }
+        else
+        {
+        }
     }
     else if (se->isLocal() || se->isParam())
     {
@@ -1272,30 +1279,41 @@ void InitNode::fill(int level, std::vector<int> d, Type *type)
 {
     if (level == d.size() || leaf != nullptr)
     {
-        fprintf(stderr, "ADD 0\n");
         if (leaf == nullptr)
+        {
             setleaf(new Constant(new ConstantSymbolEntry(Var2Const(type), 0)));
+        }
+
         return;
     }
-    int i = 0;
-    while (level < d.size() - 1 && getSize(d[level], d[level + 1]) < d[level])
+    int cap = 1, num = 0, cap2 = 1;
+    for (int i = level + 1; i < d.size(); i++)
+        cap *= d[i];
+    for (int i = leaves.size() - 1; i >= 0; i--)
+        if (leaves[i]->isLeaf())
+            num++;
+        else
+            break;
+    while (num % cap)
     {
-        fprintf(stderr, "iterator is %d level is %d, size if %d\n", i++, level, getSize(d[level], d[level + 1]));
-        // fprintf(stderr, "leaves.size() is %d\n", leaves.size());
-        addleaf(new InitNode(true));
+        InitNode *new_const_node = new InitNode(true);
+        new_const_node->setleaf(new Constant(new ConstantSymbolEntry(Var2Const(type), 0)));
+        addleaf(new_const_node);
+        num++;
     }
-    if (level == d.size() - 1)
+    int t = getSize(cap);
+    while (t < d[level])
     {
-        while (leaves.size() < d[level])
-            addleaf(new InitNode(true));
+        InitNode *new_node = new InitNode(true);
+        addleaf(new_node);
+        t++;
     }
     for (auto l : leaves)
     {
         l->fill(level + 1, d, type);
-        fprintf(stderr, "level is %d\n", level + 1);
     }
 }
-int InitNode::getSize(int d_cur, int d_nxt)
+int InitNode::getSize(int d_nxt)
 {
     int num = 0, cur_fit = 0;
     for (auto l : leaves)

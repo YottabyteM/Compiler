@@ -123,7 +123,12 @@ public:
     };
     std::vector<int> fetch() { return dim; };
     void SetPointer() { is_pointer = true; };
-    void SetDim(std::vector<int> d) { dim = d; };
+    void SetDim(std::vector<int> d) {
+        dim.clear(); 
+        for (int i = 0; i < d.size(); i ++ ) {
+            dim.push_back(d[i]);
+        }
+    };
     bool isPointer() { return is_pointer; };
     int getLength() { return dim.size(); };
     Type *getElemType();

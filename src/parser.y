@@ -578,7 +578,7 @@ VarDef
             delete [](char*)$1;
             assert(ret);
         }
-        Id* new_Id = new Id(se_var_list);
+        Id* new_Id = new Id(se_var_list, true, true);
         new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, nullptr, false, true);
         delete []$1;
@@ -599,7 +599,7 @@ VarDef
             delete [](char*)$1;
             assert(ret);
         }
-        Id* new_Id = new Id(se_var_list);
+        Id* new_Id = new Id(se_var_list, true, true);
         new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), false, true);
         delete []$1;
@@ -643,7 +643,7 @@ ConstDef
             dynamic_cast<ArrayType*>(type)->addDim((int)exp->getValue());
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         identifiers->install($1, se_var_list);
-        Id* new_Id = new Id(se_var_list);
+        Id* new_Id = new Id(se_var_list, true, true);
         new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), true, true);
         delete []$1;
