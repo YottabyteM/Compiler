@@ -181,8 +181,9 @@ static bool isAllocaPromotable(AllocaInstruction *alloca)
         {
             assert(user->getUses()[1]->getEntry() != alloca->getDef()[0]->getEntry());
             assert(dynamic_cast<PointerType *>(user->getUses()[0]->getType())->getValType() == dynamic_cast<PointerType *>(alloca->getDef()[0]->getType())->getValType());
-            // if ((user->getUses()[1]->getEntry()->isVariable()) && dynamic_cast<IdentifierSymbolEntry *>(user->getUses()[1]->getEntry())->isParam())
-            //     return false; // 函数参数先不提升
+            if (user->getUses()[1]->getEntry()->isVariable())
+                if (dynamic_cast<IdentifierSymbolEntry *>(user->getUses()[1]->getEntry())->isParam())
+                    return false; // todo : 函数参数先不提升
         }
         // load: 不允许load src的类型和alloc dst的类型不符
         else if (user->isLoad())
@@ -508,14 +509,15 @@ void Mem2Reg::Rename(Function *func)
         isVisited[BB] = true;
         for (auto inst = BB->begin(); inst != BB->end(); inst = inst->getNext())
         {
-            if (inst->isAlloca())
+            if (inst->isAlloca() && isAllocaPromotable(dynamic_cast<AllocaInstruction *>(inst)))
             {
                 inst->getParent()->remove(inst);
                 freeList.insert(inst);
             }
             else if (inst->isLoad())
             {
-                if (inst->getUses()[0]->getDef() && inst->getUses()[0]->getDef()->isAlloca())
+                if (inst->getUses()[0]->getDef() && inst->getUses()[0]->getDef()->isAlloca() &&
+                    isAllocaPromotable(dynamic_cast<AllocaInstruction *>(inst->getUses()[0]->getDef())))
                 {
                     inst->replaceAllUsesWith(IncomingVals[inst->getUses()[0]]);
                     inst->getParent()->remove(inst);
@@ -524,7 +526,8 @@ void Mem2Reg::Rename(Function *func)
             }
             else if (inst->isStore())
             {
-                if (inst->getUses()[0]->getDef() && inst->getUses()[0]->getDef()->isAlloca())
+                if (inst->getUses()[0]->getDef() && inst->getUses()[0]->getDef()->isAlloca() &&
+                    isAllocaPromotable(dynamic_cast<AllocaInstruction *>(inst->getUses()[0]->getDef())))
                 {
                     IncomingVals[inst->getUses()[0]] = inst->getUses()[1];
                     inst->getParent()->remove(inst);

@@ -88,18 +88,18 @@ int main(int argc, char *argv[])
         unit.output();
         fprintf(stderr, "ir output ok\n");
     }
-    // if (optimize)
-    // {
-    //     ControlFlowOpt cf(&unit);
-    //     cf.pass();
-    //     Mem2Reg m2r(&unit);
-    //     m2r.pass();
-    //     // cf.pass();
-    //     ElimPHI ep(&unit);
-    //     ep.pass();
-    //     cf.pass();
-    //     fprintf(stderr, "opt ir generated\n");
-    // }
+    if (optimize)
+    {
+        ControlFlowOpt cf(&unit);
+        cf.pass();
+        Mem2Reg m2r(&unit);
+        m2r.pass();
+        // cf.pass();
+        ElimPHI ep(&unit);
+        ep.pass();
+        cf.pass();
+        fprintf(stderr, "opt ir generated\n");
+    }
     if (dump_ir && optimize)
     {
         unit.output();
