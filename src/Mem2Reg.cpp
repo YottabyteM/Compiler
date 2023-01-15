@@ -1,7 +1,6 @@
 #include "Mem2Reg.h"
 #include "Type.h"
 #include <queue>
-#include "LiveVariableAnalysis.h"
 
 static std::map<BasicBlock *, std::set<BasicBlock *>> SDoms;
 static std::map<Instruction *, unsigned> InstNumbers;
@@ -120,6 +119,13 @@ void Mem2Reg::ComputeDom(Function *func)
         }
         assert(IDom[bb].size() == 1 || (bb == func->getEntry() && IDom[bb].size() == 0));
     }
+    // for (auto kv : IDom)
+    // {
+    //     fprintf(stderr, "IDom[B%d] = {", kv.first->getNo());
+    //     for (auto bb : kv.second)
+    //         fprintf(stderr, "B%d, ", bb->getNo());
+    //     fprintf(stderr, "}\n");
+    // }
 }
 
 // ref : Static Single Assignment Book
@@ -136,20 +142,22 @@ void Mem2Reg::ComputeDomFrontier(Function *func)
     is_visited[func->getEntry()] = true;
     while (!q.empty())
     {
-        auto a = q.front(), x = a;
+        auto a = q.front();
         q.pop();
-        for (auto b = a->succ_begin(); b != a->succ_end(); b++)
+        std::vector<BasicBlock *> succs(a->succ_begin(), a->succ_end());
+        for (auto b : succs)
         {
-            if (!is_visited[*b])
+            auto x = a;
+            while (!SDoms[b].count(x))
             {
-                is_visited[*b] = true;
-                q.push(*b);
-                while (std::find(SDoms[*b].begin(), SDoms[*b].end(), x) == SDoms[*b].end())
-                {
-                    assert(x != func->getEntry());
-                    DF[x].insert(*b);
-                    x = *(IDom[x].begin());
-                }
+                assert(x != func->getEntry());
+                DF[x].insert(b);
+                x = *(IDom[x].begin());
+            }
+            if (!is_visited[b])
+            {
+                is_visited[b] = true;
+                q.push(b);
             }
         }
     }
@@ -173,6 +181,8 @@ static bool isAllocaPromotable(AllocaInstruction *alloca)
         {
             assert(user->getUses()[1]->getEntry() != alloca->getDef()[0]->getEntry());
             assert(dynamic_cast<PointerType *>(user->getUses()[0]->getType())->getValType() == dynamic_cast<PointerType *>(alloca->getDef()[0]->getType())->getValType());
+            // if ((user->getUses()[1]->getEntry()->isVariable()) && dynamic_cast<IdentifierSymbolEntry *>(user->getUses()[1]->getEntry())->isParam())
+            //     return false; // 函数参数先不提升
         }
         // load: 不允许load src的类型和alloc dst的类型不符
         else if (user->isLoad())
@@ -213,7 +223,7 @@ static unsigned getInstructionIndex(Instruction *inst)
     return it->second;
 }
 
-// 如果只有一个store语句，那么被这个store指令所支配的所有指令都要被替换为store语句中的右值。
+// 如果只有一个store语句，那么被这个store指令所支配的所有指令都要被替换为store的src。
 static bool rewriteSingleStoreAlloca(AllocaInstruction *alloca, AllocaInfo &Info)
 {
     StoreInstruction *OnlyStore = Info.OnlyStore;
@@ -273,48 +283,55 @@ static bool rewriteSingleStoreAlloca(AllocaInstruction *alloca, AllocaInfo &Info
     return true;
 }
 
-// 如果某局部变量的读/写(load/store)都只存在一个基本块中，load要被之前离他最近的store的右值替换
+// 如果某局部变量的读/写(load/store)都只存在一个基本块中，load被之前离他最近的store的右值替换
 static bool promoteSingleBlockAlloca(AllocaInstruction *alloca)
 {
     // 找到所有store指令的顺序
     using StoresByIndexTy = std::vector<std::pair<unsigned, StoreInstruction *>>;
     StoresByIndexTy StoresByIndex;
+    using LoadsByIndexTy = std::vector<std::pair<unsigned, LoadInstruction *>>;
+    LoadsByIndexTy LoadsByIndex;
 
     auto AllocaUsers = alloca->getDef()[0]->getUses();
     for (auto UserInst : AllocaUsers)
+    {
         if (UserInst->isStore())
             StoresByIndex.push_back(std::make_pair(getInstructionIndex(UserInst), dynamic_cast<StoreInstruction *>(UserInst)));
-
+        else
+        {
+            assert(UserInst->isLoad());
+            LoadsByIndex.push_back(std::make_pair(getInstructionIndex(UserInst), dynamic_cast<LoadInstruction *>(UserInst)));
+        }
+    }
     std::sort(StoresByIndex.begin(), StoresByIndex.end());
+    std::sort(LoadsByIndex.begin(), LoadsByIndex.end());
 
     // 遍历所有load指令，用前面最近的store指令替换掉
-    for (auto UserInst : AllocaUsers)
+    for (auto kv : LoadsByIndex)
     {
-        if (!UserInst->isLoad())
-            continue;
+        unsigned LoadIdx = kv.first;
+        auto LoadInst = kv.second;
 
-        unsigned LoadIdx = getInstructionIndex(UserInst);
-
-        // 找到离load最近的store
+        // 找到离load最近的store，用store的操作数替换load的user
         StoresByIndexTy::iterator it = std::lower_bound(StoresByIndex.begin(), StoresByIndex.end(), std::make_pair(LoadIdx, static_cast<StoreInstruction *>(nullptr)));
         if (it == StoresByIndex.begin())
         {
-            if (StoresByIndex.size())
-                // 如果有store，用store的操作数替换load的user
-                UserInst->replaceAllUsesWith((*it).second->getUses()[1]);
-            else
-                return false;
+            assert(0);
+            // if (StoresByIndex.size())
+            //     LoadInst->replaceAllUsesWith((*it).second->getUses()[1]);
+            // else
+            //     return false;
         }
         else
         {
             auto ReplVal = (*(it - 1)).second->getUses()[1];
-            UserInst->replaceAllUsesWith(ReplVal);
+            LoadInst->replaceAllUsesWith(ReplVal);
         }
 
         // 删除load指令
-        InstNumbers.erase(UserInst);
-        UserInst->getParent()->remove(UserInst);
-        freeList.insert(UserInst);
+        InstNumbers.erase(LoadInst);
+        LoadInst->getParent()->remove(LoadInst);
+        freeList.insert(LoadInst);
     }
 
     // 删除alloca和所有的store指令
@@ -439,7 +456,6 @@ void Mem2Reg::InsertPhi(Function *func)
                 }
         }
     }
-    unit->output();
 }
 
 // 删除源操作数均相同的PHI

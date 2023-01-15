@@ -38,7 +38,8 @@ void ElimPHI::pass()
                     for (auto i = bb->begin(); i != bb->end() && i->isPHI(); i = i->getNext())
                     {
                         auto def = i->getDef()[0];
-                        auto src = ((PhiInstruction *)i)->getSrc(pred);
+                        auto src = dynamic_cast<PhiInstruction *>(i)->getSrcs()[pred];
+                        src->removeUse(i);
                         pcopy[splitBlock].push_back(new BinaryInstruction(BinaryInstruction::ADD, def, src, new Operand(new ConstantSymbolEntry(Var2Const(def->getType()), 0))));
                         freeList.insert(i);
                     }
@@ -49,7 +50,8 @@ void ElimPHI::pass()
                     for (auto i = bb->begin(); i != bb->end() && i->isPHI(); i = i->getNext())
                     {
                         auto def = i->getDef()[0];
-                        auto src = ((PhiInstruction *)i)->getSrc(pred);
+                        auto src = dynamic_cast<PhiInstruction *>(i)->getSrcs()[pred];
+                        src->removeUse(i);
                         pcopy[pred].push_back(new BinaryInstruction(BinaryInstruction::ADD, def, src, new Operand(new ConstantSymbolEntry(Var2Const(def->getType()), 0))));
                         freeList.insert(i);
                     }
@@ -64,16 +66,22 @@ void ElimPHI::pass()
             auto block = kv.first;
             auto &restInsts = kv.second;
             std::vector<Instruction *> seq;
+            auto insts = restInsts;
+            for(auto inst : insts) // delete inst like a <- a
+            {
+                if(inst->getDef()[0] == inst->getUses()[0])
+                     restInsts.erase(std::find(restInsts.begin(), restInsts.end(), inst));
+            }
             while (restInsts.size())
             {
-                std::set<Operand *> defs;
+                std::set<Operand *> uses;
                 for (auto inst : restInsts)
-                    defs.insert(inst->getDef()[0]);
+                    uses.insert(inst->getUses()[0]);
                 bool found = false;
                 auto Insts = restInsts;
                 for (auto inst : Insts)
                 {
-                    if (defs.count(inst->getUses()[0]) == 0) // inst is not live-in of pcopy
+                    if (uses.count(inst->getDef()[0]) == 0) // inst is not live-in of pcopy
                     {
                         seq.push_back(inst);
                         restInsts.erase(std::find(restInsts.begin(), restInsts.end(), inst));
@@ -83,9 +91,9 @@ void ElimPHI::pass()
                 // pcopy is only made-up of cycles; Break one of them
                 if (!found)
                 {
-                    auto freshOp = new Operand(new TemporarySymbolEntry(restInsts[0]->getDef()[0]->getType(), SymbolTable::getLabel()));
-                    seq.push_back(new BinaryInstruction(BinaryInstruction::ADD, restInsts[0]->getDef()[0], freshOp, new Operand(new ConstantSymbolEntry(Var2Const(freshOp->getType()), 0))));
-                    restInsts[0]->getDef()[0] = freshOp;
+                    auto freshOp = new Operand(new TemporarySymbolEntry(restInsts[0]->getUses()[0]->getType(), SymbolTable::getLabel()));
+                    seq.push_back(new BinaryInstruction(BinaryInstruction::ADD, freshOp, restInsts[0]->getUses()[0], new Operand(new ConstantSymbolEntry(Var2Const(freshOp->getType()), 0))));
+                    restInsts[0]->getUses()[0] = freshOp;
                 }
             }
             for (auto inst : seq)

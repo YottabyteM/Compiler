@@ -56,13 +56,8 @@ public:
 
 class FloatType : public Type
 {
-private:
-    bool is_Need = false;
-
 public:
     FloatType(int size) : Type(Type::FLOAT) { this->size = size; };
-    void need_Fp() { is_Need = true; };
-    bool is_need() { return is_Need; };
     std::string toStr();
 };
 
@@ -96,13 +91,8 @@ public:
 
 class ConstFloatType : public Type
 {
-private:
-    bool is_need = false;
-
 public:
     ConstFloatType(int size) : Type(Type ::CONST_FLOAT) { this->size = size; };
-    void Need_Fp() { is_need = true; };
-    bool is_Need() { return is_need; };
     std::string toStr();
 };
 

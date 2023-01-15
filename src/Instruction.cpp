@@ -66,21 +66,33 @@ Instruction *Instruction::getPrev()
     return prev;
 }
 
-void Instruction::replaceAllUsesWith(Operand *replVal)
+std::vector<Operand *> Instruction::replaceAllUsesWith(Operand *replVal)
 {
     if (def_list.empty())
-        return;
+        return std::vector<Operand *>();
+    std::vector<Operand *> freeList;
     for (auto userInst : def_list[0]->getUses())
     {
         auto &uses = userInst->getUses();
         for (size_t i = 0; i != userInst->getUses().size(); i++)
             if (uses[i]->getEntry() == def_list[0]->getEntry())
             {
-                if (uses[i]->usersNum() == 1)
-                    delete uses[i];
+                if (userInst->isPHI())
+                {
+                    auto &srcs = ((PhiInstruction *)userInst)->getSrcs();
+                    for (auto &src : srcs)
+                    {
+                        if (src.second == uses[i])
+                            src.second = replVal;
+                    }
+                }
+                freeList.push_back(uses[i]);
+                uses[i]->removeUse(userInst);
                 uses[i] = replVal;
+                replVal->addUse(userInst);
             }
     }
+    return freeList;
 }
 
 AllocaInstruction::AllocaInstruction(Operand *dst, SymbolEntry *se, BasicBlock *insert_bb) : Instruction(ALLOCA, insert_bb)
@@ -451,7 +463,7 @@ void FuncCallInstruction::output() const
     {
         std::string src = use_list[i]->toStr();
         std::string src_type = use_list[i]->getType()->toStr();
-        if (i != 1)
+        if (i != 0)
         {
             fprintf(yyout, ", ");
             fprintf(stderr, ", ");
@@ -514,8 +526,42 @@ void PhiInstruction::updateDst(Operand *new_dst)
 void PhiInstruction::addEdge(BasicBlock *block, Operand *src)
 {
     use_list.push_back(src);
-    srcs.insert(std::make_pair(block, src));
+    srcs[block] = src;
     src->addUse(this);
+}
+
+GepInstruction::GepInstruction(Operand *dst,
+                               Operand *arr,
+                               Operand *idx,
+                               BasicBlock *insert_bb,
+                               bool paramFirst)
+    : Instruction(GEP, insert_bb), paramFirst(paramFirst)
+{
+    def_list.push_back(dst);
+    use_list.push_back(arr);
+    use_list.push_back(idx);
+    dst->setDef(this);
+    arr->addUse(this);
+    idx->addUse(this);
+    first = false;
+    init = nullptr;
+    last = false;
+}
+
+void GepInstruction::output() const
+{
+    Operand *dst = def_list[0];
+    Operand *arr = use_list[0];
+    Operand *idx = use_list[1];
+    std::string arrType = arr->getType()->toStr();
+    if (paramFirst)
+        fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 %s\n",
+                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+                arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
+    else
+        fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
+                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+                arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
 }
 
 MachineOperand *Instruction::genMachineOperand(Operand *ope)
@@ -961,40 +1007,6 @@ void FuncCallInstruction::genMachineCode(AsmBuilder *builder)
         cur_inst = new MovMInstruction(cur_block, dst->getValType()->isFloat() ? MovMInstruction::VMOV : MovMInstruction::MOV, dst, src);
         cur_block->insertInst(cur_inst);
     }
-}
-
-GepInstruction::GepInstruction(Operand *dst,
-                               Operand *arr,
-                               Operand *idx,
-                               BasicBlock *insert_bb,
-                               bool paramFirst)
-    : Instruction(GEP, insert_bb), paramFirst(paramFirst)
-{
-    def_list.push_back(dst);
-    use_list.push_back(arr);
-    use_list.push_back(idx);
-    dst->setDef(this);
-    arr->addUse(this);
-    idx->addUse(this);
-    first = false;
-    init = nullptr;
-    last = false;
-}
-
-void GepInstruction::output() const
-{
-    Operand *dst = def_list[0];
-    Operand *arr = use_list[0];
-    Operand *idx = use_list[1];
-    std::string arrType = arr->getType()->toStr();
-    if (paramFirst)
-        fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 %s\n",
-                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
-                arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
-    else
-        fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
-                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
-                arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
 }
 
 void GepInstruction::genMachineCode(AsmBuilder *builder)

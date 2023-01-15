@@ -1,15 +1,30 @@
-//test break
+/*int a;
+int func(int p){
+	p = p - 1;
+	return p;
+}
 int main(){
-    int i;
-    i = 0;
-    int sum;
-    sum = 0;
-    while(i < 100){
-        if(i == 50){
-            break;
-        }
-        sum = sum + i;
-        i = i + 1;
-    }
-    return sum;
+	int b;
+	a = 10;
+	b = func(a);
+	return b;
+}*/
+
+void reverse(int n) {
+	int next;
+	if (n <= 1) {
+		next=getint();
+		putint(next);
+	}
+	else {
+		next=getint();
+		reverse(n-1);
+		putint(next);
+	}
+}
+
+int main() {
+	int i=200;
+	reverse(i);
+	return 0;
 }

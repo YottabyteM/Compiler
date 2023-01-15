@@ -36,9 +36,15 @@ void ControlFlowOpt::pass()
                     {
                         CondBrInstruction *branch = (CondBrInstruction *)(lastInst);
                         if (branch->getTrueBranch() == bb)
-                            branch->setTrueBranch(succs[0]); // toDO ： 真假分支一样
+                            branch->setTrueBranch(succs[0]);
                         else
                             branch->setFalseBranch(succs[0]);
+                        if (branch->getTrueBranch() == branch->getFalseBranch())
+                        {
+                            pred->remove(lastInst);
+                            freeInsts.insert(lastInst);
+                            new UncondBrInstruction(branch->getTrueBranch(), pred);
+                        }
                     }
                     else
                     {
@@ -50,6 +56,7 @@ void ControlFlowOpt::pass()
                     pred->addSucc(succs[0]);
                     succs[0]->removePred(bb);
                     succs[0]->addPred(pred);
+                    // toDO : PHI
                 }
                 bb->getParent()->remove(bb);
                 freeList.insert(bb);

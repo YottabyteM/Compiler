@@ -22,6 +22,7 @@ public:
     bool isRet() const { return instType == RET; };
     bool isAlloca() const { return instType == ALLOCA; };
     bool isPHI() const { return instType == PHI; };
+    bool isCall() const { return instType == CALL; };
     void setParent(BasicBlock *);
     void setNext(Instruction *);
     void setPrev(Instruction *);
@@ -36,7 +37,7 @@ public:
     virtual void genMachineCode(AsmBuilder *) = 0;
     virtual std::vector<Operand *> &getDef() { return def_list; };
     virtual std::vector<Operand *> &getUses() { return use_list; };
-    void replaceAllUsesWith(Operand *); // Mem2Reg
+    std::vector<Operand *> replaceAllUsesWith(Operand *); // Mem2Reg
 
 protected:
     unsigned instType;
@@ -220,7 +221,7 @@ public:
     void updateDst(Operand *);
     void addEdge(BasicBlock *block, Operand *src);
     Operand *getAddr() { return addr; };
-    Operand *getSrc(BasicBlock *bb) { return srcs[bb]; };
+    std::map<BasicBlock *, Operand *> &getSrcs() { return srcs; };
 
     void genMachineCode(AsmBuilder *){};
 };
