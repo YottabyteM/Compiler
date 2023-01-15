@@ -28,7 +28,9 @@ public:
 
     use_iterator use_begin() { return uses.begin(); };
     use_iterator use_end() { return uses.end(); };
-    Type *getType() { return se->getType(); };
+    Type *getType() { 
+        return se->getType(); 
+    };
     std::string toStr() const;
     Instruction *getDef() { return def; };
     std::vector<Instruction *> getUses() { return uses; };

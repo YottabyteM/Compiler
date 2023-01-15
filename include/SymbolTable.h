@@ -88,6 +88,7 @@ private:
         LOCAL
     };
     std::string name;
+    int label;
     int scope;
     Operand *addr;        // The address of the identifier.
     int paramNo;          // if is param

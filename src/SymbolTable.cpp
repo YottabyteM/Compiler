@@ -103,7 +103,7 @@ ConstantSymbolEntry::ConstantSymbolEntry(Type *type, double value) : SymbolEntry
 std::string ConstantSymbolEntry::toStr()
 {
     // assert(type->isConst());
-    if (type->isConstInt()) // const int / const bool
+    if (type->isConstInt() || type->isConstIntArray()) // const int / const bool
         return std::to_string((int)value);
     else
     {
@@ -134,14 +134,15 @@ std::string IdentifierSymbolEntry::toStr()
             return Double2HexStr(value);
         }
     }
-    else if (isGlobal())
-    {
-        return type->isFunc() ? "@" + name : name;
-    }
-    else
-    {
-        assert(isParam());
-        return "%" + name;
+    else {
+        std::ostringstream buffer;
+        if (SymbolTable::getLabel() < 0) {
+            if (type->isFunc())
+                buffer << '@';
+            buffer << name;
+        } else
+            buffer << "%t" << label;
+        return buffer.str();
     }
 }
 
