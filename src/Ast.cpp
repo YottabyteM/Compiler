@@ -826,10 +826,6 @@ void IndicesNode::genCode()
 DeclStmt::DeclStmt(Id *id, InitNode *expr, bool isConst, bool isArray) : id(id), expr(expr), BeConst(isConst), BeArray(isArray)
 {
     next = nullptr;
-    if (expr == nullptr && isArray)
-    {
-        expr = new InitNode(true);
-    }
 
     if (expr != nullptr)
     {
