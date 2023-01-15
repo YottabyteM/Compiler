@@ -24,6 +24,7 @@ protected:
     };
     Type *type;
     double value; // TemporarySymbolEntry用不到
+    std::vector<double> arrVals;
 
 public:
     SymbolEntry(Type *type, int kind);
@@ -35,6 +36,8 @@ public:
     void setType(Type *type) { this->type = type; };
     double getValue() { return value; };
     void setValue(double val) { value = val; };
+    std::vector<double> getArrVals() { return arrVals; };
+    void setArrVals(std::vector<double> arrVals) { this->arrVals = arrVals; };
     int getKind() { return kind; };
     virtual std::string toStr() = 0;
     // You can add any function you need here.

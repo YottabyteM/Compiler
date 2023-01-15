@@ -198,11 +198,15 @@ private:
     int cur_size = 0;
 
 public:
-    InitNode(bool isconst = false) : isconst(isconst), leaf(nullptr) {};
+    InitNode(bool isconst = false) : isconst(isconst), leaf(nullptr){};
     void addleaf(InitNode *next) { leaves.push_back(next); };
-    void setleaf(ExprNode *leaf1) { leaf = leaf1; leaves.clear(); };
+    void setleaf(ExprNode *leaf1)
+    {
+        leaf = leaf1;
+        leaves.clear();
+    };
     bool isLeaf() { return leaves.empty(); };
-    void fill(int level, std::vector<int> d, Type* type);
+    void fill(int level, std::vector<int> d, Type *type);
     int getSize(int d_nxt);
     bool isFull();
     bool isConst() const { return isconst; }
@@ -265,19 +269,7 @@ private:
     bool BeArray;
 
 public:
-    DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false) : id(id), expr(expr), BeConst(isConst), BeArray(isArray)
-    {
-        next = nullptr;
-        if (expr == nullptr && isArray) { expr = new InitNode(true);}
-        
-        if (expr != nullptr) {
-            fprintf(stderr, "---------------------------\n");
-            if (id->getType()->isARRAY()) {
-                std::vector<int> origin_dim = ((ArrayType*)(id->getType()))->fetch();
-                expr->fill(0, origin_dim, ((ArrayType*)(id->getType()))->getElemType());
-            }
-        }
-    };
+    DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false);
     void setNext(DeclStmt *next);
     DeclStmt *getNext();
     void output(int level);

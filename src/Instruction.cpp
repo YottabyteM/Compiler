@@ -97,6 +97,7 @@ std::vector<Operand *> Instruction::replaceAllUsesWith(Operand *replVal)
 
 AllocaInstruction::AllocaInstruction(Operand *dst, SymbolEntry *se, BasicBlock *insert_bb) : Instruction(ALLOCA, insert_bb)
 {
+    assert(dst->getType()->isPTR());
     def_list.push_back(dst);
     dst->setDef(this);
     this->se = se;

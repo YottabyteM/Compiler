@@ -172,7 +172,8 @@ void Mem2Reg::ComputeDomFrontier(Function *func)
 
 static bool isAllocaPromotable(AllocaInstruction *alloca)
 {
-    // ToDO:考虑数组load、store、gep
+    if (dynamic_cast<PointerType *>(alloca->getDef()[0]->getType())->isARRAY())
+        return false; // toDo ：数组拟采用sroa、向量化优化
     auto users = alloca->getDef()[0]->getUses();
     for (auto user : users)
     {
