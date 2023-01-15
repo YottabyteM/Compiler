@@ -268,12 +268,11 @@ public:
     DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false) : id(id), expr(expr), BeConst(isConst), BeArray(isArray)
     {
         next = nullptr;
-        if (expr == nullptr && isArray) { expr = new InitNode(true);}
-        
         if (expr != nullptr) {
             fprintf(stderr, "---------------------------\n");
             if (id->getType()->isARRAY()) {
                 std::vector<int> origin_dim = ((ArrayType*)(id->getType()))->fetch();
+                fprintf(stderr, "dimsize is %d\n", origin_dim.size());
                 expr->fill(0, origin_dim, ((ArrayType*)(id->getType()))->getElemType());
             }
         }

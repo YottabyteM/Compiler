@@ -214,7 +214,7 @@ UnaryExpr
             dynamic_cast<FuncCallParamsNode *>$3->setParams(RParams);
         }
         Type *retType = dynamic_cast<FunctionType *>(se->getType())->getRetType();
-        SymbolEntry *t = new TemporarySymbolEntry(retType, SymbolTable::getLabel()); // 1.函数调用没做常量传播，可考虑自动内联 2.某些函数调用无需返回值，但这里也分配了一个临时符号
+        SymbolEntry *t = new TemporarySymbolEntry(retType, SymbolTable::getLabel()); // 1.函数调用没做常量传播 2.某些函数调用无需返回值，但这里也分配了一个临时符号
         $$ = new FuncCallNode(t, new Id(se), (FuncCallParamsNode*)$3);
     }
     | ADD UnaryExpr {
@@ -578,7 +578,7 @@ VarDef
             delete [](char*)$1;
             assert(ret);
         }
-        Id* new_Id = new Id(se_var_list, true, true);
+        Id* new_Id = new Id(se_var_list);
         new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, nullptr, false, true);
         delete []$1;
@@ -599,7 +599,7 @@ VarDef
             delete [](char*)$1;
             assert(ret);
         }
-        Id* new_Id = new Id(se_var_list, true, true);
+        Id* new_Id = new Id(se_var_list);
         new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), false, true);
         delete []$1;
@@ -643,7 +643,7 @@ ConstDef
             dynamic_cast<ArrayType*>(type)->addDim((int)exp->getValue());
         SymbolEntry *se_var_list = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
         identifiers->install($1, se_var_list);
-        Id* new_Id = new Id(se_var_list, true, true);
+        Id* new_Id = new Id(se_var_list);
         new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
         $$ = new DeclStmt(new_Id, dynamic_cast<InitNode*>($4), true, true);
         delete []$1;
