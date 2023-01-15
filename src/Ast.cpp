@@ -383,7 +383,7 @@ void Id::genCode()
     if (!is_Array())
     {
         // delete dst;
-        dst = new Operand(new TemporarySymbolEntry(dst->getType(), SymbolTable::getLabel()));
+        dst = new Operand(new TemporarySymbolEntry(symbolEntry->getType(), SymbolTable::getLabel()));
         new LoadInstruction(dst, addr, bb);
     }
     else

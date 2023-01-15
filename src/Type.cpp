@@ -51,7 +51,7 @@ Type *ArrayType::getElemType()
 std::string IntType::toStr()
 {
     std::ostringstream buffer;
-    buffer << "i32";
+    buffer << "i" << size;
     return buffer.str();
 }
 
@@ -69,7 +69,7 @@ std::string VoidType::toStr()
 std::string ConstIntType::toStr()
 {
     std::ostringstream buffer;
-    buffer << "i32";
+    buffer << "i" << size;
     return buffer.str();
 }
 
@@ -81,16 +81,19 @@ std::string ConstFloatType::toStr()
 
 std::string IntArrayType::toStr()
 {
-    Type* type = getElemType();
+    Type *type = getElemType();
     int count = 0;
     bool flag = false;
     std::vector<std::string> vec;
-    for (auto d : dim) {
+    for (auto d : dim)
+    {
         std::ostringstream buffer;
-        if (d == -1) flag = true;
-        else {
+        if (d == -1)
+            flag = true;
+        else
+        {
             buffer << "[" << d << " x ";
-            count ++;
+            count++;
             vec.push_back(buffer.str());
         }
     }
