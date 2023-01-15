@@ -34,7 +34,6 @@ PointerType::PointerType(Type *valueType) : Type(Type::PTR), valueType(valueType
 ArrayType::ArrayType(int eleType) : Type(eleType)
 {
     size = 32;
-    is_pointer = false;
     newTypes.push_back(this);
 }
 
@@ -79,7 +78,7 @@ std::string ConstFloatType::toStr()
     // return "double";
 }
 
-std::string IntArrayType::toStr()
+std::string ArrayType::toStr()
 {
     Type *type = getElemType();
     int count = 0;
@@ -106,21 +105,6 @@ std::string IntArrayType::toStr()
     if (flag)
         buffer << '*';
     return buffer.str();
-}
-
-std::string ConstIntArrayType::toStr()
-{
-    return "const int array";
-}
-
-std::string ConstFloatArrayType::toStr()
-{
-    return "const float array";
-}
-
-std::string FloatArrayType::toStr()
-{
-    return "float array";
 }
 
 std::string FunctionType::toStr()

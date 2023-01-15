@@ -111,7 +111,6 @@ class ArrayType : public Type
 {
 protected:
     std::vector<int> dim;
-    bool is_pointer;
 
 public:
     ArrayType(int elemType);
@@ -122,53 +121,42 @@ public:
         size *= d;
     };
     std::vector<int> fetch() { return dim; };
-    void SetPointer() { is_pointer = true; };
-    void SetDim(std::vector<int> d) {
-        dim.clear(); 
-        for (int i = 0; i < d.size(); i ++ ) {
+    void SetDim(std::vector<int> d)
+    {
+        dim.clear();
+        for (int i = 0; i < d.size(); i++)
+        {
             dim.push_back(d[i]);
         }
     };
-    bool isPointer() { return is_pointer; };
     int getLength() { return dim.size(); };
     Type *getElemType();
-    virtual std::string toStr() = 0;
+    virtual std::string toStr();
 };
 
 class IntArrayType : public ArrayType
 {
 public:
     IntArrayType() : ArrayType(Type::INT_ARRAY){};
-    std::string toStr();
 };
 
 class ConstIntArrayType : public ArrayType
 {
 public:
     ConstIntArrayType() : ArrayType(Type::CONST_INT_ARRAY){};
-    std::string toStr();
 };
 
 class FloatArrayType : public ArrayType
 {
-private:
-    std::vector<int> dim;
-    bool is_pointer = false;
 
 public:
     FloatArrayType() : ArrayType(Type::FLOAT_ARRAY){};
-    std::string toStr();
 };
 
 class ConstFloatArrayType : public ArrayType
 {
-private:
-    std::vector<int> dim;
-    bool is_pointer = false;
-
 public:
     ConstFloatArrayType() : ArrayType(Type::CONST_FLOAT_ARRAY){};
-    std::string toStr();
 };
 
 class TypeSystem
