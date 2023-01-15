@@ -134,15 +134,17 @@ std::string IdentifierSymbolEntry::toStr()
             return Double2HexStr(value);
         }
     }
-    else {
-        std::ostringstream buffer;
-        if (SymbolTable::getLabel() < 0) {
-            if (type->isFunc())
-                buffer << '@';
-            buffer << name;
-        } else
-            buffer << "%t" << label;
-        return buffer.str();
+    else if (isGlobal())
+    {
+        return type->isFunc() ? "@" + name : name;
+    }
+    else if (isParam())
+    {
+        assert(isParam());
+        return "%" + name;
+    }
+    else if (type->isARRAY()) {
+        return "%" + std::to_string(SymbolTable::getLabel());
     }
 }
 

@@ -166,9 +166,10 @@ class Id : public ExprNode
 private:
     IndicesNode *indices;
     bool is_array = false, is_array_ele = false; // is_array is array. is_array_ele is array ele
+    bool isleft;
 
 public:
-    Id(SymbolEntry *se, bool be_array = false) : ExprNode(se, be_array)
+    Id(SymbolEntry *se, bool be_array = false, bool isleft = false) : ExprNode(se, be_array)
     {
         indices = nullptr;
         is_array_ele = se->getType()->isARRAY() && be_array;
@@ -267,6 +268,8 @@ public:
     DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false) : id(id), expr(expr), BeConst(isConst), BeArray(isArray)
     {
         next = nullptr;
+        if (expr == nullptr && isArray) { expr = new InitNode(true);}
+        
         if (expr != nullptr) {
             fprintf(stderr, "---------------------------\n");
             if (id->getType()->isARRAY()) {

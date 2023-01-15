@@ -459,6 +459,7 @@ void Id::genCode()
             }
         }
     }
+
 }
 
 void UnaryExpr::genCode()
@@ -828,12 +829,18 @@ void DeclStmt::genCode()
     IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(id->getSymPtr());
     if (se->isGlobal())
     {
-        SymbolEntry *addr_se;
-        addr_se = new IdentifierSymbolEntry(*se);
-        addr_se->setType(new PointerType(se->getType()));
-        addr = new Operand(addr_se);
-        se->setAddr(addr);
-        this->builder->getUnit()->insertDecl(se);
+        if (!(id->getType()->isARRAY())) {
+            SymbolEntry *addr_se;
+            addr_se = new IdentifierSymbolEntry(*se);
+            addr_se->setType(new PointerType(se->getType()));
+            addr = new Operand(addr_se);
+            se->setAddr(addr);
+            this->builder->getUnit()->insertDecl(se);
+        }
+        else
+        {
+
+        }
     }
     else if (se->isLocal() || se->isParam())
     {
