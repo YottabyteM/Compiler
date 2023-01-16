@@ -773,6 +773,8 @@ FuncFParam
         identifiers->install($2, se);
         Id* id = new Id(se);
         id->setIndices(dynamic_cast<IndicesNode*>($3));
+        ((IdentifierSymbolEntry*)se)->setLabel();
+        ((IdentifierSymbolEntry*)se)->setAddr(new Operand(se));
         $$ = id;
     }
     ;

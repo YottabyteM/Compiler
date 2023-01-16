@@ -396,7 +396,7 @@ void Id::genCode()
         if (indices != nullptr)
         {
             Operand *tempSrc = addr;
-            ArrayType *curr_type;
+            ArrayType *curr_type, *cur_pter_type;
             if (cur_type->isIntArray())
             {
                 if (cur_type->isConst())
@@ -422,6 +422,14 @@ void Id::genCode()
             bool is_first = true;
             for (auto idx : indices->getExprList())
             {
+                // if (idx->getValue() == -1) {
+                //     Operand* dst1 = new Operand(new TemporarySymbolEntry(
+                //         new PointerType(type), SymbolTable::getLabel()));
+                //     tempSrc = dst1;
+                //     new LoadInstruction(dst1, addr, bb);
+                //     flag = true;
+                //     firstFlag = false;
+                // }
                 // if (((ArrayType *)type1)->getLength() == -1)
                 // {
                 //     Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel()));
@@ -445,6 +453,7 @@ void Id::genCode()
                 }
                 idx->genCode();
                 auto gep = new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb, flag);
+                if (is_first) gep->setFirst();
                 last_op = tempSrc;
                 if (!currr_dim.empty())
                 {
