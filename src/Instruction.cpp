@@ -556,6 +556,9 @@ void GepInstruction::output() const
     fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
             dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
             arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
+    fprintf(stderr, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
+            dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+            arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
 }
 
 MachineOperand *Instruction::genMachineOperand(Operand *ope)
@@ -1051,6 +1054,7 @@ void GepInstruction::genMachineCode(AsmBuilder *builder)
     auto extra_offset = genMachineVReg();
     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, extra_offset, idx, size);
     cur_block->insertInst(cur_inst);
+
 
     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, new MachineOperand(*base_offset), new MachineOperand(*extra_offset));
     cur_block->insertInst(cur_inst);

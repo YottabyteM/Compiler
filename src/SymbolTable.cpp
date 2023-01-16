@@ -142,7 +142,7 @@ IdentifierSymbolEntry::IdentifierSymbolEntry(Type *type, std::string name, int s
 std::string IdentifierSymbolEntry::toStr()
 {
     // 常量折叠
-    if (type->isConst())
+    if (type->isConst() && !type->isARRAY())
     {
         if (type->isConstInt())
             return std::to_string((int)value);

@@ -414,7 +414,14 @@ void Id::genCode()
             std::vector<int> currr_dim = get_Array_Type()->fetch();
             currr_dim.erase(currr_dim.begin());
             curr_type->SetDim(currr_dim);
-            Operand *tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+            Operand *tempDst;
+            if (currr_dim.size() != 0) {
+                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+            }
+            else 
+            {
+                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), SymbolTable::getLabel()));
+            }
             Operand *last_op;
             bool flag = false;
             bool pointer = false;
@@ -1047,6 +1054,8 @@ void ReturnStmt::genCode()
         new RetInstruction(nullptr, bb);
     else
     {
+        if (retValue->getSymPtr()->getType()->isARRAY())
+            cur_type = (ArrayType*)(retValue->getSymPtr()->getType());
         retValue->genCode();
         new RetInstruction(retValue->getOperand(), bb);
     }
