@@ -1055,7 +1055,6 @@ void GepInstruction::genMachineCode(AsmBuilder *builder)
     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, extra_offset, idx, size);
     cur_block->insertInst(cur_inst);
 
-
     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, new MachineOperand(*base_offset), new MachineOperand(*extra_offset));
     cur_block->insertInst(cur_inst);
     ((TemporarySymbolEntry *)(def_list[0]->getEntry()))->offset = dst;
