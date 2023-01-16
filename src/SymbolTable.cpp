@@ -73,18 +73,20 @@ void IdentifierSymbolEntry::decl_code()
     }
     else if (type->isARRAY())
     {
-        fprintf(yyout, "%s = global ", this->toStr().c_str());
+        fprintf(yyout, "%s = dso_local global ", this->toStr().c_str());
         if (((IdentifierSymbolEntry *)this)->getArrVals().empty())
-            fprintf(yyout, "%s zeroinitializer", type->toStr().c_str());
+            fprintf(yyout, "%s zeroinitializer\n", type->toStr().c_str());
         else
         {
             unsigned idx = 0;
+            fprintf(yyout, "%s", type->toStr().c_str());
             auto vals = ((IdentifierSymbolEntry *)this)->getArrVals();
             auto dims = ((ArrayType *)type)->fetch();
             for (auto d : dims)
             {
                 // toDo
             }
+            fprintf(yyout, "\n");
         }
     }
     else

@@ -645,7 +645,7 @@ void AllocaInstruction::genMachineCode(AsmBuilder *builder)
     else
     {
         assert(id_se->isLocal());
-        int offset = cur_func->AllocSpace(/*se->getType()->getSize()*/ 4);
+        int offset = cur_func->AllocSpace(std::max(se->getType()->getSize(), 4));
         dynamic_cast<TemporarySymbolEntry *>(def_list[0]->getEntry())->setOffset(-offset);
     }
 }
@@ -1042,9 +1042,9 @@ void GepInstruction::genMachineCode(AsmBuilder *builder)
         return;
     }
     MachineOperand *base = nullptr;
-    int size;
     if (idx->isImm())
         idx = cur_block->insertLoadImm(idx);
+    int size;
     if (paramFirst)
         size = ((PointerType *)(use_list[0]->getType()))->getValType()->getSize();
     else
