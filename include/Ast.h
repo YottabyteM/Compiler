@@ -153,6 +153,7 @@ public:
     void addBefore(ExprNode *new_expr) { exprList.insert(exprList.begin(), new_expr); };
     void output(int level);
     std::vector<ExprNode *> getExprList() { return exprList; };
+    int get_len() { return exprList.size(); };
     void genCode();
     ~IndicesNode()
     {
@@ -177,6 +178,7 @@ public:
     };
     void setIndices(IndicesNode *new_indices) { indices = new_indices; };
     IndicesNode *getIndices() { return indices; };
+    int getlen() { return indices != nullptr; };
     void output(int level);
     void SetLeft() { isleft = true; };
     bool is_Array() { return is_array; };

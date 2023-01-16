@@ -1,6 +1,7 @@
 %code top{
     #include <iostream>
     #include <assert.h>
+    #include <vector>
     #include "parser.h"
     extern Ast ast;
     int yylex();
@@ -9,6 +10,7 @@
     Type *retType = nullptr;
     bool isLeft = false;
     bool inWhileBlock = false;
+    std::vector<int> arrayIdx;
     bool needRet = false;
 }
 
@@ -762,13 +764,15 @@ FuncFParam
         delete []$2;
     }
     | Type ID FuncArrayIndices {
-        Type* arrayType; 
+        ArrayType* arrayType; 
         if($1==TypeSystem::intType){
             arrayType = new IntArrayType();
         }
         else if($1==TypeSystem::floatType){
             arrayType = new FloatArrayType();
         }
+        arrayType->SetDim(arrayIdx);
+        arrayIdx.clear();
         SymbolEntry *se = new IdentifierSymbolEntry(arrayType, $2, identifiers->getLevel());
         identifiers->install($2, se);
         Id* id = new Id(se);
@@ -783,12 +787,14 @@ FuncArrayIndices
     : FuncArrayIndices LBRACKET ConstExp RBRACKET {
         dynamic_cast<IndicesNode*>($1)->addNew($3);
         $$ = $1;
+        arrayIdx.push_back(-1);
     }
     | LBRACKET RBRACKET {
         SymbolEntry *addDim = new ConstantSymbolEntry(TypeSystem::constIntType, -1);
         IndicesNode* indice = new IndicesNode();
         indice->addNew(new Constant(addDim));
         $$ = indice;
+        arrayIdx.push_back(-1);
     }
     ;
 %%
