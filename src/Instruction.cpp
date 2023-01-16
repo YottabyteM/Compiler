@@ -535,9 +535,8 @@ void PhiInstruction::addEdge(BasicBlock *block, Operand *src)
 GepInstruction::GepInstruction(Operand *dst,
                                Operand *arr,
                                Operand *idx,
-                               BasicBlock *insert_bb,
-                               bool paramFirst)
-    : Instruction(GEP, insert_bb), paramFirst(paramFirst)
+                               BasicBlock *insert_bb)
+    : Instruction(GEP, insert_bb)
 {
     def_list.push_back(dst);
     use_list.push_back(arr);
@@ -546,9 +545,6 @@ GepInstruction::GepInstruction(Operand *dst,
     dst->setDef(this);
     arr->addUse(this);
     idx->addUse(this);
-    first = false;
-    init = nullptr;
-    last = false;
 }
 
 void GepInstruction::output() const
@@ -557,14 +553,9 @@ void GepInstruction::output() const
     Operand *arr = use_list[0];
     Operand *idx = use_list[1];
     std::string arrType = arr->getType()->toStr();
-    if (paramFirst)
-        fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 %s\n",
-                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
-                arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
-    else
-        fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
-                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
-                arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
+    fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
+            dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+            arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
 }
 
 MachineOperand *Instruction::genMachineOperand(Operand *ope)
@@ -574,7 +565,10 @@ MachineOperand *Instruction::genMachineOperand(Operand *ope)
     if (se->isConstant())
         mope = new MachineOperand(MachineOperand::IMM, se->getValue(), se->getType());
     else if (se->isTemporary())
-        mope = new MachineOperand(MachineOperand::VREG, dynamic_cast<TemporarySymbolEntry *>(se)->getLabel(), se->getType());
+    {
+        Type *type = se->getType()->isPTR() ? TypeSystem::intType : se->getType();
+        mope = new MachineOperand(MachineOperand::VREG, dynamic_cast<TemporarySymbolEntry *>(se)->getLabel(), type);
+    }
     else if (se->isVariable())
     {
         auto id_se = dynamic_cast<IdentifierSymbolEntry *>(se);
@@ -1031,71 +1025,44 @@ void GepInstruction::genMachineCode(AsmBuilder *builder)
     auto cur_block = builder->getBlock();
     MachineInstruction *cur_inst;
     auto dst = genMachineOperand(def_list[0]);
+    auto arr = use_list[0];
     auto idx = genMachineOperand(use_list[1]);
-    if (init)
-    {
-        if (last)
-        {
-            auto base = genMachineOperand(init);
-            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, base, genMachineImm(4));
-            cur_block->insertInst(cur_inst);
-        }
-        return;
-    }
-    MachineOperand *base = nullptr;
-    if (idx->isImm())
-        idx = cur_block->insertLoadImm(idx);
-    int size;
-    if (paramFirst)
-        size = ((PointerType *)(use_list[0]->getType()))->getValType()->getSize();
+
+    MachineOperand *base_offset;
+    if (((TemporarySymbolEntry *)(arr->getEntry()))->offset != nullptr)
+        base_offset = ((TemporarySymbolEntry *)(arr->getEntry()))->offset;
     else
     {
-        if (first)
-        {
-            base = genMachineVReg();
-            if (use_list[0]->getEntry()->isVariable() && ((IdentifierSymbolEntry *)(use_list[0]->getEntry()))->isGlobal())
-            {
-                auto src = genMachineOperand(use_list[0]);
-                cur_inst = new LoadMInstruction(cur_block, base, src);
-            }
-            else
-            {
-                auto offset = genMachineImm(((TemporarySymbolEntry *)(use_list[0]->getEntry()))->getOffset());
-                if (offset->isIllegalShifterOperand())
-                    cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, base, offset);
-                else
-                    cur_inst = new LoadMInstruction(cur_block, base, offset);
-            }
-            cur_block->insertInst(cur_inst);
-        }
-        ArrayType *type = (ArrayType *)(((PointerType *)(use_list[0]->getType()))->getValType());
-        size = type->getElemType()->getSize();
-    }
-    auto size1 = cur_block->insertLoadImm(genMachineImm(size));
-    auto off = genMachineVReg();
-    cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, off, idx, size1);
-    off = new MachineOperand(*off);
-    cur_block->insertInst(cur_inst);
-    if (paramFirst || !first)
-    {
-        auto arr = genMachineOperand(use_list[0]);
-        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, arr, off);
-        cur_block->insertInst(cur_inst);
-    }
-    else
-    {
-        auto addr = genMachineVReg();
-        auto base1 = new MachineOperand(*base);
-        cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, addr, base1, off);
-        cur_block->insertInst(cur_inst);
-        addr = new MachineOperand(*addr);
-        if (use_list[0]->getEntry()->isVariable() && ((IdentifierSymbolEntry *)(use_list[0]->getEntry()))->isGlobal())
-            cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, dst, addr);
+        base_offset = genMachineVReg();
+        if (arr->getEntry()->isVariable() && ((IdentifierSymbolEntry *)(arr->getEntry()))->isGlobal())
+            cur_inst = new LoadMInstruction(cur_block, base_offset, genMachineOperand(arr));
         else
         {
+            // toDo : param
             auto fp = genMachineReg(11);
-            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, fp, addr);
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, base_offset, fp, genMachineImm(((TemporarySymbolEntry *)(arr->getEntry()))->getOffset()));
         }
         cur_block->insertInst(cur_inst);
     }
+
+    if (idx->isImm())
+        idx = cur_block->insertLoadImm(idx);
+    auto size = cur_block->insertLoadImm(genMachineImm(((ArrayType *)(((PointerType *)(def_list[0]->getEntry()->getType()))->getValType()))->getSize()));
+    auto extra_offset = genMachineVReg();
+    cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, extra_offset, idx, size);
+    cur_block->insertInst(cur_inst);
+
+    cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, new MachineOperand(*base_offset), new MachineOperand(*extra_offset));
+    cur_block->insertInst(cur_inst);
+    ((TemporarySymbolEntry *)(def_list[0]->getEntry()))->offset = dst;
+    // auto fp = genMachineReg(11);
+    // cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, fp, new MachineOperand(*offset));
+    // if (arr->getEntry()->isVariable() && ((IdentifierSymbolEntry *)(arr->getEntry()))->isGlobal())
+    //     cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, dst, addr);
+    // else
+    // {
+    //     auto fp = genMachineReg(11);
+    //     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, fp, offset);
+    // }
+    // cur_block->insertInst(cur_inst);
 }

@@ -75,7 +75,7 @@ void IdentifierSymbolEntry::decl_code()
     {
         fprintf(yyout, "%s = dso_local global ", this->toStr().c_str());
         if (((IdentifierSymbolEntry *)this)->getArrVals().empty())
-            fprintf(yyout, "%s zeroinitializer\n", type->toStr().c_str());
+            fprintf(yyout, "%s zeroinitializer", type->toStr().c_str());
         else
         {
             unsigned idx = 0;
@@ -86,8 +86,8 @@ void IdentifierSymbolEntry::decl_code()
             {
                 // toDo
             }
-            fprintf(yyout, "\n");
         }
+        fprintf(yyout, ", align 4\n");
     }
     else
     {
@@ -110,6 +110,7 @@ SymbolEntry::SymbolEntry(Type *type, int kind)
 {
     this->type = type;
     this->kind = kind;
+    arrVals = std::vector<double>();
     newSymbolEntries.push_back(this);
 }
 

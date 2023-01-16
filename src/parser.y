@@ -581,7 +581,7 @@ VarDef
         }
         Id* new_Id = new Id(se_var_list);
         new_Id->setIndices(dynamic_cast<IndicesNode*>($2));
-        $$ = new DeclStmt(new_Id, new InitNode(true), false, true);
+        $$ = new DeclStmt(new_Id, nullptr, false, true);
         delete []$1;
     }
     | ID ArrayConstIndices ASSIGN InitVal {

@@ -396,7 +396,7 @@ void Id::genCode()
         if (indices != nullptr)
         {
             Operand *tempSrc = addr;
-            ArrayType *curr_type, *cur_pter_type;
+            ArrayType *curr_type;
             if (cur_type->isIntArray())
             {
                 if (cur_type->isConst())
@@ -411,8 +411,9 @@ void Id::genCode()
                 else
                     curr_type = new FloatArrayType();
             }
-            curr_type->SetDim(get_Array_Type()->fetch());
-            std::vector<int> currr_dim = curr_type->fetch();
+            std::vector<int> currr_dim = get_Array_Type()->fetch();
+            currr_dim.erase(currr_dim.begin());
+            curr_type->SetDim(currr_dim);
             Operand *tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
             Operand *last_op;
             bool flag = false;
@@ -452,8 +453,7 @@ void Id::genCode()
                     fprintf(stderr, "last_op_type is %s", last_op->getType()->toStr().c_str());
                 }
                 idx->genCode();
-                auto gep = new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb, flag);
-                if (is_first) gep->setFirst();
+                auto gep = new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb);
                 last_op = tempSrc;
                 if (!currr_dim.empty())
                 {
@@ -487,17 +487,17 @@ void Id::genCode()
                 //     break;
                 // type = ((ArrayType *)type)->getElemType();
                 // type1 = ((ArrayType *)type1)->getElemType();
-                tempSrc = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+                tempSrc = tempDst;
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 is_first = false;
             }
             fprintf(stderr, "last_op_type is %s", last_op->getType()->toStr().c_str());
             if (isleft)
             {
-                arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
+                arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
                 return;
             }
-            Operand *new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
+            Operand *new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
 
             if (!pointer)
             {
@@ -507,7 +507,9 @@ void Id::genCode()
                 else
                     dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
                 new LoadInstruction(dst1, new_dst, bb);
+                
                 dst = dst1;
+
             }
         }
         else
@@ -522,7 +524,6 @@ void Id::genCode()
             {
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                 auto gep = new GepInstruction(dst, addr, idx, bb);
-                gep->setFirst();
             }
         }
     }

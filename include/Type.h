@@ -124,9 +124,11 @@ public:
     void SetDim(std::vector<int> d)
     {
         dim.clear();
+        size = 32;
         for (int i = 0; i < d.size(); i++)
         {
             dim.push_back(d[i]);
+            size *= d[i];
         }
     };
     int getLength() { return dim.size(); };

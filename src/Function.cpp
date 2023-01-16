@@ -74,11 +74,33 @@ void Function::genMachineCode(AsmBuilder *builder)
     auto cur_func = new MachineFunction(cur_unit, this->sym_ptr);
     builder->setFunction(cur_func);
     std::map<BasicBlock *, MachineBlock *> map;
+
+    // std::set<BasicBlock *> v;
+    // std::list<BasicBlock *> q;
+    // q.push_back(entry);
+    // v.insert(entry);
+    // while (!q.empty())
+    // {
+    //     auto bb = q.front();
+    //     q.pop_front();
+    //     bb->genMachineCode(builder);
+    //     map[bb] = builder->getBlock();
+    //     for (auto succ = bb->succ_begin(); succ != bb->succ_end(); succ++)
+    //     {
+    //         if (v.find(*succ) == v.end())
+    //         {
+    //             v.insert(*succ);
+    //             q.push_back(*succ);
+    //         }
+    //     }
+    // }
+
     for (auto block : block_list)
     {
         block->genMachineCode(builder);
         map[block] = builder->getBlock();
     }
+
     // Add pred and succ for every block
     for (auto block : block_list)
     {

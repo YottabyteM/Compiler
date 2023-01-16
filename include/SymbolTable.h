@@ -9,6 +9,7 @@
 
 class Type;
 class Operand;
+class MachineOperand;
 
 class SymbolEntry
 {
@@ -165,6 +166,7 @@ private:
     bool isArray;
 
 public:
+    MachineOperand *offset = nullptr;
     TemporarySymbolEntry(Type *type, int label, bool isarray = false) : SymbolEntry(type, SymbolEntry::TEMPORARY)
     {
         this->label = label;
