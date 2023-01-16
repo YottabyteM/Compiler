@@ -414,7 +414,7 @@ void Id::genCode()
             }
             std::vector<int> currr_dim = ((ArrayType*)getSymPtr()->getType())->fetch(); // if is params, it should be 0
             if(currr_dim[0] == -1){
-                TemporarySymbolEntry* se = new TemporarySymbolEntry(getType(), SymbolTable::getLabel());
+                TemporarySymbolEntry* se = new TemporarySymbolEntry(new PointerType(getType()), SymbolTable::getLabel());
                 Operand* new_addr = new Operand(se);
                 new LoadInstruction(new_addr, addr, bb);
                 tempSrc = new_addr;
@@ -422,12 +422,17 @@ void Id::genCode()
             currr_dim.erase(currr_dim.begin());
             curr_type->SetDim(currr_dim);
             Operand *tempDst;
-            if (currr_dim.size() != 0) {
-                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+            if (currr_dim[0] == -1) {
+                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(getType()), SymbolTable::getLabel()));
             }
-            else 
-            {
-                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), SymbolTable::getLabel()));
+            else {
+                if (currr_dim.size() != 0) {
+                    tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+                }
+                else 
+                {
+                    tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), SymbolTable::getLabel()));
+                }
             }
             Operand *last_op;
             bool flag = false;
@@ -485,7 +490,7 @@ void Id::genCode()
         }
         else
         {
-            if (((ArrayType *)(this->getType()))->getLength() == 0)
+            if (getlen() == 0)
             {
                 ArrayType *curr_type;
                 if (cur_type->isIntArray())

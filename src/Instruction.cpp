@@ -789,8 +789,9 @@ void BinaryInstruction::genMachineCode(AsmBuilder *builder)
         else
             src1 = cur_block->insertLoadImm(src1);
     }
-    if (src2->isImm() && src2->isIllegalShifterOperand())
-        src2 = cur_block->insertLoadImm(src2);
+    if (src2->isImm())
+        if (src2->isIllegalShifterOperand())
+            src2 = cur_block->insertLoadImm(src2);
     switch (opcode)
     {
     case ADD:
@@ -1043,7 +1044,10 @@ void GepInstruction::genMachineCode(AsmBuilder *builder)
         {
             // toDo : param
             auto fp = genMachineReg(11);
-            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, base_offset, fp, genMachineImm(((TemporarySymbolEntry *)(arr->getEntry()))->getOffset()));
+            auto offset = genMachineImm(((TemporarySymbolEntry *)(arr->getEntry()))->getOffset());
+            if (offset->isIllegalShifterOperand())
+                offset = cur_block->insertLoadImm(offset);
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, base_offset, fp, offset);
         }
         cur_block->insertInst(cur_inst);
     }
