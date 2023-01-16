@@ -8,8 +8,8 @@ bool isShifterOperandVal(unsigned bin_val)
 {
     for (int i = 0; i < 32; i += 2)
     {
-        unsigned shift_val = (bin_val >> i) | (bin_val << (32 - i)); // 循环右移i位
-        if (!(shift_val & 0xFFFFFF00))
+        signed shift_val = ((bin_val) >> i) | ((bin_val) << (32 - i)); // 循环右移i位
+        if ((shift_val & 0xFFFFFF00) == 0x00000000)
             return true;
     }
     return false;
@@ -145,12 +145,10 @@ bool MachineOperand::isIllegalShifterOperand()
     if (valType->isFloat()) // TODO
         // bin_val = reinterpret_cast<unsigned &>(this->val);
         return true;
-    else
-    {
-        signed signed_val = (int)(this->val);
-        bin_val = reinterpret_cast<unsigned &>(signed_val);
-    }
-    return !isShifterOperandVal(bin_val) && !isShifterOperandVal(~bin_val + 1);
+    assert(valType->isInt());
+    signed signed_val = (int)(this->val);
+    bin_val = reinterpret_cast<unsigned &>(signed_val);
+    return this->val >= 0 ? !isShifterOperandVal(bin_val) : !isShifterOperandVal(~bin_val + 1);
 }
 
 void MachineInstruction::printCond()
@@ -790,7 +788,7 @@ void MachineFunction::output()
     // Allocate stack space for local variable
     if (stack_size)
     {
-        if (!isShifterOperandVal(reinterpret_cast<unsigned &>(stack_size)))
+        if (!isShifterOperandVal(stack_size))
         {
             auto reg_no = (*saved_rregs.begin());
             assert(reg_no < 11);
@@ -829,12 +827,12 @@ void MachineFunction::output()
     // recycle stack space
     if (stack_size)
     {
-        if (!isShifterOperandVal(reinterpret_cast<unsigned &>(stack_size)))
+        if (!isShifterOperandVal(stack_size))
         {
             auto reg_no = (*saved_rregs.begin());
             assert(reg_no < 11);
             fprintf(yyout, "\tldr r%d,=%d\n", reg_no, stack_size);
-            fprintf(yyout, "\tsub sp, sp, r%d\n", reg_no);
+            fprintf(yyout, "\tadd sp, sp, r%d\n", reg_no);
         }
         else
             fprintf(yyout, "\tadd sp, sp, #%d\n", stack_size);
