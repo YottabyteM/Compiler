@@ -207,6 +207,8 @@ Type *Var2Const(Type *type)
 bool convertible(Type *from, Type *to)
 {
     // to do : array type
+    if (from->isARRAY() && to->isARRAY())
+        return true;
     return from->isConst() ? (!to->isPTR() && !to->isFunc() && !to->isVoid()) : (from->isInt() || from->isFloat()) ? (!to->isPTR() && !to->isFunc() && !to->isVoid() && !to->isConst())
                                                                                                                    : false;
 }
