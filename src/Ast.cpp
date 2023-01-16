@@ -412,7 +412,13 @@ void Id::genCode()
                 else
                     curr_type = new FloatArrayType();
             }
-            std::vector<int> currr_dim = get_Array_Type()->fetch();
+            std::vector<int> currr_dim = ((ArrayType*)getSymPtr()->getType())->fetch(); // if is params, it should be 0
+            if(currr_dim[0] == -1){
+                TemporarySymbolEntry* se = new TemporarySymbolEntry(getType(), SymbolTable::getLabel());
+                Operand* new_addr = new Operand(se);
+                new LoadInstruction(new_addr, addr, bb);
+                tempSrc = new_addr;
+            }
             currr_dim.erase(currr_dim.begin());
             curr_type->SetDim(currr_dim);
             Operand *tempDst;
@@ -425,37 +431,11 @@ void Id::genCode()
             }
             Operand *last_op;
             bool flag = false;
-            bool pointer = false;
             bool firstFlag = true;
             fprintf(stderr, "id type size is %d, idx size is %d\n", currr_dim.size(), indices->getExprList().size());
             bool is_first = true;
             for (auto idx : indices->getExprList())
             {
-                // if (idx->getValue() == -1) {
-                //     Operand* dst1 = new Operand(new TemporarySymbolEntry(
-                //         new PointerType(type), SymbolTable::getLabel()));
-                //     tempSrc = dst1;
-                //     new LoadInstruction(dst1, addr, bb);
-                //     flag = true;
-                //     firstFlag = false;
-                // }
-                // if (((ArrayType *)type1)->getLength() == -1)
-                // {
-                //     Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel()));
-                //     tempSrc = dst1;
-                //     new LoadInstruction(dst1, addr, bb);
-                //     flag = true;
-                //     firstFlag = false;
-                // }
-                // if (!idx)
-                // {
-                //     Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel()));
-                //     Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
-                //     new GepInstruction(dst1, tempSrc, idx, bb);
-                //     tempDst = dst1;
-                //     pointer = true;
-                //     break;
-                // }
                 if (!is_first)
                 {
                     fprintf(stderr, "last_op_type is %s", last_op->getType()->toStr().c_str());
@@ -484,17 +464,6 @@ void Id::genCode()
                 }
                 else
                     break;
-                // if (!flag && firstFlag)
-                // {
-                //     gep->setFirst();
-                //     firstFlag = false;
-                // }
-                // if (flag)
-                //     flag = false;
-                // if (type == TypeSystem::intType || type == TypeSystem::constIntType)
-                //     break;
-                // type = ((ArrayType *)type)->getElemType();
-                // type1 = ((ArrayType *)type1)->getElemType();
                 tempSrc = tempDst;
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 is_first = false;
@@ -506,25 +475,36 @@ void Id::genCode()
                 return;
             }
             Operand *new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
-
-            if (!pointer)
-            {
-                Operand *dst1;
-                if (getType()->isInt())
-                    dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
-                else
-                    dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
-                new LoadInstruction(dst1, new_dst, bb);
-                
-                dst = dst1;
-
-            }
+            Operand *dst1;
+            if (getType()->isInt())
+                dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
+            else
+                dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
+            new LoadInstruction(dst1, new_dst, bb);
+            dst = dst1;
         }
         else
         {
-            if (((ArrayType *)(this->getType()))->getLength() == -1)
+            if (((ArrayType *)(this->getType()))->getLength() == 0)
             {
-                Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(((ArrayType *)(this->getType()))->getElemType()), SymbolTable::getLabel()));
+                ArrayType *curr_type;
+                if (cur_type->isIntArray())
+                {
+                    if (cur_type->isConst())
+                        curr_type = new ConstIntArrayType();
+                    else
+                        curr_type = new IntArrayType();
+                }
+                else
+                {
+                    if (cur_type->isConst())
+                        curr_type = new ConstFloatArrayType();
+                    else
+                        curr_type = new FloatArrayType();
+                }
+                std::vector<int> currdim = cur_type->fetch();
+                curr_type->SetDim(currdim);
+                Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 new LoadInstruction(dst1, addr, bb);
                 dst = dst1;
             }
@@ -927,7 +907,7 @@ void DeclStmt::genCode()
         se->setAddr(addr);
         this->builder->getUnit()->insertDecl(se);
     }
-    else if (se->isLocal() || se->isParam())
+    else if (se->isLocal())
     {
         Function *func = builder->getInsertBB()->getParent();
         BasicBlock *entry = func->getEntry();
@@ -1201,12 +1181,19 @@ void FuncDefParamsNode::genCode()
     for (auto it : paramsList)
     {
         func->insertParams(it->getOperand());
-        IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(it->getSymPtr());
-        Operand *addr = new Operand(new TemporarySymbolEntry(new PointerType(it->getType()), SymbolTable::getLabel()));
-        Instruction *alloca = new AllocaInstruction(addr, se);
-        entry->insertFront(alloca);
+        IdentifierSymbolEntry* se = dynamic_cast<IdentifierSymbolEntry*>(it->getSymPtr());
+        Type *type = new PointerType(it->getType());
+        SymbolEntry *addr_se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
+        Operand* addr = new Operand(addr_se);
+        Instruction *alloca = new AllocaInstruction(addr, se);// allocate space for local id in function stack.
+        entry->insertFront(alloca);                           // allocate instructions should be inserted into the begin of the entry block.
         se->setAddr(addr);
         Operand *src = it->getOperand();
+        fprintf(stderr, "name is %s\n", ((IdentifierSymbolEntry*)(it->getSymPtr()))->getName().c_str());
+        /***
+         * We haven't implemented array yet, the lval can only be ID. So we just store the result of the `expr` to the addr of the id.
+         * If you want to implement array, you have to caculate the address first and then store the result into it.
+         */
         new StoreInstruction(addr, src, entry);
     }
 }

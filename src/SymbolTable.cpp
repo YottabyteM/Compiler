@@ -164,7 +164,6 @@ std::string IdentifierSymbolEntry::toStr()
     }
     else if (type->isARRAY())
     {
-        assert(0);
         return "%" + std::to_string(SymbolTable::getLabel());
     }
 }
