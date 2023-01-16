@@ -110,17 +110,89 @@ std::string IntArrayType::toStr()
 
 std::string ConstIntArrayType::toStr()
 {
-    return "const int array";
+    Type *type = getElemType();
+    int count = 0;
+    bool flag = false;
+    std::vector<std::string> vec;
+    for (auto d : dim)
+    {
+        std::ostringstream buffer;
+        if (d == -1)
+            flag = true;
+        else
+        {
+            buffer << "[" << d << " x ";
+            count++;
+            vec.push_back(buffer.str());
+        }
+    }
+    std::ostringstream buffer;
+    for (auto it = vec.begin(); it != vec.end(); it++)
+        buffer << *it;
+    buffer << type->toStr();
+    while (count--)
+        buffer << ']';
+    if (flag)
+        buffer << '*';
+    return buffer.str();
 }
 
 std::string ConstFloatArrayType::toStr()
 {
-    return "const float array";
+    Type *type = getElemType();
+    int count = 0;
+    bool flag = false;
+    std::vector<std::string> vec;
+    for (auto d : dim)
+    {
+        std::ostringstream buffer;
+        if (d == -1)
+            flag = true;
+        else
+        {
+            buffer << "[" << d << " x ";
+            count++;
+            vec.push_back(buffer.str());
+        }
+    }
+    std::ostringstream buffer;
+    for (auto it = vec.begin(); it != vec.end(); it++)
+        buffer << *it;
+    buffer << type->toStr();
+    while (count--)
+        buffer << ']';
+    if (flag)
+        buffer << '*';
+    return buffer.str();
 }
 
 std::string FloatArrayType::toStr()
 {
-    return "float array";
+    Type *type = getElemType();
+    int count = 0;
+    bool flag = false;
+    std::vector<std::string> vec;
+    for (auto d : dim)
+    {
+        std::ostringstream buffer;
+        if (d == -1)
+            flag = true;
+        else
+        {
+            buffer << "[" << d << " x ";
+            count++;
+            vec.push_back(buffer.str());
+        }
+    }
+    std::ostringstream buffer;
+    for (auto it = vec.begin(); it != vec.end(); it++)
+        buffer << *it;
+    buffer << type->toStr();
+    while (count--)
+        buffer << ']';
+    if (flag)
+        buffer << '*';
+    return buffer.str();
 }
 
 std::string FunctionType::toStr()
