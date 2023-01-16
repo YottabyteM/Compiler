@@ -97,6 +97,7 @@ std::vector<Operand *> Instruction::replaceAllUsesWith(Operand *replVal)
 
 AllocaInstruction::AllocaInstruction(Operand *dst, SymbolEntry *se, BasicBlock *insert_bb) : Instruction(ALLOCA, insert_bb)
 {
+    assert(dst->getType()->isPTR());
     def_list.push_back(dst);
     dst->setDef(this);
     this->se = se;
@@ -963,18 +964,32 @@ void FuncCallInstruction::genMachineCode(AsmBuilder *builder)
     for (int i = (int)use_list.size() - 1; i != -1; i--)
     {
         auto arg = genMachineOperand(use_list[i]);
-        if (arg->isImm() && arg->isIllegalShifterOperand())
-            arg = cur_block->insertLoadImm(arg);
         // 左起前4个参数通过r0-r3/s0-s3传递
         if (i < 4)
         {
             auto dst = new MachineOperand(MachineOperand::REG, i, arg->getValType());
-            cur_inst = new MovMInstruction(cur_block, arg->getValType()->isFloat() ? MovMInstruction::VMOV : MovMInstruction::MOV, dst, arg);
-            cur_block->insertInst(cur_inst);
+            if (arg->isImm() && arg->getValType()->isInt())
+            {
+                cur_inst = new LoadMInstruction(cur_block, dst, arg);
+                cur_block->insertInst(cur_inst);
+            }
+            else
+            {
+                if (arg->isImm() && arg->isIllegalShifterOperand())
+                {
+                    auto internal_reg = genMachineVReg(TypeSystem::intType);
+                    cur_block->insertInst(new LoadMInstruction(cur_block, internal_reg, arg));
+                    arg = new MachineOperand(*internal_reg);
+                }
+                cur_inst = new MovMInstruction(cur_block, dst->getValType()->isFloat() ? MovMInstruction::VMOV : MovMInstruction::MOV, dst, arg);
+                cur_block->insertInst(cur_inst);
+            }
         }
         // 后面的参数压栈
         else
         {
+            if (arg->isImm())
+                arg = cur_block->insertLoadImm(arg);
             cur_inst = new StackMInstruction(cur_block, StackMInstruction::PUSH, arg);
             cur_block->insertInst(cur_inst);
         }

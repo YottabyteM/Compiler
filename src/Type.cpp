@@ -34,7 +34,6 @@ PointerType::PointerType(Type *valueType) : Type(Type::PTR), valueType(valueType
 ArrayType::ArrayType(int eleType) : Type(eleType)
 {
     size = 32;
-    is_pointer = false;
     newTypes.push_back(this);
 }
 
@@ -79,94 +78,7 @@ std::string ConstFloatType::toStr()
     // return "double";
 }
 
-std::string IntArrayType::toStr()
-{
-    Type *type = getElemType();
-    int count = 0;
-    bool flag = false;
-    std::vector<std::string> vec;
-    for (auto d : dim)
-    {
-        std::ostringstream buffer;
-        if (d == -1)
-            flag = true;
-        else
-        {
-            buffer << "[" << d << " x ";
-            count++;
-            vec.push_back(buffer.str());
-        }
-    }
-    std::ostringstream buffer;
-    for (auto it = vec.begin(); it != vec.end(); it++)
-        buffer << *it;
-    buffer << type->toStr();
-    while (count--)
-        buffer << ']';
-    if (flag)
-        buffer << '*';
-    return buffer.str();
-}
-
-std::string ConstIntArrayType::toStr()
-{
-    Type *type = getElemType();
-    int count = 0;
-    bool flag = false;
-    std::vector<std::string> vec;
-    for (auto d : dim)
-    {
-        std::ostringstream buffer;
-        if (d == -1)
-            flag = true;
-        else
-        {
-            buffer << "[" << d << " x ";
-            count++;
-            vec.push_back(buffer.str());
-        }
-    }
-    std::ostringstream buffer;
-    for (auto it = vec.begin(); it != vec.end(); it++)
-        buffer << *it;
-    buffer << type->toStr();
-    while (count--)
-        buffer << ']';
-    if (flag)
-        buffer << '*';
-    return buffer.str();
-}
-
-std::string ConstFloatArrayType::toStr()
-{
-    Type *type = getElemType();
-    int count = 0;
-    bool flag = false;
-    std::vector<std::string> vec;
-    for (auto d : dim)
-    {
-        std::ostringstream buffer;
-        if (d == -1)
-            flag = true;
-        else
-        {
-            buffer << "[" << d << " x ";
-            count++;
-            vec.push_back(buffer.str());
-        }
-    }
-    std::ostringstream buffer;
-    for (auto it = vec.begin(); it != vec.end(); it++)
-        buffer << *it;
-    buffer << type->toStr();
-    while (count--)
-        buffer << ']';
-    if (flag)
-        buffer << '*';
-    return buffer.str();
-}
-
-std::string FloatArrayType::toStr()
+std::string ArrayType::toStr()
 {
     Type *type = getElemType();
     int count = 0;

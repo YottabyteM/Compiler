@@ -283,21 +283,21 @@ void LoadMInstruction::output()
         this->use_list[1] = this->def_list[0];
     }
 
-    // // 小的立即数用MOV优化一下，arm汇编器会自动做?
-    // if ((this->use_list.size() == 1) && this->use_list[0]->isImm() && !this->use_list[0]->isIllegalShifterOperand())
-    // {
-    //     if (this->def_list[0]->getValType()->isFloat())
-    //         fprintf(yyout, "\tvmov.f32");
-    //     else
-    //         fprintf(yyout, "\tmov");
-    //     printCond();
-    //     fprintf(yyout, " ");
-    //     this->def_list[0]->output();
-    //     fprintf(yyout, ", ");
-    //     this->use_list[0]->output();
-    //     fprintf(yyout, "\n");
-    //     return;
-    // }
+    // 小的立即数用MOV优化一下，arm汇编器会自动做?
+    if ((this->use_list.size() == 1) && this->use_list[0]->isImm() && !this->use_list[0]->isIllegalShifterOperand())
+    {
+        if (this->def_list[0]->getValType()->isFloat())
+            fprintf(yyout, "\tvmov.f32");
+        else
+            fprintf(yyout, "\tmov");
+        printCond();
+        fprintf(yyout, " ");
+        this->def_list[0]->output();
+        fprintf(yyout, ", ");
+        this->use_list[0]->output();
+        fprintf(yyout, "\n");
+        return;
+    }
 
     if (this->def_list[0]->getValType()->isFloat())
         fprintf(yyout, "\tvldr.32");
@@ -872,22 +872,49 @@ MachineFunction::~MachineFunction()
 
 void MachineUnit::printGlobalDecl()
 {
-    // TODO: Array
     // print global variable declaration code;
     if (!global_var_list.empty())
         fprintf(yyout, "\t.data\n");
     for (auto var : global_var_list)
     {
-        fprintf(yyout, "\t.global %s\n", var->toStr().c_str());
-        fprintf(yyout, "\t.align 4\n");
-        fprintf(yyout, "\t.size %s, %d\n", var->toStr().c_str(), /*var->getType()->getSize()*/ 4);
-        fprintf(yyout, "%s:\n", var->toStr().c_str());
-        if (var->getType()->isInt())
-            fprintf(yyout, "\t.word %d\n", int(var->getValue()));
+        if (var->getType()->isARRAY())
+        {
+            if (var->getArrVals().empty())
+                fprintf(yyout, "\t.comm\t%s,%d,4\n", var->toStr().c_str(), var->getType()->getSize());
+            else
+            {
+                fprintf(yyout, "\t.global %s\n", var->toStr().c_str());
+                fprintf(yyout, "\t.align 4\n");
+                fprintf(yyout, "\t.size %s, %d\n", var->toStr().c_str(), var->getType()->getSize());
+                fprintf(yyout, "%s:\n", var->toStr().c_str());
+                if (var->getType()->isIntArray() || var->getType()->isConstIntArray())
+                {
+                    for (auto val : var->getArrVals())
+                        fprintf(yyout, "\t.word %d\n", int(val));
+                }
+                else
+                {
+                    for (auto val : var->getArrVals())
+                    {
+                        float value = float(val);
+                        fprintf(yyout, "\t.word %u\n", reinterpret_cast<unsigned &>(value));
+                    }
+                }
+            }
+        }
         else
         {
-            float value = float(var->getValue());
-            fprintf(yyout, "\t.word %u\n", reinterpret_cast<unsigned &>(value));
+            fprintf(yyout, "\t.global %s\n", var->toStr().c_str());
+            fprintf(yyout, "\t.align 4\n");
+            fprintf(yyout, "\t.size %s, %d\n", var->toStr().c_str(), /*var->getType()->getSize()*/ 4);
+            fprintf(yyout, "%s:\n", var->toStr().c_str());
+            if (var->getType()->isInt())
+                fprintf(yyout, "\t.word %d\n", int(var->getValue()));
+            else
+            {
+                float value = float(var->getValue());
+                fprintf(yyout, "\t.word %u\n", reinterpret_cast<unsigned &>(value));
+            }
         }
     }
 }

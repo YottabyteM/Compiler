@@ -780,28 +780,46 @@ void SeqStmt::genCode()
 
 void InitNode::genCode(int level)
 {
-
     for (int i = 0; i < vec_val.size(); i++)
     {
         int pos = i;
+        ArrayType* curr_type;
+        if (cur_type->isIntArray()) {
+            if (cur_type->isConst())
+                curr_type = new ConstIntArrayType();
+            else curr_type = new IntArrayType();
+        }
+        else {
+            if (cur_type->isConst())
+                curr_type = new ConstFloatArrayType();
+            else curr_type = new FloatArrayType();
+        }
         std::vector<int> curr_dim(cur_dim);
         Operand *final_offset = arrayAddr;
         for (int j = 0; j < d.size(); j++)
         {
-            cur_type->SetDim(curr_dim);
             curr_dim.erase(curr_dim.begin());
+            curr_type->SetDim(curr_dim);
             Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, pos / d[j]));
             Operand *addr = final_offset;
-            final_offset = new Operand(new TemporarySymbolEntry(new PointerType(cur_type), SymbolTable::getLabel()));
+            final_offset = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
             fprintf(stderr, "currdim is %s\n", addr->getType()->toStr().c_str());
             new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
             pos %= d[j];
+            if (cur_type->isIntArray()) {
+                if (cur_type->isConst())
+                    curr_type = new ConstIntArrayType();
+                else curr_type = new IntArrayType();
+            }
+            else {
+                if (cur_type->isConst())
+                    curr_type = new ConstFloatArrayType();
+                else curr_type = new FloatArrayType();
+            }
         }
         vec_val[i]->genCode();
         Operand *src = vec_val[i]->getOperand();
-        final_offset = new Operand(new TemporarySymbolEntry(
-            new PointerType(((ArrayType *)cur_type)->getElemType()),
-            dynamic_cast<TemporarySymbolEntry *>(final_offset->getEntry())->getLabel()));
+        final_offset = new Operand(new TemporarySymbolEntry(new PointerType(((ArrayType *)cur_type)->getElemType()), dynamic_cast<TemporarySymbolEntry *>(final_offset->getEntry())->getLabel()));
         new StoreInstruction(final_offset, src, builder->getInsertBB());
         curr_dim.clear();
         // assert(cur_dim.empty());
@@ -870,6 +888,27 @@ void IndicesNode::genCode()
         ele->genCode();
 }
 
+DeclStmt::DeclStmt(Id *id, InitNode *expr, bool isConst, bool isArray) : id(id), expr(expr), BeConst(isConst), BeArray(isArray)
+{
+    next = nullptr;
+
+    if (expr != nullptr)
+    {
+        fprintf(stderr, "---------------------------\n");
+        if (id->getType()->isARRAY())
+        {
+            std::vector<int> origin_dim = ((ArrayType *)(id->getType()))->fetch();
+            expr->fill(0, origin_dim, ((ArrayType *)(id->getType()))->getElemType());
+            vec_val.clear();
+            get_vec_val(expr);
+            std::vector<double> arrVals;
+            for (auto elem : vec_val)
+                arrVals.push_back(elem->getValue());
+            id->getSymPtr()->setArrVals(arrVals);
+        }
+    }
+};
+
 void DeclStmt::genCode()
 {
     if (id->getType()->isConst()) // 常量折叠
@@ -878,8 +917,7 @@ void DeclStmt::genCode()
     IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(id->getSymPtr());
     if (se->isGlobal())
     {
-        SymbolEntry *addr_se;
-        addr_se = new IdentifierSymbolEntry(*se);
+        SymbolEntry *addr_se = new IdentifierSymbolEntry(*se);
         addr_se->setType(new PointerType(se->getType()));
         addr = new Operand(addr_se);
         se->setAddr(addr);
@@ -889,15 +927,10 @@ void DeclStmt::genCode()
     {
         Function *func = builder->getInsertBB()->getParent();
         BasicBlock *entry = func->getEntry();
-        Instruction *alloca;
-        SymbolEntry *addr_se;
-        Type *type;
-        type = new PointerType(se->getType());
-        addr_se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
-        addr = new Operand(addr_se);
-        alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack. TODO：Alloc指令考虑数组
-        entry->insertFront(alloca);               // allocate instructions should be inserted into the begin of the entry block.
-        se->setAddr(addr);                        // set the addr operand in symbol entry so that we can use it in subsequent code generation.
+        addr = new Operand(new TemporarySymbolEntry(new PointerType(se->getType()), SymbolTable::getLabel()));
+        Instruction *alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack. TODO：Alloc指令考虑数组
+        entry->insertFront(alloca);                            // allocate instructions should be inserted into the begin of the entry block.
+        se->setAddr(addr);                                     // set the addr operand in symbol entry so that we can use it in subsequent code generation.
         Operand *temp = nullptr;
         if (se->isParam())
             temp = se->getAddr();
@@ -1162,14 +1195,11 @@ void FuncDefParamsNode::genCode()
     {
         func->insertParams(it->getOperand());
         IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(it->getSymPtr());
-        Type *type = new PointerType(it->getType());
-        SymbolEntry *se_addr = new TemporarySymbolEntry(type, SymbolTable::getLabel());
-        Operand *addr = new Operand(se_addr);
+        Operand *addr = new Operand(new TemporarySymbolEntry(new PointerType(it->getType()), SymbolTable::getLabel()));
         Instruction *alloca = new AllocaInstruction(addr, se);
         entry->insertFront(alloca);
         se->setAddr(addr);
         Operand *src = it->getOperand();
-
         new StoreInstruction(addr, src, entry);
     }
 }

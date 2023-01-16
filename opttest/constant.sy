@@ -1,15 +1,11 @@
-int a = -1 * 100 + 10;
+const int a = -1 * 100 + 10;
 
-float t = 3.1 / 5.9;
+const float t = 3.1 / 5.9;
 
 int main()
 {
-    int b = -1 * 100 + 10;
-    if (16 >= (3 - (2 + 1))) { putch(65); }
-    if ((25 - 7) != (36 - 6 * 3)) putch(66);
-    if (1 < 8 != 7 % 2) { putch(67); }
-    if (3 > 4 == 0) { putch(68); }
-    if (1 == 0x66 <= 077) putch(69);
-    if (5 - 6 == -!0) putch(70);
-    return 0;
+    const int b = -1 * 100 + 10 + t;
+    if (16 >= (3 - (2 + 1))) { putch(b); }
+    else {putch(a);};
+    return a;
 }

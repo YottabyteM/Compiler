@@ -71,6 +71,22 @@ void IdentifierSymbolEntry::decl_code()
         fprintf(yyout, ")\n");
         fprintf(stderr, ")\n");
     }
+    else if (type->isARRAY())
+    {
+        fprintf(yyout, "%s = global ", this->toStr().c_str());
+        if (((IdentifierSymbolEntry *)this)->getArrVals().empty())
+            fprintf(yyout, "%s zeroinitializer", type->toStr().c_str());
+        else
+        {
+            unsigned idx = 0;
+            auto vals = ((IdentifierSymbolEntry *)this)->getArrVals();
+            auto dims = ((ArrayType *)type)->fetch();
+            for (auto d : dims)
+            {
+                // toDo
+            }
+        }
+    }
     else
     {
         if (type->isConst()) // 常量折叠
@@ -143,7 +159,9 @@ std::string IdentifierSymbolEntry::toStr()
         assert(isParam());
         return "%" + name;
     }
-    else if (type->isARRAY()) {
+    else if (type->isARRAY())
+    {
+        assert(0);
         return "%" + std::to_string(SymbolTable::getLabel());
     }
 }
