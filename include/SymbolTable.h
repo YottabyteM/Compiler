@@ -44,6 +44,26 @@ public:
     // You can add any function you need here.
 };
 
+
+// symbol table managing identifier symbol entries
+class SymbolTable
+{
+private:
+    std::multimap<std::string, SymbolEntry *> symbolTable;
+    SymbolTable *prev;
+    int level;
+    static int counter;
+
+public:
+    SymbolTable();
+    SymbolTable(SymbolTable *prev);
+    bool install(std::string name, SymbolEntry *entry);
+    SymbolEntry *lookup(std::string name, bool isFunc = false, std::vector<Type *> ParamsType = std::vector<Type *>{});
+    SymbolTable *getPrev() { return prev; };
+    int getLevel() { return level; };
+    static int getLabel() { return counter++; };
+};
+
 /*
     Symbol entry for literal constant. Example:
 
@@ -113,6 +133,7 @@ public:
     void setParamNo(int paramNo) { this->paramNo = paramNo; };
     int getParamNo() { return paramNo; };
     std::string getName() const { return name; };
+    void setLabel() { label = SymbolTable::getLabel(); };
     bool isLibFunc();
     void decl_code();
     bool need8BytesAligned() { return this->is8BytesAligned; };
@@ -160,24 +181,6 @@ public:
     // You can add any function you need here.
 };
 
-// symbol table managing identifier symbol entries
-class SymbolTable
-{
-private:
-    std::multimap<std::string, SymbolEntry *> symbolTable;
-    SymbolTable *prev;
-    int level;
-    static int counter;
-
-public:
-    SymbolTable();
-    SymbolTable(SymbolTable *prev);
-    bool install(std::string name, SymbolEntry *entry);
-    SymbolEntry *lookup(std::string name, bool isFunc = false, std::vector<Type *> ParamsType = std::vector<Type *>{});
-    SymbolTable *getPrev() { return prev; };
-    int getLevel() { return level; };
-    static int getLabel() { return counter++; };
-};
 
 extern SymbolTable *identifiers;
 extern SymbolTable *globals;
