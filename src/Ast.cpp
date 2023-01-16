@@ -52,10 +52,16 @@ void Ast::output()
 
 Type *ExprNode::getType()
 {
-    if (!is_array_ele)
-        return symbolEntry->getType();
-    else
-        return dynamic_cast<ArrayType *>(symbolEntry->getType())->getElemType();
+    if (symbolEntry->getType()->isPTR()) {
+        // TODO : 
+        return nullptr;
+    }
+    else {
+        if (!is_array_ele)
+            return symbolEntry->getType();
+        else
+            return dynamic_cast<ArrayType *>(symbolEntry->getType())->getElemType();
+    }
 }
 
 void ExprNode::setType(Type *type)
@@ -490,7 +496,7 @@ void Id::genCode()
         }
         else
         {
-            // if (((ArrayType*)getType())->get_len() == -1) {
+            if (((ArrayType*)getType())->get_len() == -1) {
                 ArrayType *curr_type;
                 if (cur_type->isIntArray())
                 {
@@ -508,17 +514,18 @@ void Id::genCode()
                 }
                 std::vector<int> currdim = cur_type->fetch();
                 curr_type->SetDim(currdim);
+                Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(cur_type), SymbolTable::getLabel()));
+                new LoadInstruction(dst1, addr, bb);
+                // Operand* idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                 // Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(cur_type->getElemType()), SymbolTable::getLabel()));
-                // new LoadInstruction(dst1, addr, bb);
-                Operand* idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
-                Operand *dst1 = new Operand(new TemporarySymbolEntry(new PointerType(cur_type->getElemType()), SymbolTable::getLabel()));
-                new GepInstruction(dst1, addr, idx, bb);
+                // new GepInstruction(dst1, addr, idx, bb);
                 dst = dst1;
-            // }
-            // else {
-            //     Operand* idx = new Operand(new ConstantSymbolEntry(TypeSystem::intType, 0));
-            //     auto gep = new GepInstruction(dst, addr, idx, bb);
-            // }
+            }
+            else {
+                Operand* idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
+                dst = new Operand(new TemporarySymbolEntry(new PointerType(symbolEntry->getType()), SymbolTable::getLabel()));
+                auto gep = new GepInstruction(dst, addr, idx, bb);
+            }
         }
     }
 }
@@ -1186,9 +1193,30 @@ void FuncDefParamsNode::genCode()
     BasicBlock *entry = func->getEntry();
     for (auto it : paramsList)
     {
-        func->insertParams(it->getOperand());
         IdentifierSymbolEntry* se = dynamic_cast<IdentifierSymbolEntry*>(it->getSymPtr());
-        Type *type = new PointerType(it->getType());
+        Type *type;
+        if (it->getIndices() != nullptr) {
+            std::vector<int> dimensions;
+            for (auto idx : it->getIndices()->getExprList()) {
+                dimensions.push_back(idx->getSymPtr()->getValue());
+            }
+            dimensions.erase(dimensions.begin());
+            auto TType = ((ArrayType*)(it->getSymPtr()->getType()))->getElemType();
+            ArrayType* new_type;
+            if (TType->isInt()) {
+                if (TType->isConst()) new_type = new ConstIntArrayType();
+                else new_type = new IntArrayType();
+            }
+            else {
+                if (TType->isConst()) new_type = new ConstFloatArrayType();
+                else new_type = new FloatArrayType();
+            }
+            new_type->SetDim(dimensions);
+            type = new PointerType(new_type);
+            it->getSymPtr()->setType(type);
+        }
+        else type = new PointerType(it->getSymPtr()->getType());
+        func->insertParams(it->getOperand());
         SymbolEntry *addr_se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
         Operand* addr = new Operand(addr_se);
         Instruction *alloca = new AllocaInstruction(addr, se);// allocate space for local id in function stack.
