@@ -415,7 +415,6 @@ void Id::genCode()
             std::vector<int> currr_dim = curr_type->fetch();
             Operand *tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
             Operand *last_op;
-            bool flag = false;
             bool pointer = false;
             bool firstFlag = true;
             fprintf(stderr, "id type size is %d, idx size is %d\n", currr_dim.size(), indices->getExprList().size());
@@ -439,12 +438,8 @@ void Id::genCode()
                 //     pointer = true;
                 //     break;
                 // }
-                if (!is_first)
-                {
-                    fprintf(stderr, "last_op_type is %s", last_op->getType()->toStr().c_str());
-                }
                 idx->genCode();
-                auto gep = new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb, flag);
+                auto gep = new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb);
                 last_op = tempSrc;
                 if (!currr_dim.empty())
                 {
@@ -482,7 +477,6 @@ void Id::genCode()
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 is_first = false;
             }
-            fprintf(stderr, "last_op_type is %s", last_op->getType()->toStr().c_str());
             if (isleft)
             {
                 arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
@@ -513,7 +507,6 @@ void Id::genCode()
             {
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                 auto gep = new GepInstruction(dst, addr, idx, bb);
-                gep->setFirst();
             }
         }
     }
@@ -1330,6 +1323,7 @@ ExprNode *typeCast(ExprNode *fromNode, Type *to)
 {
     Type *from = fromNode->getType();
     assert(convertible(from, to));
+    // toDo:ArrayType
     if (from->isARRAY() && to->isARRAY())
         return fromNode;
     if (from != to && !(from == TypeSystem::constIntType && to == TypeSystem::intType) &&
