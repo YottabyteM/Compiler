@@ -178,8 +178,10 @@ public:
     void setIndices(IndicesNode *new_indices) { indices = new_indices; };
     IndicesNode *getIndices() { return indices; };
     void output(int level);
+    void SetLeft() { isleft = true; };
     bool is_Array() { return is_array; };
     bool is_Array_Ele() { return is_array_ele; };
+    ArrayType* get_Array_Type() { return (ArrayType*)(getSymPtr()->getType()); };
     // void typeCheck();
     void genCode();
     ~Id()
@@ -343,7 +345,9 @@ private:
     ExprNode *expr;
 
 public:
-    AssignStmt(ExprNode *lval, ExprNode *expr) : lval(lval), expr(expr){};
+    AssignStmt(ExprNode *lval, ExprNode *expr) : lval(lval), expr(expr){
+        ((Id*)(lval))->SetLeft();
+    };
     void output(int level);
     // void typeCheck();
     void genCode();

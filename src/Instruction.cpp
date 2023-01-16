@@ -541,6 +541,7 @@ GepInstruction::GepInstruction(Operand *dst,
 {
     def_list.push_back(dst);
     use_list.push_back(arr);
+    fprintf(stderr, "GepType is %s\n", arr->getType()->toStr().c_str());
     use_list.push_back(idx);
     dst->setDef(this);
     arr->addUse(this);
@@ -558,11 +559,11 @@ void GepInstruction::output() const
     std::string arrType = arr->getType()->toStr();
     if (paramFirst)
         fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 %s\n",
-                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+                dst->toStr().c_str(), arrType.c_str(),
                 arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
     else
         fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
-                dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
+                dst->toStr().c_str(), arrType.c_str(),
                 arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
 }
 
