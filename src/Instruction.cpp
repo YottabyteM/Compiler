@@ -1032,7 +1032,7 @@ void GepInstruction::genMachineCode(AsmBuilder *builder)
     auto idx = genMachineOperand(use_list[1]);
 
     MachineOperand *base_offset;
-    if (((TemporarySymbolEntry *)(arr->getEntry()))->offset != nullptr)
+    if (arr->getEntry()->isTemporary() && ((TemporarySymbolEntry *)(arr->getEntry()))->offset != nullptr)
         base_offset = ((TemporarySymbolEntry *)(arr->getEntry()))->offset;
     else
     {

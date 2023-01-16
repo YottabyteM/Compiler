@@ -301,7 +301,7 @@ std::vector<Type *> FuncCallParamsNode::getParamsType()
 {
     std::vector<Type *> ans;
     for (auto param : paramsList)
-        ans.push_back(param->getSymPtr()->getType());
+        ans.push_back(param->getType());
     return ans;
 }
 
@@ -392,6 +392,7 @@ void Id::genCode()
     }
     else
     {
+        cur_type = ((ArrayType*)getSymPtr()->getType());
         SymbolEntry *temp = new TemporarySymbolEntry(new PointerType(((ArrayType *)getType())->getElemType()), SymbolTable::getLabel());
         if (indices != nullptr)
         {
