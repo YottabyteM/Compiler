@@ -301,7 +301,7 @@ std::vector<Type *> FuncCallParamsNode::getParamsType()
 {
     std::vector<Type *> ans;
     for (auto param : paramsList)
-        ans.push_back(param->getType());
+        ans.push_back(param->getSymPtr()->getType());
     return ans;
 }
 
@@ -843,39 +843,6 @@ void InitNode::genCode(int level)
         curr_dim.clear();
         // assert(cur_dim.empty());
     }
-    // }
-    // // if it's a null {}, just generate nothing
-    // if (this->leaf != nullptr)
-    // {
-    //     this->leaf->genCode();
-    //     Operand *src = this->leaf->getOperand();
-    //     Operand *final_offset = new Operand(new TemporarySymbolEntry(new PointerType(((ArrayType *)cur_type)->getElemType()), dynamic_cast<TemporarySymbolEntry *>(lastAddr->getEntry())->getLabel()));
-    //     new StoreInstruction(final_offset, src, builder->getInsertBB());
-    //     // new BinaryInstruction(BinaryInstruction::ADD, final_offset, offset_operand, addr, builder->getInsertBB());
-    //     // new StoreInstruction(final_offset, src, builder->getInsertBB());
-    //     return;
-    // }
-    // // for (int i = 0; i < leaves.size(); i ++ ) {
-
-    // // }
-    // int off = 0;
-    // for (auto l : leaves)
-    // {
-    //     cur_type->SetDim(cur_dim);
-    //     recover.push_back(cur_dim[0]);
-    //     cur_dim.erase(cur_dim.begin());
-    //     Operand *tmp_addr = lastAddr;
-    //     Operand *offset_operand = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, off));
-    //     Operand *final_offset = new Operand(new TemporarySymbolEntry(new PointerType(cur_type), SymbolTable::getLabel()));
-    //     Operand *addr = lastAddr;
-    //     new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
-    //     lastAddr = final_offset;
-    //     l->genCode(level + 1);
-    //     lastAddr = tmp_addr;
-    //     cur_dim.insert(cur_dim.begin(), (*recover.rbegin()));
-    //     recover.pop_back();
-    //     off ++;
-    // }
 }
 
 void IndicesNode::output(int level)
@@ -930,7 +897,7 @@ DeclStmt::DeclStmt(Id *id, InitNode *expr, bool isConst, bool isArray) : id(id),
 
 void DeclStmt::genCode()
 {
-    if (id->getType()->isConst()) // 常量折叠
+    if (id->getType()->isConst() && !id->getSymPtr()->getType()->isARRAY()) // 常量折叠
         return;
     Operand *addr;
     IdentifierSymbolEntry *se = dynamic_cast<IdentifierSymbolEntry *>(id->getSymPtr());
