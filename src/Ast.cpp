@@ -16,8 +16,6 @@ static int offset = 0;
 static Operand *arrayAddr;
 static Operand *lastAddr;
 static Type *arrayType = nullptr;
-static Type *tmp_arrayType = nullptr;
-static int depth = 0;
 static std::vector<int> d;
 static std::vector<int> recover;
 std::vector<int> cur_dim;
@@ -392,8 +390,7 @@ void Id::genCode()
     }
     else
     {
-        cur_type = ((ArrayType*)getSymPtr()->getType());
-        SymbolEntry *temp = new TemporarySymbolEntry(new PointerType(((ArrayType *)getType())->getElemType()), SymbolTable::getLabel());
+        cur_type = ((ArrayType *)getSymPtr()->getType());
         if (indices != nullptr)
         {
             Operand *tempSrc = addr;
@@ -416,19 +413,15 @@ void Id::genCode()
             currr_dim.erase(currr_dim.begin());
             curr_type->SetDim(currr_dim);
             Operand *tempDst;
-            if (currr_dim.size() != 0) {
+            if (currr_dim.size() != 0)
+            {
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
             }
-            else 
+            else
             {
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), SymbolTable::getLabel()));
             }
-            Operand *last_op;
-            bool flag = false;
             bool pointer = false;
-            bool firstFlag = true;
-            fprintf(stderr, "id type size is %d, idx size is %d\n", currr_dim.size(), indices->getExprList().size());
-            bool is_first = true;
             for (auto idx : indices->getExprList())
             {
                 // if (idx->getValue() == -1) {
@@ -456,13 +449,8 @@ void Id::genCode()
                 //     pointer = true;
                 //     break;
                 // }
-                if (!is_first)
-                {
-                    fprintf(stderr, "last_op_type is %s", last_op->getType()->toStr().c_str());
-                }
                 idx->genCode();
-                auto gep = new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb);
-                last_op = tempSrc;
+                new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb);
                 if (!currr_dim.empty())
                 {
                     currr_dim.erase(currr_dim.begin());
@@ -497,9 +485,7 @@ void Id::genCode()
                 // type1 = ((ArrayType *)type1)->getElemType();
                 tempSrc = tempDst;
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
-                is_first = false;
             }
-            fprintf(stderr, "last_op_type is %s", last_op->getType()->toStr().c_str());
             if (isleft)
             {
                 arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
@@ -515,9 +501,8 @@ void Id::genCode()
                 else
                     dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
                 new LoadInstruction(dst1, new_dst, bb);
-                
-                dst = dst1;
 
+                dst = dst1;
             }
         }
         else
@@ -531,7 +516,7 @@ void Id::genCode()
             else
             {
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
-                auto gep = new GepInstruction(dst, addr, idx, bb);
+                new GepInstruction(dst, addr, idx, bb);
             }
         }
     }
@@ -809,7 +794,7 @@ void SeqStmt::genCode()
 
 void InitNode::genCode(int level)
 {
-    for (int i = 0; i < vec_val.size(); i++)
+    for (size_t i = 0; i < vec_val.size(); i++)
     {
         int pos = i;
         ArrayType *curr_type;
@@ -829,7 +814,7 @@ void InitNode::genCode(int level)
         }
         std::vector<int> curr_dim(cur_dim);
         Operand *final_offset = arrayAddr;
-        for (int j = 0; j < d.size(); j++)
+        for (size_t j = 0; j < d.size(); j++)
         {
             curr_dim.erase(curr_dim.begin());
             curr_type->SetDim(curr_dim);
@@ -1056,7 +1041,7 @@ void ReturnStmt::genCode()
     else
     {
         if (retValue->getSymPtr()->getType()->isARRAY())
-            cur_type = (ArrayType*)(retValue->getSymPtr()->getType());
+            cur_type = (ArrayType *)(retValue->getSymPtr()->getType());
         retValue->genCode();
         new RetInstruction(retValue->getOperand(), bb);
     }
@@ -1364,7 +1349,7 @@ ExprNode *typeCast(ExprNode *fromNode, Type *to)
 
 void InitNode::fill(int level, std::vector<int> d, Type *type)
 {
-    if (level == d.size() || leaf != nullptr)
+    if (level == (int)d.size() || leaf != nullptr)
     {
         if (leaf == nullptr)
         {
@@ -1373,10 +1358,10 @@ void InitNode::fill(int level, std::vector<int> d, Type *type)
 
         return;
     }
-    int cap = 1, num = 0, cap2 = 1;
-    for (int i = level + 1; i < d.size(); i++)
+    int cap = 1, num = 0;
+    for (size_t i = level + 1; i < d.size(); i++)
         cap *= d[i];
-    for (int i = leaves.size() - 1; i >= 0; i--)
+    for (int i = (int)leaves.size() - 1; i >= 0; i--)
         if (leaves[i]->isLeaf())
             num++;
         else

@@ -1,17 +1,90 @@
-const int N = 10000;
-
-int long_array(int k) {
-  int a1[N];
-  int a2[N];
-  int a3[N];
-  int i = 0;
-  while (i < N) {
-    a1[i] = (i * i) % 10;
-    i = i + 1;
+int func1(int x, int y, int z) {
+  if (z == 0) {
+    return x * y;
   }
-  return 0;
+  else {
+    return func1(x, y - z, 0);
+  }
+}
+
+int func2(int x, int y) {
+  if (y) {
+    return func2(x % y, 0);
+  }
+  else {
+    return x;
+  }
+}
+
+int func3(int x, int y) {
+  if (y == 0) {
+    return x + 1;
+  }
+  else {
+    return func3(x + y, 0);
+  }
+}
+
+int func4(int x, int y, int z) {
+  if (x) {
+    return y;
+  }
+  else {
+    return z;
+  }
+}
+
+int func5(int x) {
+  return -x;
+}
+
+int func6(int x, int y) {
+  if (x && y) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+int func7(int x) {
+  if (!x) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
 }
 
 int main() {
-  return long_array(9);
+  int i1 = getint(), i2 = getint(), i3 = getint(), i4 = 4;
+ 
+  int a = func1(
+      // this
+      func2(
+          // is
+          func1(
+              // comment
+              func3(func4(func5(func3(func2(func6(func7(i1), func5(i2)), i3),
+                                      // this
+                                      i4)),
+                          // is
+                          5,
+                          // function
+                          func1(func2(func3(func4(func5(6),
+                                                  // call
+                                                  func6(7, func7(8)),
+                                                  func2(9, func7(10))),
+                                            11),
+                                      12),
+                                func3(13, func7(14)), i1)),
+                    func2(i2, func3(func7(3), 4))),
+              5, 6),
+          7),
+      8,
+      func3(func2(func1(func2(func3(9, func5(10)), func5(11)),
+                        12, func7(13)),
+                  func5(14)),
+            1));
+  return a;
 }

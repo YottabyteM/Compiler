@@ -125,7 +125,7 @@ public:
     {
         dim.clear();
         size = 32;
-        for (int i = 0; i < d.size(); i++)
+        for (size_t i = 0; i < d.size(); i++)
         {
             dim.push_back(d[i]);
             size *= d[i];

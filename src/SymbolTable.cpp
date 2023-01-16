@@ -78,14 +78,14 @@ void IdentifierSymbolEntry::decl_code()
             fprintf(yyout, "%s zeroinitializer", type->toStr().c_str());
         else
         {
-            unsigned idx = 0;
+            // unsigned idx = 0;
             fprintf(yyout, "%s", type->toStr().c_str());
-            auto vals = ((IdentifierSymbolEntry *)this)->getArrVals();
-            auto dims = ((ArrayType *)type)->fetch();
-            for (auto d : dims)
-            {
-                // toDo
-            }
+            // auto vals = ((IdentifierSymbolEntry *)this)->getArrVals();
+            // auto dims = ((ArrayType *)type)->fetch();
+            // for (auto d : dims)
+            // {
+            //     // toDo
+            // }
         }
         fprintf(yyout, ", align 4\n");
     }
@@ -157,16 +157,8 @@ std::string IdentifierSymbolEntry::toStr()
     {
         return type->isFunc() ? "@" + name : name;
     }
-    else if (isParam())
-    {
-        assert(isParam());
-        return "%" + name;
-    }
-    else if (type->isARRAY())
-    {
-        assert(0);
-        return "%" + std::to_string(SymbolTable::getLabel());
-    }
+    assert(isParam());
+    return "%" + name;
 }
 
 std::string TemporarySymbolEntry::toStr()
