@@ -275,7 +275,7 @@ LoadMInstruction::LoadMInstruction(MachineBlock *p,
 void LoadMInstruction::output()
 {
     // 这段只针对栈中偏移更新前合法但更新后不合法的情况
-    if (this->use_list.size() > 1 && this->use_list[1]->isIllegalShifterOperand())
+    if (this->use_list.size() > 1 && this->use_list[1]->isImm() && this->use_list[1]->isIllegalShifterOperand())
     {
         fprintf(yyout, "\tldr ");
         this->def_list[0]->output();
@@ -792,9 +792,10 @@ void MachineFunction::output()
     {
         if (!isShifterOperandVal(reinterpret_cast<unsigned &>(stack_size)))
         {
-            assert((std::find(saved_rregs.begin(), saved_rregs.end(), 4)) != saved_rregs.end());
-            fprintf(yyout, "\tldr r4,=%d\n", stack_size);
-            fprintf(yyout, "\tsub sp, sp, r4\n");
+            auto reg_no = (*saved_rregs.begin());
+            assert(reg_no < 11);
+            fprintf(yyout, "\tldr r%d,=%d\n", reg_no, stack_size);
+            fprintf(yyout, "\tsub sp, sp, r%d\n", reg_no);
         }
         else
             fprintf(yyout, "\tsub sp, sp, #%d\n", stack_size);
@@ -830,9 +831,10 @@ void MachineFunction::output()
     {
         if (!isShifterOperandVal(reinterpret_cast<unsigned &>(stack_size)))
         {
-            assert((std::find(saved_rregs.begin(), saved_rregs.end(), 4)) != saved_rregs.end());
-            fprintf(yyout, "\tldr r4,=%d\n", stack_size);
-            fprintf(yyout, "\tadd sp, sp, r4\n");
+            auto reg_no = (*saved_rregs.begin());
+            assert(reg_no < 11);
+            fprintf(yyout, "\tldr r%d,=%d\n", reg_no, stack_size);
+            fprintf(yyout, "\tsub sp, sp, r%d\n", reg_no);
         }
         else
             fprintf(yyout, "\tadd sp, sp, #%d\n", stack_size);

@@ -336,14 +336,14 @@ WHITE [\t ]
     char *lexeme = new char[strlen(yytext) + 1];
     strcpy(lexeme, yytext);
     yylval.strtype = lexeme;
-    // std::vector<Type*> paramsType; //形参类型表
-    // Type* arrayType = new IntArrayType();
-    // ((IntArrayType*)arrayType)->addDimensions(-1);
-    // paramsType.push_back(arrayType);
-    // Type* funcType = new FunctionType(TypeSystem::intType, paramsType);//返回类型int，参数[int array]
-    // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
-    // globals->install(yytext, se);
-    // return ID;
+    std::vector<Type*> paramsType; 
+    Type* arrayType = new IntArrayType();
+    ((ArrayType*)arrayType)->addDim(-1);
+    paramsType.push_back(arrayType);
+    Type* funcType = new FunctionType(TypeSystem::intType, paramsType);
+    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);
+    globals->install(yytext, se);
+    return ID;
 }
 "getfarray" {
     if(dump_tokens){
@@ -353,14 +353,14 @@ WHITE [\t ]
     char *lexeme = new char[strlen(yytext) + 1];
     strcpy(lexeme, yytext);
     yylval.strtype = lexeme;
-    // std::vector<Type*> paramsType; //形参类型表
-    // Type* arrayType = new FloatArrayType();
-    // ((FloatArrayType*)arrayType)->addDimensions(-1);
-    // paramsType.push_back(arrayType);
-    // Type* funcType = new FunctionType(TypeSystem::intType, paramsType);//返回类型int，参数[float array]
-    // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
-    // globals->install(yytext, se);
-    // return ID;
+    std::vector<Type*> paramsType; 
+    Type* arrayType = new FloatArrayType();
+    ((ArrayType*)arrayType)->addDim(-1);
+    paramsType.push_back(arrayType);
+    Type* funcType = new FunctionType(TypeSystem::intType, paramsType);
+    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);
+    globals->install(yytext, se);
+    return ID;
 }
 "putint" {
     if(dump_tokens){
@@ -370,10 +370,10 @@ WHITE [\t ]
     char *lexeme = new char[strlen(yytext) + 1];
     strcpy(lexeme, yytext);
     yylval.strtype = lexeme;
-    std::vector<Type*> paramsType; //形参类型表
+    std::vector<Type*> paramsType; 
     paramsType.push_back(TypeSystem::intType);
-    Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);//返回类型void，参数表[int]
-    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
+    Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);
+    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);
     globals->install(yytext, se);
     return ID;
 }
@@ -385,10 +385,10 @@ WHITE [\t ]
     char *lexeme = new char[strlen(yytext) + 1];
     strcpy(lexeme, yytext);
     yylval.strtype = lexeme;
-    std::vector<Type*> paramsType; //形参类型表
+    std::vector<Type*> paramsType;
     paramsType.push_back(TypeSystem::intType);
-    Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);//返回类型void，参数表[int]
-    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
+    Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);
+    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);
     globals->install(yytext, se);
     return ID;
 }
@@ -400,10 +400,10 @@ WHITE [\t ]
     char *lexeme = new char[strlen(yytext) + 1];
     strcpy(lexeme, yytext);
     yylval.strtype = lexeme;
-    std::vector<Type*> paramsType; //形参类型表
+    std::vector<Type*> paramsType; 
     paramsType.push_back(TypeSystem::floatType);
-    Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);//返回类型void，参数表[int]
-    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
+    Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);
+    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);
     globals->install(yytext, se);
     return ID;
 }
@@ -415,15 +415,15 @@ WHITE [\t ]
     char *lexeme = new char[strlen(yytext) + 1];
     strcpy(lexeme, yytext);
     yylval.strtype = lexeme;
-    // std::vector<Type*> paramsType; //形参类型表
-    // paramsType.push_back(TypeSystem::intType);
-    // Type* arrayType = new IntArrayType();
-    // ((IntArrayType*)arrayType)->addDimensions(-1);
-    // paramsType.push_back(arrayType);
-    // Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);//返回类型void，参数表[int, int array]
-    // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
-    // globals->install(yytext, se);
-    // return ID;
+    std::vector<Type*> paramsType; 
+    paramsType.push_back(TypeSystem::intType);
+    Type* arrayType = new IntArrayType();
+    ((ArrayType*)arrayType)->addDim(-1);
+    paramsType.push_back(arrayType);
+    Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);
+    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);
+    globals->install(yytext, se);
+    return ID;
 }
 "putfarray" {
     if(dump_tokens){
@@ -433,15 +433,15 @@ WHITE [\t ]
     char *lexeme = new char[strlen(yytext) + 1];
     strcpy(lexeme, yytext);
     yylval.strtype = lexeme;
-    // std::vector<Type*> paramsType; //形参类型表
-    // paramsType.push_back(TypeSystem::intType);
-    // Type* arrayType = new FloatArrayType();
-    // ((FloatArrayType*)arrayType)->addDimensions(-1);
-    // paramsType.push_back(arrayType);
-    // Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);//返回类型void，参数表[int, float array]
-    // SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);//作用域GLOBAL(0)
-    // globals->install(yytext, se);
-    // return ID;
+    std::vector<Type*> paramsType;
+    paramsType.push_back(TypeSystem::intType);
+    Type* arrayType = new FloatArrayType();
+    ((ArrayType*)arrayType)->addDim(-1);
+    paramsType.push_back(arrayType);
+    Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);
+    SymbolEntry* se = new IdentifierSymbolEntry(funcType, yytext, 0);
+    globals->install(yytext, se);
+    return ID;
 }
 {DECIMAL} {
     if(dump_tokens){
