@@ -4,15 +4,8 @@ int aaa(int a[][2][2]) {
     return a[0][0][0];
 }
 
-int bb(int t[])
-{
-    int c = t[1];
-    t[2] = c;
-    return t[2];
-}
-
 int main()
 {
-    int a[2] = {};
-    return bb(a);
+    int a[2][2][2] = {};
+    return aaa(a);
 }
