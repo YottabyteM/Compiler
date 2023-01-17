@@ -21,6 +21,7 @@ static std::vector<int> recover;
 std::vector<int> cur_dim;
 ArrayType *cur_type;
 std::vector<ExprNode *> vec_val;
+
 static void get_vec_val(InitNode *cur_node)
 {
     if (cur_node->isLeaf() || cur_node->getself() != nullptr)
@@ -1416,6 +1417,7 @@ void InitNode::fill(int level, std::vector<int> d, Type *type)
         l->fill(level + 1, d, type);
     }
 }
+
 int InitNode::getSize(int d_nxt)
 {
     int num = 0, cur_fit = 0;

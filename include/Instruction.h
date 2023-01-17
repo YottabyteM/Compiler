@@ -230,7 +230,6 @@ public:
 class GepInstruction : public Instruction
 {
 public:
-    // GepInstruction(Operand *dst, Operand *arr, Operand *idx, BasicBlock *insert_bb = nullptr); //降维1次
     GepInstruction(Operand *dst, Operand *arr, std::vector<Operand *> idxList, BasicBlock *insert_bb = nullptr); // 普适，降维n-1次
     void output() const;
     void genMachineCode(AsmBuilder *);

@@ -531,20 +531,6 @@ void PhiInstruction::addEdge(BasicBlock *block, Operand *src)
     src->addUse(this);
 }
 
-// GepInstruction::GepInstruction(Operand *dst,
-//                                Operand *arr,
-//                                Operand *idx,
-//                                BasicBlock *insert_bb)
-//     : Instruction(GEP, insert_bb)
-// {
-//     def_list.push_back(dst);
-//     use_list.push_back(arr);
-//     use_list.push_back(idx);
-//     dst->setDef(this);
-//     arr->addUse(this);
-//     idx->addUse(this);
-// }
-
 GepInstruction::GepInstruction(Operand *dst,
                                Operand *arr,
                                std::vector<Operand *> idxList,
@@ -1056,7 +1042,9 @@ void GepInstruction::genMachineCode(AsmBuilder *builder)
     auto dst = genMachineOperand(def_list[0]);
     auto arr = use_list[0];
     int cur_size = (dynamic_cast<PointerType *>(arr->getEntry()->getType())->getValType())->getSize();
-    auto dims = ((ArrayType *)(dynamic_cast<PointerType *>(arr->getEntry()->getType())->getValType()))->fetch();
+    auto dims = (dynamic_cast<PointerType *>(arr->getEntry()->getType())->getValType())->isARRAY()
+                    ? ((ArrayType *)(dynamic_cast<PointerType *>(arr->getEntry()->getType())->getValType()))->fetch()
+                    : std::vector<int>{1}; // unused
 
     MachineOperand *base_addr;
     if (arr->getEntry()->isVariable())

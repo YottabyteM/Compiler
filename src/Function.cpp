@@ -24,7 +24,9 @@ Function::~Function()
 // remove the basicblock bb from its block_list.
 void Function::remove(BasicBlock *bb)
 {
-    block_list.erase(std::find(block_list.begin(), block_list.end(), bb));
+    auto it = std::find(block_list.begin(), block_list.end(), bb);
+    if (it != block_list.end())
+        block_list.erase(it);
 }
 
 void Function::output() const

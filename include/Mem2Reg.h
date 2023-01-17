@@ -7,6 +7,8 @@
     Mem2Reg for IR:
         1) 计算Idom
         2) 计算DF
+        3) insertPHI (pruned SSA)
+        4) Rename
 */
 class Mem2Reg
 {
