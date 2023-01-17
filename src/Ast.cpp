@@ -446,11 +446,13 @@ void Id::genCode()
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
             else
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), SymbolTable::getLabel()));
-            bool isFirst = false;
+            bool isFirst = true;
             for (auto idx : indices->getExprList())
             {
                 idx->genCode();
-                new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{nullptr, idx->getOperand()}, bb);
+                if (isPtr && isFirst)
+                    new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{idx->getOperand()}, bb);
+                else new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{nullptr, idx->getOperand()}, bb);
                 if (!currr_dim.empty())
                 {
                     currr_dim.erase(currr_dim.begin());
@@ -475,6 +477,7 @@ void Id::genCode()
                     break;
                 tempSrc = tempDst;
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+                isFirst = false;
             }
             if (isleft)
             {
