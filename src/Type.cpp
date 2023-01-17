@@ -42,7 +42,6 @@ Type *ArrayType::getElemType()
     return isConstIntArray()     ? TypeSystem::constIntType
            : isConstFloatArray() ? TypeSystem::constFloatType
            : isIntArray()        ? TypeSystem::intType
-           : isPTR()             ? ((PointerType*)this)->getValType()
                                  : TypeSystem::floatType;
 }
 

@@ -772,6 +772,7 @@ FuncFParam
             arrayType = new FloatArrayType();
         }
         arrayType->SetDim(arrayIdx);
+        arrayType->setlenth();
         arrayIdx.clear();
         SymbolEntry *se = new IdentifierSymbolEntry(arrayType, $2, identifiers->getLevel());
         identifiers->install($2, se);
@@ -780,6 +781,7 @@ FuncFParam
         ((IdentifierSymbolEntry*)se)->setLabel();
         ((IdentifierSymbolEntry*)se)->setAddr(new Operand(se));
         $$ = id;
+        delete []$2;
     }
     ;
 FuncArrayIndices

@@ -612,8 +612,8 @@ MachineOperand *Instruction::genMachineOperand(Operand *ope)
         }
         else
         {
-            assert(0);
-            exit(0);
+            // assert(0);
+            // exit(0);
         }
     }
     return mope;

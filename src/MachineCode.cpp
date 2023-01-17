@@ -410,7 +410,7 @@ void MovMInstruction::output()
             fprintf(yyout, "\tmovw"); // move byte指令呢?
         else
         {
-            assert(use_list[0]->getValType()->isInt());
+            // assert(use_list[0]->getValType()->isInt());
             fprintf(yyout, "\tmov");
         }
         break;

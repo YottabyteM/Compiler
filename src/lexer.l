@@ -338,6 +338,7 @@ WHITE [\t ]
     yylval.strtype = lexeme;
     std::vector<Type*> paramsType; 
     Type* arrayType = new IntArrayType();
+    ((ArrayType*)arrayType)->setlenth();
     ((ArrayType*)arrayType)->addDim(-1);
     paramsType.push_back(arrayType);
     Type* funcType = new FunctionType(TypeSystem::intType, paramsType);
@@ -355,6 +356,7 @@ WHITE [\t ]
     yylval.strtype = lexeme;
     std::vector<Type*> paramsType; 
     Type* arrayType = new FloatArrayType();
+    ((ArrayType*)arrayType)->setlenth();
     ((ArrayType*)arrayType)->addDim(-1);
     paramsType.push_back(arrayType);
     Type* funcType = new FunctionType(TypeSystem::intType, paramsType);
@@ -418,6 +420,7 @@ WHITE [\t ]
     std::vector<Type*> paramsType; 
     paramsType.push_back(TypeSystem::intType);
     Type* arrayType = new IntArrayType();
+    ((ArrayType*)arrayType)->setlenth();
     ((ArrayType*)arrayType)->addDim(-1);
     paramsType.push_back(arrayType);
     Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);
@@ -436,6 +439,7 @@ WHITE [\t ]
     std::vector<Type*> paramsType;
     paramsType.push_back(TypeSystem::intType);
     Type* arrayType = new FloatArrayType();
+    ((ArrayType*)arrayType)->setlenth();
     ((ArrayType*)arrayType)->addDim(-1);
     paramsType.push_back(arrayType);
     Type* funcType = new FunctionType(TypeSystem::voidType, paramsType);

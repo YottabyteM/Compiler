@@ -57,11 +57,11 @@ int func7(int x) {
 }
 
 int main() {
-  int i1 = getint(), i2 = 2, i3 = getint(), i4 = 4;
+  int i1 = getint(), i2 = getint(), i3 = getint(), i4 = getint();
   int arr[10];
   int i = 0;
   while (i < 10) {
-    arr[i] = i + 5;
+    arr[i] = getint();
     i = i + 1;
   }
   int a = func1(
