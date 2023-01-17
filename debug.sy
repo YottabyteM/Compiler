@@ -1,4 +1,11 @@
-const int ascii_0 = 48;
+int main() {
+	int x[5] = {1, 2, 3, 4, 5};
+	putint(x[0]);
+	return 0;
+}
+
+
+/*const int ascii_0 = 48;
 
 int my_getint()
 {
@@ -50,3 +57,10 @@ int main()
     }
     return 0;
 }
+
+int main()
+{
+    int b[2] = {};
+    int t = bbb(b);
+    return t;
+}*/
