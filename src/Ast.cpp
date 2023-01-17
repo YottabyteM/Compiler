@@ -1268,7 +1268,10 @@ void FuncDefParamsNode::genCode()
         else
             type = new PointerType(it->getSymPtr()->getType());
         func->insertParams(it->getOperand());
-        SymbolEntry *addr_se = new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel());
+        SymbolEntry *addr_se;
+        if (it->getIndices() != nullptr)
+            addr_se = new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel());
+        else addr_se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
         Operand *addr = new Operand(addr_se);
         Instruction *alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack.
         entry->insertFront(alloca);                            // allocate instructions should be inserted into the begin of the entry block.
