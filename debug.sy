@@ -1,18 +1,13 @@
-int aaa(int a[][2][2]) {
-    int c = a[1][1][1];
-    a[0][0][0] = 1;
-    return a[0][0][0];
+int a(int x, int y)
+{
+    return x + y;
 }
-
-int bbb(int t[]) {
-    int c = t[1];
-    t[2] = c;
-    return t[2];
+int b(int x, int y)
+{
+    return x * y;
 }
-
 int main()
 {
-    int b[2] = {};
-    int t = bbb(b);
-    return t;
+    int i = getint(), j = getint(), k = getint(), m = getint();
+    return a(i, j);
 }
