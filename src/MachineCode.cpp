@@ -796,7 +796,7 @@ void MachineFunction::output()
         offset->setVal(offset->getVal() + 4 * (regs.size() + sregs.size()));
     // fp = sp
     fprintf(yyout, "\tmov fp, sp\n");
-    if (/*dynamic_cast<IdentifierSymbolEntry *>(sym_ptr)->need8BytesAligned() &&*/
+    if (dynamic_cast<IdentifierSymbolEntry *>(sym_ptr)->need8BytesAligned() &&
         (4 * (regs.size() + sregs.size() + std::max(0, (int)dynamic_cast<FunctionType *>(sym_ptr->getType())->getParamsType().size() - 4)) + stack_size) % 8)
         stack_size += 4;
     // Allocate stack space for local variable
@@ -819,7 +819,8 @@ void MachineFunction::output()
     {
         iter->output();
         // 生成一条跳转到结尾函数栈帧处理的无条件跳转语句
-        if (iter->getInsts().empty() || (!(*(iter->end() - 1))->isBranch() && iter != *(block_list.end() - 1)))
+        auto lastBlock = *(block_list.end() - 1);
+        if (iter->getInsts().empty() || (!((*(iter->end() - 1))->isBranch()) && iter != lastBlock) || ((*(iter->end() - 1))->isBranch() && (*(iter->end() - 1))->getOpType() == BranchMInstruction::BL))
         {
             outputEndLabel = true;
             std::string endLabel = ".L" + this->sym_ptr->toStr().erase(0, 1) + "_END";

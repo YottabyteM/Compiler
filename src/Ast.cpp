@@ -54,7 +54,7 @@ Type *ExprNode::getType()
     if (symbolEntry->getType()->isPTR())
     {
         // TODO :
-        return symbolEntry->getType();
+        return ((PointerType*)symbolEntry->getType())->getValType();
     }
     else
     {
@@ -463,7 +463,6 @@ void Id::genCode()
                 if (!currr_dim.empty())
                 {
                     currr_dim.erase(currr_dim.begin());
-                    assert(curr_type->isIntArray());
                     if (curr_type->isIntArray())
                     {
                         if (curr_type->isConst())
@@ -539,24 +538,29 @@ void Id::genCode()
             }
             else
             {
-                ArrayType *curr_type;
-                if (cur_type->isIntArray())
-                {
-                    if (cur_type->isConst())
-                        curr_type = new ConstIntArrayType();
-                    else
-                        curr_type = new IntArrayType();
-                }
-                else
-                {
-                    if (cur_type->isConst())
-                        curr_type = new ConstFloatArrayType();
-                    else
-                        curr_type = new FloatArrayType();
-                }
                 std::vector<int> FunP(cur_type->fetch());
+                Type *curr_type;
+                if (FunP.size() > 0) {
+                    FunP.erase(FunP.begin());
+                    if (cur_type->isIntArray())
+                    {
+                        if (cur_type->isConst())
+                            curr_type = new ConstIntArrayType();
+                        else
+                            curr_type = new IntArrayType();
+                    }
+                    else
+                    {
+                        if (cur_type->isConst())
+                            curr_type = new ConstFloatArrayType();
+                        else
+                            curr_type = new FloatArrayType();
+                    }
+                    ((ArrayType*)curr_type)->SetDim(FunP);
+                }
+                else if (cur_type->isIntArray()) curr_type = new IntType(4);
+                else curr_type = new FloatType(4);
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
-                curr_type->SetDim(FunP);
                 dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 new GepInstruction(dst, addr, std::vector<Operand *>{nullptr, idx}, bb);
             }

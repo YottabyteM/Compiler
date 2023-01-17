@@ -1,7 +1,8 @@
 SRC_PATH ?= src
 INC_PATH += include
 BUILD_PATH ?= build
-TEST_PATH ?= test
+TEST_PATH ?= test/level2-6
+# DEBUG_PATH ?= MakeDebug
 OPTTEST_PATH ?= opttest
 OBJ_PATH ?= $(BUILD_PATH)/obj
 BINARY ?= $(BUILD_PATH)/compiler
@@ -19,6 +20,7 @@ SRC += $(PARSER)
 OBJ = $(SRC:$(SRC_PATH)/%.cpp=$(OBJ_PATH)/%.o)
 PARSERH ?= $(INC_PATH)/$(addsuffix .h, $(notdir $(basename $(PARSER))))
 
+# TESTCASE = $(shell find $(DEBUG_PATH) -name "*.sy")
 TESTCASE = $(shell find $(TEST_PATH) -name "*.sy")
 OPTTESTCASE = $(shell find $(OPTTEST_PATH) -name "*.sy")
 TESTCASE_NUM = $(words $(TESTCASE))
