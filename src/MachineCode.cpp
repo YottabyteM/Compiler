@@ -401,6 +401,8 @@ MovMInstruction::MovMInstruction(MachineBlock *p, int op,
 
 void MovMInstruction::output()
 {
+    if ((*def_list[0]) == (*use_list[0]))
+        return;
     switch (this->op)
     {
     case MovMInstruction::MOV:
