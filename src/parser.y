@@ -508,29 +508,35 @@ DeclStmt
 VarDeclStmt
     : 
     Type VarDefList SEMICOLON {
-        $$ = $2;
+        $$ = ((DeclStmt*)$2)->getHead();
     }
     ;
 ConstDeclStmt
     : CONST Type ConstDefList SEMICOLON {
-        $$ = $3;
+        $$ = ((DeclStmt*)$3)->getHead();
     }
     ;
 VarDefList
     : VarDefList COMMA VarDef {
-        ((DeclStmt*)$3)->setNext(((DeclStmt*)$1)->getNext());
+        ((DeclStmt*)$3)->setHead(((DeclStmt*)$1)->getHead());
         ((DeclStmt*)$1)->setNext((DeclStmt*)$3);
-        $$ = $1;
+        $$ = $3;
     } 
-    | VarDef {$$ = $1;}
+    | VarDef {
+        ((DeclStmt*)$1)->setHead((DeclStmt*)$1);
+        $$ = $1;
+    }
     ;
 ConstDefList
     : ConstDefList COMMA ConstDef {
-        ((DeclStmt*)$3)->setNext(((DeclStmt*)$1)->getNext());
-        ((DeclStmt*)$1)->setNext((DeclStmt*)$3);
-        $$ = $1;
+        ((DeclStmt*)$3)->setHead(((DeclStmt*)$1)->getHead());
+        ((DeclStmt*)$1)->setNext((DeclStmt*)$3);        
+        $$ = $3;
     }
-    | ConstDef {$$ = $1;}
+    | ConstDef {
+        ((DeclStmt*)$1)->setHead((DeclStmt*)$1);
+        $$ = $1; 
+    }
     ;
 VarDef
     : ID {

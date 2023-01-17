@@ -183,7 +183,7 @@ public:
     void SetLeft() { isleft = true; };
     bool is_Array() { return is_array; };
     bool is_Array_Ele() { return is_array_ele; };
-    ArrayType* get_Array_Type() { return (ArrayType*)(getSymPtr()->getType()); };
+    ArrayType *get_Array_Type() { return (ArrayType *)(getSymPtr()->getType()); };
     // void typeCheck();
     void genCode();
     ~Id()
@@ -271,11 +271,14 @@ private:
     DeclStmt *next;
     bool BeConst;
     bool BeArray;
+    DeclStmt *head;
 
 public:
     DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false);
     void setNext(DeclStmt *next);
     DeclStmt *getNext();
+    void setHead(DeclStmt* head){this->head = head;};
+    DeclStmt *getHead() { return head; };
     void output(int level);
     // void typeCheck();
     void genCode();
@@ -347,8 +350,9 @@ private:
     ExprNode *expr;
 
 public:
-    AssignStmt(ExprNode *lval, ExprNode *expr) : lval(lval), expr(expr){
-        ((Id*)(lval))->SetLeft();
+    AssignStmt(ExprNode *lval, ExprNode *expr) : lval(lval), expr(expr)
+    {
+        ((Id *)(lval))->SetLeft();
     };
     void output(int level);
     // void typeCheck();

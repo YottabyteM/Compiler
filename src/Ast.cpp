@@ -21,6 +21,7 @@ static std::vector<int> recover;
 std::vector<int> cur_dim;
 ArrayType *cur_type;
 std::vector<ExprNode *> vec_val;
+
 static void get_vec_val(InitNode *cur_node)
 {
     if (cur_node->isLeaf() || cur_node->getself() != nullptr)
@@ -50,8 +51,9 @@ void Ast::output()
 
 Type *ExprNode::getType()
 {
-    if (symbolEntry->getType()->isPTR()) {
-        // TODO : 
+    if (symbolEntry->getType()->isPTR())
+    {
+        // TODO :
         return symbolEntry->getType();
     }
     else
@@ -402,7 +404,8 @@ void Id::genCode()
         {
             if (!isPtr)
                 cur_type = ((ArrayType *)getSymPtr()->getType());
-            else cur_type = (ArrayType*)((PointerType*)symbolEntry->getType())->getValType();
+            else
+                cur_type = (ArrayType *)((PointerType *)symbolEntry->getType())->getValType();
             Operand *tempSrc = addr;
             ArrayType *curr_type;
             if (cur_type->isIntArray())
@@ -419,17 +422,20 @@ void Id::genCode()
                 else
                     curr_type = new FloatArrayType();
             }
-            Operand* dst1;
-            if (isPtr) {
-                dst1 = new Operand(new TemporarySymbolEntry(((PointerType*)addr->getType())->getValType(), SymbolTable::getLabel()));
+            Operand *dst1;
+            if (isPtr)
+            {
+                dst1 = new Operand(new TemporarySymbolEntry(((PointerType *)addr->getType())->getValType(), SymbolTable::getLabel()));
                 new LoadInstruction(dst1, addr, bb);
                 tempSrc = dst1;
             }
             std::vector<int> currr_dim;
             if (!isPtr)
                 currr_dim = ((ArrayType *)getSymPtr()->getType())->fetch(); // if is params, it should be 0
-            else currr_dim = ((ArrayType*)((PointerType *)getSymPtr()->getType())->getValType())->fetch();
-            if (currr_dim.size() > 0) {
+            else
+                currr_dim = ((ArrayType *)((PointerType *)getSymPtr()->getType())->getValType())->fetch();
+            if (currr_dim.size() > 0)
+            {
                 if (currr_dim[0] == -1)
                 {
                     TemporarySymbolEntry *se = new TemporarySymbolEntry(new PointerType(getType()), SymbolTable::getLabel());
@@ -452,7 +458,8 @@ void Id::genCode()
                 idx->genCode();
                 if (isPtr && isFirst)
                     new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{idx->getOperand()}, bb);
-                else new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{nullptr, idx->getOperand()}, bb);
+                else
+                    new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{nullptr, idx->getOperand()}, bb);
                 if (!currr_dim.empty())
                 {
                     currr_dim.erase(currr_dim.begin());
@@ -485,13 +492,14 @@ void Id::genCode()
                 return;
             }
             Operand *new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
-            if (!isPtr) {
+            if (!isPtr)
+            {
                 if (getType()->isInt())
                     dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
                 else
                     dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
             }
-            else 
+            else
             {
                 if (curr_type->getElemType()->isInt())
                     dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
@@ -555,7 +563,6 @@ void Id::genCode()
         }
     }
 }
-
 
 void UnaryExpr::genCode()
 {
@@ -931,6 +938,8 @@ DeclStmt::DeclStmt(Id *id, InitNode *expr, bool isConst, bool isArray) : id(id),
             id->getSymPtr()->setArrVals(arrVals);
         }
     }
+
+    this->head = nullptr;
 };
 
 void DeclStmt::genCode()
@@ -1208,7 +1217,8 @@ void FuncCallNode::genCode()
     {
         params->genCode();
         std::vector<Operand *> Oplist;
-        for (auto it : params->getParams()) {
+        for (auto it : params->getParams())
+        {
             Oplist.push_back(it->getOperand());
         }
         new FuncCallInstruction(dst, Oplist, se, bb);
@@ -1255,12 +1265,12 @@ void FuncDefParamsNode::genCode()
             type = new PointerType(it->getSymPtr()->getType());
         func->insertParams(it->getOperand());
         SymbolEntry *addr_se = new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel());
-        Operand* addr = new Operand(addr_se);
-        Instruction *alloca = new AllocaInstruction(addr, se);// allocate space for local id in function stack.
-        entry->insertFront(alloca);                           // allocate instructions should be inserted into the begin of the entry block.
+        Operand *addr = new Operand(addr_se);
+        Instruction *alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack.
+        entry->insertFront(alloca);                            // allocate instructions should be inserted into the begin of the entry block.
         se->setAddr(addr);
         Operand *src = it->getOperand();
-        fprintf(stderr, "name is %s, \n", ((IdentifierSymbolEntry*)(it->getSymPtr()))->getName().c_str());
+        fprintf(stderr, "name is %s, \n", ((IdentifierSymbolEntry *)(it->getSymPtr()))->getName().c_str());
         /***
          * We haven't implemented array yet, the lval can only be ID. So we just store the result of the `expr` to the addr of the id.
          * If you want to implement array, you have to caculate the address first and then store the result into it.
@@ -1458,6 +1468,7 @@ void InitNode::fill(int level, std::vector<int> d, Type *type)
         l->fill(level + 1, d, type);
     }
 }
+
 int InitNode::getSize(int d_nxt)
 {
     int num = 0, cur_fit = 0;
