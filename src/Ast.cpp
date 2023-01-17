@@ -431,7 +431,7 @@ void Id::genCode()
             for (auto idx : indices->getExprList())
             {
                 idx->genCode();
-                new GepInstruction(tempDst, tempSrc, idx->getOperand(), bb);
+                new GepInstruction(tempDst, tempSrc, std::vector<Operand*>{nullptr, idx->getOperand()}, bb);
                 if (!currr_dim.empty())
                 {
                     currr_dim.erase(currr_dim.begin());
@@ -498,7 +498,7 @@ void Id::genCode()
             else
             {
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
-                new GepInstruction(dst, addr, idx, bb);
+                new GepInstruction(dst, addr, std::vector<Operand*>{nullptr, idx}, bb);
             }
         }
     }
@@ -804,7 +804,7 @@ void InitNode::genCode(int level)
             Operand *addr = final_offset;
             final_offset = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
             fprintf(stderr, "currdim is %s\n", addr->getType()->toStr().c_str());
-            new GepInstruction(final_offset, addr, offset_operand, builder->getInsertBB());
+            new GepInstruction(final_offset, addr, std::vector<Operand*>{nullptr, offset_operand}, builder->getInsertBB());
             pos %= d[j];
             if (cur_type->isIntArray())
             {

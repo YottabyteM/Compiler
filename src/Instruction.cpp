@@ -142,7 +142,6 @@ void StoreInstruction::output() const
 {
     // TODO : Array
     std::string dst = use_list[0]->toStr();
-    fprintf(stderr, "Operend is %f", use_list[1]->getEntry()->getValue());
     std::string src = use_list[1]->toStr();
     std::string dst_type = use_list[0]->getType()->toStr();
     // assert(use_list[0]->getType()->isPTR());
@@ -532,33 +531,59 @@ void PhiInstruction::addEdge(BasicBlock *block, Operand *src)
     src->addUse(this);
 }
 
+// GepInstruction::GepInstruction(Operand *dst,
+//                                Operand *arr,
+//                                Operand *idx,
+//                                BasicBlock *insert_bb)
+//     : Instruction(GEP, insert_bb)
+// {
+//     def_list.push_back(dst);
+//     use_list.push_back(arr);
+//     use_list.push_back(idx);
+//     dst->setDef(this);
+//     arr->addUse(this);
+//     idx->addUse(this);
+// }
+
 GepInstruction::GepInstruction(Operand *dst,
                                Operand *arr,
-                               Operand *idx,
+                               std::vector<Operand *> idxList,
                                BasicBlock *insert_bb)
     : Instruction(GEP, insert_bb)
 {
     def_list.push_back(dst);
-    use_list.push_back(arr);
-    fprintf(stderr, "GepType is %s\n", arr->getType()->toStr().c_str());
-    use_list.push_back(idx);
     dst->setDef(this);
+    use_list.push_back(arr);
     arr->addUse(this);
-    idx->addUse(this);
+    for (auto idx : idxList)
+    {
+        if (idx == nullptr)
+            idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
+        use_list.push_back(idx);
+        idx->addUse(this);
+    }
 }
 
 void GepInstruction::output() const
 {
     Operand *dst = def_list[0];
     Operand *arr = use_list[0];
-    Operand *idx = use_list[1];
+    // Operand *idx = use_list[1];
+
     std::string arrType = arr->getType()->toStr();
-    fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
+    fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 %s",
             dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
-            arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
-    fprintf(stderr, "  %s = getelementptr inbounds %s, %s %s, i32 0, i32 %s\n",
+            arrType.c_str(), arr->toStr().c_str(), use_list[1]->toStr().c_str());
+    fprintf(stderr, "  %s = getelementptr inbounds %s, %s %s, i32 %s",
             dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),
-            arrType.c_str(), arr->toStr().c_str(), idx->toStr().c_str());
+            arrType.c_str(), arr->toStr().c_str(), use_list[1]->toStr().c_str());
+    for (size_t i = 2; i < use_list.size(); i++)
+    {
+        fprintf(yyout, ", i32 %s", use_list[i]->toStr().c_str());
+        fprintf(stderr, ", i32 %s", use_list[i]->toStr().c_str());
+    }
+    fprintf(yyout, "\n");
+    fprintf(stderr, "\n");
 }
 
 MachineOperand *Instruction::genMachineOperand(Operand *ope)
@@ -668,7 +693,7 @@ void LoadInstruction::genMachineCode(AsmBuilder *builder)
         cur_inst = new LoadMInstruction(cur_block, dst, internal_reg2);
         cur_block->insertInst(cur_inst);
     }
-    // Load local operand
+    // Load local operand / param
     else if (use_list[0]->getEntry()->isTemporary() && use_list[0]->getDef() && use_list[0]->getDef()->isAlloca())
     {
         // example: ldr r1, [fp, #4]
@@ -728,7 +753,7 @@ void StoreInstruction::genMachineCode(AsmBuilder *builder)
         cur_inst = new StoreMInstruction(cur_block, src, internal_reg2);
         cur_block->insertInst(cur_inst);
     }
-    // Store local operand
+    // Store local operand / param
     else if (use_list[0]->getEntry()->isTemporary() && use_list[0]->getDef() && use_list[0]->getDef()->isAlloca())
     {
         // example: str r1, [fp, #-4]
@@ -773,7 +798,7 @@ void BinaryInstruction::genMachineCode(AsmBuilder *builder)
             return;
         }
     }
-    // toDo : a = a + 0, a = b - 0, a = b*0, a=b*1, a = c/1;
+    // toDo : a = a + 0, a = b - 0, a = b*0, a=b*1, a = c/1; 把这部分工作额外用一次强度削弱的遍历来完成
     MachineInstruction *cur_inst = nullptr;
     if (opcode == MUL || opcode == DIV || opcode == MOD)
     {
@@ -1027,49 +1052,71 @@ void FuncCallInstruction::genMachineCode(AsmBuilder *builder)
 void GepInstruction::genMachineCode(AsmBuilder *builder)
 {
     auto cur_block = builder->getBlock();
-    MachineInstruction *cur_inst;
+    MachineInstruction *cur_inst = nullptr;
     auto dst = genMachineOperand(def_list[0]);
     auto arr = use_list[0];
-    auto idx = genMachineOperand(use_list[1]);
+    int cur_size = (dynamic_cast<PointerType *>(arr->getEntry()->getType())->getValType())->getSize();
+    auto dims = ((ArrayType *)(dynamic_cast<PointerType *>(arr->getEntry()->getType())->getValType()))->fetch();
 
-    MachineOperand *base_offset;
-    if (arr->getEntry()->isTemporary() && ((TemporarySymbolEntry *)(arr->getEntry()))->offset != nullptr)
-        base_offset = ((TemporarySymbolEntry *)(arr->getEntry()))->offset;
-    else
+    MachineOperand *base_addr;
+    if (arr->getEntry()->isVariable())
     {
-        base_offset = genMachineVReg();
-        if (arr->getEntry()->isVariable() && ((IdentifierSymbolEntry *)(arr->getEntry()))->isGlobal())
-            cur_inst = new LoadMInstruction(cur_block, base_offset, genMachineOperand(arr));
-        else
+        if (((IdentifierSymbolEntry *)(arr->getEntry()))->isGlobal())
         {
-            // toDo : param
+            base_addr = genMachineVReg();
+            cur_inst = new LoadMInstruction(cur_block, base_addr, genMachineOperand(arr));
+            cur_block->insertInst(cur_inst);
+        }
+        else
+            assert(0);
+    }
+    else if (arr->getEntry()->isTemporary())
+    {
+        if (arr->getDef() && (arr->getDef()->isAlloca()))
+        {
+            base_addr = genMachineVReg();
             auto fp = genMachineReg(11);
             auto offset = genMachineImm(((TemporarySymbolEntry *)(arr->getEntry()))->getOffset());
             if (offset->isIllegalShifterOperand())
                 offset = cur_block->insertLoadImm(offset);
-            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, base_offset, fp, offset);
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, base_addr, fp, offset);
+            cur_block->insertInst(cur_inst);
         }
-        cur_block->insertInst(cur_inst);
+        else
+        {
+            assert(arr->getDef() && (arr->getDef()->isLoad() || arr->getDef()->isGep()));
+            base_addr = genMachineOperand(arr);
+        }
     }
 
-    if (idx->isImm())
-        idx = cur_block->insertLoadImm(idx);
-    auto size = cur_block->insertLoadImm(genMachineImm(((ArrayType *)(((PointerType *)(def_list[0]->getEntry()->getType()))->getValType()))->getSize()));
-    auto extra_offset = genMachineVReg();
-    cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, extra_offset, idx, size);
-    cur_block->insertInst(cur_inst);
-
-    cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, new MachineOperand(*base_offset), new MachineOperand(*extra_offset));
-    cur_block->insertInst(cur_inst);
-    ((TemporarySymbolEntry *)(def_list[0]->getEntry()))->offset = dst;
-    // auto fp = genMachineReg(11);
-    // cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, fp, new MachineOperand(*offset));
-    // if (arr->getEntry()->isVariable() && ((IdentifierSymbolEntry *)(arr->getEntry()))->isGlobal())
-    //     cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, dst, addr);
-    // else
-    // {
-    //     auto fp = genMachineReg(11);
-    //     cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, fp, offset);
-    // }
-    // cur_block->insertInst(cur_inst);
+    auto internal_reg = new MachineOperand(*base_addr);
+    for (size_t i = 1; i < use_list.size(); i++)
+    {
+        if (use_list[i]->getEntry()->isConstant() && use_list[i]->getEntry()->getValue() == 0)
+        {
+            if (i == 1 && use_list.size() > 2)
+                ;
+            else
+            {
+                cur_inst = new MovMInstruction(cur_block, MovMInstruction::MOV, dst, internal_reg);
+                cur_block->insertInst(cur_inst);
+                internal_reg = new MachineOperand(*dst);
+            }
+        }
+        else
+        {
+            auto idx = genMachineOperand(use_list[i]);
+            if (idx->isImm())
+                idx = cur_block->insertLoadImm(idx);
+            auto size = cur_block->insertLoadImm(genMachineImm(cur_size));
+            auto extra_offset = genMachineVReg();
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::MUL, extra_offset, idx, size);
+            cur_block->insertInst(cur_inst);
+            cur_inst = new BinaryMInstruction(cur_block, BinaryMInstruction::ADD, dst, internal_reg, new MachineOperand(*extra_offset));
+            cur_block->insertInst(cur_inst);
+            internal_reg = new MachineOperand(*dst);
+        }
+        if (i != use_list.size() - 1)
+            cur_size /= dims[i - 1];
+    }
 }

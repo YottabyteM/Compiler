@@ -166,11 +166,11 @@ private:
     bool isArray;
 
 public:
-    MachineOperand *offset = nullptr;
     TemporarySymbolEntry(Type *type, int label, bool isarray = false) : SymbolEntry(type, SymbolEntry::TEMPORARY)
     {
         this->label = label;
         this->isArray = isarray;
+        this->stack_offset = 0;
     };
     virtual ~TemporarySymbolEntry(){};
     std::string toStr();

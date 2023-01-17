@@ -1,90 +1,41 @@
-int func1(int x, int y, int z) {
-  if (z == 0) {
-    return x * y;
-  }
-  else {
-    return func1(x, y - z, 0);
-  }
-}
+int canJump(int nums[], int n) {
+    if(n == 1)
+        return 1;
+    if(nums[0] > n - 2)
+        return 1;
+    int dp[10];
+    int i;
+    i = 0;
+    while(i<n-1){
+        dp[i] = 0;
+        i = i +1;
+    }
+    dp[n - 1] = 1;
+    i = n - 2;
+    while(i > -1){
+        int j;
+        if(nums[i] < n - 1 - i){
+            j = nums[i];
+        }
+        else
+            j = n - 1 - i;
+        while(j > -1){
+            if(dp[i+j] != 0){
+                dp[i] = 1;
+            }
+            j = j - 1;
+        }
+        i = i - 1;
+    }
 
-int func2(int x, int y) {
-  if (y) {
-    return func2(x % y, 0);
-  }
-  else {
-    return x;
-  }
+    return dp[0];
 }
-
-int func3(int x, int y) {
-  if (y == 0) {
-    return x + 1;
-  }
-  else {
-    return func3(x + y, 0);
-  }
-}
-
-int func4(int x, int y, int z) {
-  if (x) {
-    return y;
-  }
-  else {
-    return z;
-  }
-}
-
-int func5(int x) {
-  return -x;
-}
-
-int func6(int x, int y) {
-  if (x && y) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
-int func7(int x) {
-  if (!x) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
-int main() {
-  int i1 = getint(), i2 = getint(), i3 = getint(), i4 = 4;
- 
-  int a = func1(
-      // this
-      func2(
-          // is
-          func1(
-              // comment
-              func3(func4(func5(func3(func2(func6(func7(i1), func5(i2)), i3),
-                                      // this
-                                      i4)),
-                          // is
-                          5,
-                          // function
-                          func1(func2(func3(func4(func5(6),
-                                                  // call
-                                                  func6(7, func7(8)),
-                                                  func2(9, func7(10))),
-                                            11),
-                                      12),
-                                func3(13, func7(14)), i1)),
-                    func2(i2, func3(func7(3), 4))),
-              5, 6),
-          7),
-      8,
-      func3(func2(func1(func2(func3(9, func5(10)), func5(11)),
-                        12, func7(13)),
-                  func5(14)),
-            1));
-  return a;
+int main(){
+    int res;
+    int a[10];
+    a[0]=3;a[1]=3;a[2]=9;a[3]=0;a[4]=0;
+    a[5]=1;a[6]=1;a[7]=5;a[8]=7;a[9]=8;
+    res = 10;
+    res = canJump(a, res);
+    return res;
 }
