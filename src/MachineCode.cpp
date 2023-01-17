@@ -699,8 +699,20 @@ void MachineBlock::output()
             fprintf(yyout, ", .L%d", (*i)->getNo());
     }
     fprintf(yyout, "\n");
+    int cnt = 0;
     for (auto iter : inst_list)
+    {
         iter->output();
+        cnt++;
+        if (cnt > 300)
+        {
+            fprintf(yyout, "\tb .LiteralPool%d\n", parent->getParent()->getLtorgNo());
+            fprintf(yyout, ".LTORG\n");
+            parent->getParent()->printBridge();
+            fprintf(yyout, ".LiteralPool%d:\n", parent->getParent()->getLtorgNo() - 1);
+            cnt = 0;
+        }
+    }
 }
 
 MachineFunction::MachineFunction(MachineUnit *p, SymbolEntry *sym_ptr)
@@ -794,7 +806,7 @@ void MachineFunction::output()
         {
             auto reg_no = (*saved_rregs.begin());
             assert(reg_no < 11);
-            fprintf(yyout, "\tldr r%d,=%d\n", reg_no, stack_size);
+            fprintf(yyout, "\tldr r%d, =%d\n", reg_no, stack_size);
             fprintf(yyout, "\tsub sp, sp, r%d\n", reg_no);
         }
         else
@@ -833,7 +845,7 @@ void MachineFunction::output()
         {
             auto reg_no = (*saved_rregs.begin());
             assert(reg_no < 11);
-            fprintf(yyout, "\tldr r%d,=%d\n", reg_no, stack_size);
+            fprintf(yyout, "\tldr r%d, =%d\n", reg_no, stack_size);
             fprintf(yyout, "\tadd sp, sp, r%d\n", reg_no);
         }
         else
