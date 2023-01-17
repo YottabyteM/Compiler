@@ -1,7 +1,7 @@
 SRC_PATH ?= src
 INC_PATH += include
 BUILD_PATH ?= build
-TEST_PATH ?= test
+TEST_PATH ?= test/level2-6
 DEBUG_PATH ?= MakeDebug
 OPTTEST_PATH ?= opttest
 OBJ_PATH ?= $(BUILD_PATH)/obj
@@ -112,7 +112,7 @@ test:app
 		OUT=$${file%.*}.out
 		FILE=$${file##*/}
 		FILE=$${FILE%.*}
-		timeout 20s $(BINARY) $${file} -o $${ASM} -S 2>$${LOG} -O2
+		timeout 5s $(BINARY) $${file} -o $${ASM} -S 2>$${LOG} -O2
 		# timeout 5s $(BINARY) $${file} -o $${IR} -i 2>$${LOG} -O2
 		RETURN_VALUE=$$?
 		if [ $$RETURN_VALUE = 124 ]; then
