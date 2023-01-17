@@ -510,7 +510,7 @@ void Id::genCode()
         }
         else
         {
-            if (((ArrayType *)getType())->get_len() == -1)
+            if (symbolEntry->getType()->isPTR())
             {
                 ArrayType *curr_type;
                 if (cur_type->isIntArray())
