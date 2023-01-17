@@ -1,8 +1,93 @@
-int main() {
-	int x[5] = {1, 2, 3, 4, 5};
-	putint(x[0]);
-	return 0;
+int func1(int x, int y, int z) {
+  if (z == 0) {
+    return x * y;
+  }
+  else {
+    return func1(x, y - z, 0);
+  }
 }
+
+int func2(int x, int y) {
+  if (y) {
+    return func2(x % y, 0);
+  }
+  else {
+    return x;
+  }
+}
+
+int func3(int x, int y) {
+  if (y == 0) {
+    return x + 1;
+  }
+  else {
+    return func3(x + y, 0);
+  }
+}
+
+int func4(int x, int y, int z) {
+  if (x) {
+    return y;
+  }
+  else {
+    return z;
+  }
+}
+
+int func5(int x) {
+  return -x;
+}
+
+int func6(int x, int y) {
+  if (x && y) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+int func7(int x) {
+  if (!x) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+int main() {
+  int i1 = 1, i2 = 2, i3 = 3, i4 = 4;
+  int a = func1(
+      // this
+      func2(
+          // is
+          func1(
+              // comment
+              func3(func4(func5(func3(func2(func6(func7(i1), func5(i2)), i3),
+                                      // this
+                                      i4)),
+                          // is
+                          5,
+                          // function
+                          func1(func2(func3(func4(func5(6),
+                                                  // call
+                                                  func6(7, func7(8)),
+                                                  func2(9, func7(10))),
+                                            11),
+                                      12),
+                                func3(13, func7(14)), i1)),
+                    func2(i2, func3(func7(i3), i4))),
+              5, 6),
+          7),
+      8,
+      func3(func2(func1(func2(func3(9, func5(10)), func5(11)),
+                        12, func7(13)),
+                  func5(14)),
+            i1));
+  return a;
+}
+
 
 
 /*const int ascii_0 = 48;
