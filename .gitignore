@@ -11,3 +11,5 @@ parser.h
 *.bin
 *.s
 debug.*
+Makefile
+MakeDebug
