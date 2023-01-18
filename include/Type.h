@@ -79,7 +79,7 @@ public:
     FunctionType(Type *returnType, std::vector<Type *> paramsType);
     std::string toStr();
     std::vector<Type *> getParamsType() { return paramsType; };
-    void setParamsType(std::vector<Type *> paramsType) { this->paramsType = paramsType; };
+    // void setParamsType(std::vector<Type *> paramsType) { this->paramsType = paramsType; };
     Type *getRetType() { return returnType; };
 };
 
@@ -135,7 +135,7 @@ public:
     };
     int getLength() { return dim.size(); };
     void setlenth() { lenth = -1; };
-    int get_len() {return lenth;};
+    int get_len() { return lenth; };
     Type *getElemType();
     virtual std::string toStr();
 };

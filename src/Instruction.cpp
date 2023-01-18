@@ -194,7 +194,6 @@ void BinaryInstruction::output() const
     else
     {
         assert(def_list[0]->getType() == TypeSystem::floatType);
-        fprintf(stderr, "oprendType is Array : %d", def_list[0]->getType()->isARRAY());
         switch (opcode)
         {
         case ADD:
@@ -554,8 +553,6 @@ void GepInstruction::output() const
 {
     Operand *dst = def_list[0];
     Operand *arr = use_list[0];
-    // Operand *idx = use_list[1];
-
     std::string arrType = arr->getType()->toStr();
     fprintf(yyout, "  %s = getelementptr inbounds %s, %s %s, i32 %s",
             dst->toStr().c_str(), arrType.substr(0, arrType.size() - 1).c_str(),

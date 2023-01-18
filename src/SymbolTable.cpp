@@ -2,6 +2,7 @@
 #include <Type.h>
 #include <iostream>
 #include <sstream>
+#include <stack>
 
 extern FILE *yyout;
 static std::vector<SymbolEntry *> newSymbolEntries; // 用来回收new出来的SymbolEntry
@@ -25,6 +26,16 @@ std::string Double2HexStr(double val)
     return "0x" + std::string(hex_str, hex_str + 9) + std::string(7, '0');
 }
 
+// @a = dso_local global DeclArray, align 4
+// eg : [[2 x [3 x i32]] [[3 x i32] [i32 1, i32 2, i32 3], [3 x i32] [i32 0, i32 0, i32 0]]]
+std::string DeclArray(ArrayType *type, std::vector<double> initializer)
+{
+    std::string decl;
+    if (type->fetch().size() == 1)
+    {
+    }
+}
+
 std::vector<std::string> lib_funcs{
     "getint",
     "getch",
@@ -35,11 +46,7 @@ std::vector<std::string> lib_funcs{
     "putch",
     "putfloat",
     "putarray",
-    "putfarray",
-    //    "putf",
-    //    "starttime",
-    //    "stoptime"
-};
+    "putfarray"};
 
 bool IdentifierSymbolEntry::isLibFunc()
 {
@@ -73,21 +80,20 @@ void IdentifierSymbolEntry::decl_code()
     }
     else if (type->isARRAY())
     {
-        fprintf(yyout, "%s = dso_local global ", this->toStr().c_str());
+        fprintf(yyout, "@%s = dso_local global ", this->toStr().c_str());
+        fprintf(stderr, "@%s = dso_local global ", this->toStr().c_str());
         if (((IdentifierSymbolEntry *)this)->getArrVals().empty())
-            fprintf(yyout, "%s zeroinitializer", type->toStr().c_str());
+        {
+            fprintf(yyout, "@%s zeroinitializer", type->toStr().c_str());
+            fprintf(stderr, "@%s zeroinitializer", type->toStr().c_str());
+        }
         else
         {
-            // unsigned idx = 0;
-            fprintf(yyout, "%s", type->toStr().c_str());
-            // auto vals = ((IdentifierSymbolEntry *)this)->getArrVals();
-            // auto dims = ((ArrayType *)type)->fetch();
-            // for (auto d : dims)
-            // {
-            //     // toDo
-            // }
+            fprintf(yyout, "%s", DeclArray((ArrayType *)type, getArrVals()));
+            fprintf(stderr, "%s", DeclArray((ArrayType *)type, getArrVals()));
         }
         fprintf(yyout, ", align 4\n");
+        fprintf(stderr, ", align 4\n");
     }
     else
     {
@@ -95,13 +101,13 @@ void IdentifierSymbolEntry::decl_code()
             ;
         else if (type->isInt())
         {
-            fprintf(yyout, "%s = dso_local global %s %d, align 4\n", name.c_str(), type->toStr().c_str(), (int)value);
-            fprintf(stderr, "%s = dso_local global %s %d, align 4\n", name.c_str(), type->toStr().c_str(), (int)value);
+            fprintf(yyout, "@%s = dso_local global %s %d, align 4\n", name.c_str(), type->toStr().c_str(), (int)value);
+            fprintf(stderr, "@%s = dso_local global %s %d, align 4\n", name.c_str(), type->toStr().c_str(), (int)value);
         }
         else if (type->isFloat())
         {
-            fprintf(yyout, "%s = dso_local global %s %s, align 4\n", name.c_str(), type->toStr().c_str(), Double2HexStr(value).c_str());
-            fprintf(stderr, "%s = dso_local global %s %s, align 4\n", name.c_str(), type->toStr().c_str(), Double2HexStr(value).c_str());
+            fprintf(yyout, "@%s = dso_local global %s %s, align 4\n", name.c_str(), type->toStr().c_str(), Double2HexStr(value).c_str());
+            fprintf(stderr, "@%s = dso_local global %s %s, align 4\n", name.c_str(), type->toStr().c_str(), Double2HexStr(value).c_str());
         }
     }
 }
