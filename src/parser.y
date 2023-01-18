@@ -655,7 +655,9 @@ ConstDef
 InitVal 
     : Exp {
         InitNode* new_exp = new InitNode(false);
-        new_exp->setleaf(dynamic_cast<ExprNode*>($1));
+        assert(convertible(dynamic_cast<ExprNode*>($1)->getType(), curType));
+        ExprNode* new_expr = typeCast(dynamic_cast<ExprNode*>($1), curType);
+        new_exp->setleaf(new_expr);
         $$ = new_exp;
     }
     // 这样的大括号初始化方式太过灵活，需要额外检查
