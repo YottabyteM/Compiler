@@ -171,8 +171,8 @@ clean-test:
 	@rm -rf $(OUTPUT_TOKS) $(OUTPUT_AST) $(OUTPUT_IR) $(OUTPUT_ASM) $(OUTPUT_LOG) $(OUTPUT_BIN) $(OUTPUT_RES) $(LLVM_IR) $(GCC_ASM) 
 	@find . -name "*.log" | grep -v lastpass.log | grep -v newpass.log|grep -v passchange.log | xargs rm -rf 
 	@find . -name "*.bin" | xargs rm -rf
-	@find . -name "*.ll" | grep -v *.copy.ll | xargs rm -rf
-	@find . -name "*.s" | grep -v *.copy.s | xargs rm -rf
+	@find . -name "*.ll" | grep -v *copy.ll | xargs rm -rf
+	@find . -name "*.s" | grep -v *copy.s | xargs rm -rf
 	@find . -name "*.dot" | xargs rm -rf
 	@find . -name "*.res" | xargs rm -rf
 
