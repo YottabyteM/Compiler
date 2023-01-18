@@ -490,7 +490,15 @@ void Id::genCode()
                 arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
                 return;
             }
-            Operand *new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+            Operand* new_dst;
+            if (!isFirst)
+                new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+            else 
+            {
+                if (curr_type->getElemType()->isAnyInt())
+                    new_dst = new Operand(new TemporarySymbolEntry(new PointerType(TypeSystem::intType), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+                else new_dst = new Operand(new TemporarySymbolEntry(new PointerType(TypeSystem::floatType), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+            }
             if (!isPtr)
             {
                 if (getType()->isInt())
