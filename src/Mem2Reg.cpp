@@ -485,6 +485,7 @@ static void SimplifyInstruction()
     }
 }
 
+// https://roife.github.io/2022/02/07/mem2reg/
 void Mem2Reg::Rename(Function *func)
 {
     // std::map<BasicBlock *, std::set<BasicBlock *>> DT_succ; // DominatorTree

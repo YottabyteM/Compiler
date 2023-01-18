@@ -1,15 +1,16 @@
-#include "ControlFlowOpt.h"
+#include "SimplifyCFG.h"
 #include "Type.h"
 #include <queue>
 
 std::set<BasicBlock *> freeList;
 std::set<Instruction *> freeInsts;
 
-void ControlFlowOpt::pass()
+void SimplifyCFG::pass()
 {
     auto Funcs = std::vector<Function *>(unit->begin(), unit->end());
     for (auto func : Funcs)
     {
+        // bfs
         std::map<BasicBlock *, bool> is_visited;
         for (auto bb : func->getBlockList())
             is_visited[bb] = false;
@@ -21,13 +22,39 @@ void ControlFlowOpt::pass()
             auto bb = q.front();
             std::vector<BasicBlock *> preds(bb->pred_begin(), bb->pred_end());
             std::vector<BasicBlock *> succs(bb->succ_begin(), bb->succ_end());
+            // 消除空的基本块，比如某些end_bb
             if (bb->empty())
             {
-                assert(0);
+                assert(bb->succEmpty());
+                for (auto pred : preds)
+                {
+                    auto lastInst = pred->rbegin();
+                    if (lastInst->isUncond())
+                    {
+                        pred->remove(lastInst);
+                        freeInsts.insert(lastInst);
+                    }
+                    else
+                    {
+                        assert(lastInst->isCond());
+                        pred->remove(lastInst);
+                        freeInsts.insert(lastInst);
+                        CondBrInstruction *branch = (CondBrInstruction *)(lastInst);
+                        if (branch->getTrueBranch() == bb)
+                            new UncondBrInstruction(branch->getFalseBranch(), pred);
+                        else
+                            new UncondBrInstruction(branch->getTrueBranch(), pred);
+                    }
+                    pred->removeSucc(bb);
+                }
+                func->remove(bb);
+                freeList.insert(bb);
             }
+            // 消除仅包含无条件分支的基本块。
             else if (bb->begin()->getNext() == bb->end() && bb->begin()->isUncond())
             {
                 assert(bb->getNumOfSucc() == 1);
+                succs[0]->removePred(bb);
                 for (auto pred : preds)
                 {
                     pred->removeSucc(bb);
@@ -54,13 +81,13 @@ void ControlFlowOpt::pass()
                         new UncondBrInstruction(succs[0], pred);
                     }
                     pred->addSucc(succs[0]);
-                    succs[0]->removePred(bb);
                     succs[0]->addPred(pred);
                     // toDO : PHI
                 }
-                bb->getParent()->remove(bb);
+                func->remove(bb);
                 freeList.insert(bb);
             }
+            // 如果仅有一个前驱且该前驱仅有一个后继，将基本块与前驱合并
             else if (bb->getNumOfPred() == 1 && (*(bb->pred_begin()))->getNumOfSucc() == 1)
             {
                 auto pred = *(bb->pred_begin());
@@ -84,7 +111,7 @@ void ControlFlowOpt::pass()
                     succ->removePred(bb);
                     succ->addPred(pred);
                 }
-                bb->getParent()->remove(bb);
+                func->remove(bb);
                 freeList.insert(bb);
             }
             q.pop();
@@ -97,7 +124,9 @@ void ControlFlowOpt::pass()
                 }
             }
         }
-        for (auto bb : func->getBlockList())
+        // 删除不可达的基本块。
+        auto blocks = func->getBlockList();
+        for (auto bb : blocks)
             if (!is_visited[bb])
             {
                 func->remove(bb);

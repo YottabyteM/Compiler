@@ -27,13 +27,42 @@ std::string Double2HexStr(double val)
 }
 
 // @a = dso_local global DeclArray, align 4
-// eg : [[2 x [3 x i32]] [[3 x i32] [i32 1, i32 2, i32 3], [3 x i32] [i32 0, i32 0, i32 0]]]
+// eg : [2 x [3 x i32]] [[3 x i32] [i32 1, i32 2, i32 3], [3 x i32] [i32 0, i32 0, i32 0]]
 std::string DeclArray(ArrayType *type, std::vector<double> initializer)
 {
     std::string decl;
-    if (type->fetch().size() == 1)
+    auto elemType = type->getElemType();
+    std::string type_str = type->getElemType()->toStr();
+    auto dims = type->fetch();
+    if (dims.size() == 1)
     {
+        decl = type->toStr() + " [" + type_str + " " + (elemType->isFloat() ? Double2HexStr(initializer[0]) : std::to_string((int)initializer[0]));
+        for (size_t i = 1; i != initializer.size(); i++)
+        {
+            decl += ", " + type_str + " " + (elemType->isFloat() ? Double2HexStr(initializer[i]) : std::to_string((int)initializer[i]));
+        }
+        decl += "]";
+        return decl;
     }
+    auto d = dims[0];
+    auto next_type = new ArrayType(*type);
+    dims.erase(dims.begin());
+    next_type->SetDim(dims);
+    decl = type->toStr() + " [";
+    for (int i = 0; i < d; i++)
+    {
+        if (i)
+            decl += ", ";
+        std::vector<double> next_initializer;
+        for (int j = 0; j < (int)next_type->getSize() / 4; j++)
+        {
+            next_initializer.push_back(initializer[0]);
+            initializer.erase(initializer.begin());
+        }
+        decl += DeclArray(next_type, next_initializer);
+    }
+    decl += "]";
+    return decl;
 }
 
 std::vector<std::string> lib_funcs{
@@ -84,13 +113,13 @@ void IdentifierSymbolEntry::decl_code()
         fprintf(stderr, "@%s = dso_local global ", this->toStr().c_str());
         if (((IdentifierSymbolEntry *)this)->getArrVals().empty())
         {
-            fprintf(yyout, "@%s zeroinitializer", type->toStr().c_str());
-            fprintf(stderr, "@%s zeroinitializer", type->toStr().c_str());
+            fprintf(yyout, "%s zeroinitializer", type->toStr().c_str());
+            fprintf(stderr, "%s zeroinitializer", type->toStr().c_str());
         }
         else
         {
-            fprintf(yyout, "%s", DeclArray((ArrayType *)type, getArrVals()));
-            fprintf(stderr, "%s", DeclArray((ArrayType *)type, getArrVals()));
+            fprintf(yyout, "%s", DeclArray((ArrayType *)type, getArrVals()).c_str());
+            fprintf(stderr, "%s", DeclArray((ArrayType *)type, getArrVals()).c_str());
         }
         fprintf(yyout, ", align 4\n");
         fprintf(stderr, ", align 4\n");

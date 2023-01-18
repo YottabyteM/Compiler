@@ -10,7 +10,8 @@ parser.h
 *.log
 *.bin
 *.s
+*.dot
 debug.*
-Debug.*
+Debug.sy
 Makefile
 MakeDebug

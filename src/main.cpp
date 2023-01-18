@@ -5,7 +5,7 @@
 #include "Unit.h"
 #include "MachineCode.h"
 #include "LinearScan.h"
-#include "ControlFlowOpt.h"
+#include "SimplifyCFG.h"
 #include "Mem2Reg.h"
 #include "ElimPHI.h"
 using namespace std;
@@ -90,14 +90,14 @@ int main(int argc, char *argv[])
     }
     if (optimize)
     {
-        // ControlFlowOpt cf(&unit);
-        // cf.pass();
+        // SimplifyCFG sc(&unit);
+        // sc.pass();
         // Mem2Reg m2r(&unit);
         // m2r.pass();
-        // // cf.pass();
+        // // sc.pass();
         // ElimPHI ep(&unit);
         // ep.pass();
-        // cf.pass();
+        // sc.pass();
         // fprintf(stderr, "opt ir generated\n");
     }
     if (dump_ir && optimize)

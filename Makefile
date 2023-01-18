@@ -1,8 +1,9 @@
 SRC_PATH ?= src
 INC_PATH += include
 BUILD_PATH ?= build
-TEST_PATH ?= MakeDebug
-OPTTEST_PATH ?= opttest
+TEST_PATH ?= test
+# DEBUG_PATH ?= MakeDebug
+OPTTEST_PATH ?= testopt
 OBJ_PATH ?= $(BUILD_PATH)/obj
 BINARY ?= $(BUILD_PATH)/compiler
 SYSLIB_PATH ?= sysyruntimelibrary
@@ -19,6 +20,7 @@ SRC += $(PARSER)
 OBJ = $(SRC:$(SRC_PATH)/%.cpp=$(OBJ_PATH)/%.o)
 PARSERH ?= $(INC_PATH)/$(addsuffix .h, $(notdir $(basename $(PARSER))))
 
+# TESTCASE = $(shell find $(DEBUG_PATH) -name "*.sy")
 TESTCASE = $(shell find $(TEST_PATH) -name "*.sy")
 OPTTESTCASE = $(shell find $(OPTTEST_PATH) -name "*.sy")
 TESTCASE_NUM = $(words $(TESTCASE))
@@ -31,9 +33,6 @@ OUTPUT_ASM = $(addsuffix .s, $(basename $(TESTCASE)))
 OUTPUT_RES = $(addsuffix .res, $(basename $(TESTCASE)))
 OUTPUT_BIN = $(addsuffix .bin, $(basename $(TESTCASE)))
 OUTPUT_LOG = $(addsuffix .log, $(basename $(TESTCASE)))
-OUTPUT_OPT_IR = $(addsuffix .ll, $(basename $(OPTTESTCASE)))
-OUTPUT_OPT_ASM = $(addsuffix .s, $(basename $(OPTTESTCASE)))
-OUTPUT_OPT_LOG = $(addsuffix .log, $(basename $(OPTTESTCASE)))
 
 .phony:all app run gdb testlexer testparser testir testasm test clean clean-all clean-test clean-app llvmir gccasm testopt lltest
 all:app
@@ -56,6 +55,7 @@ app:$(LEXER) $(PARSER) $(BINARY)
 run:app
 	@$(BINARY) -o debug.ll -i debug.sy -O2
 	@$(BINARY) -o debug.s -S debug.sy -O2
+	@opt -dot-cfg debug.ll
 
 gdb:app
 	@gdb $(BINARY)
@@ -112,6 +112,7 @@ test:app
 		FILE=$${file##*/}
 		FILE=$${FILE%.*}
 		timeout 5s $(BINARY) $${file} -o $${ASM} -S 2>$${LOG} -O2
+		# timeout 5s $(BINARY) $${file} -o $${IR} -i 2>$${LOG} -O2
 		RETURN_VALUE=$$?
 		if [ $$RETURN_VALUE = 124 ]; then
 			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Timeout\033[0m" && echo "FAIL: $${FILE}\tCompile Timeout" >> newpass.log
@@ -167,12 +168,15 @@ clean-app:
 	@rm -rf $(BUILD_PATH) $(PARSER) $(LEXER) $(PARSERH)
 
 clean-test:
-	@rm -rf $(OUTPUT_TOKS) $(OUTPUT_AST) $(OUTPUT_IR) $(OUTPUT_ASM) $(OUTPUT_LOG) $(OUTPUT_BIN) $(OUTPUT_RES) $(LLVM_IR) $(GCC_ASM) ./example.ast ./example.ll ./example.s ./debug.bin ./debug.log ./debug.res
+	@rm -rf $(OUTPUT_TOKS) $(OUTPUT_AST) $(OUTPUT_IR) $(OUTPUT_ASM) $(OUTPUT_LOG) $(OUTPUT_BIN) $(OUTPUT_RES) $(LLVM_IR) $(GCC_ASM) 
+	@find . -name "*.log" | grep -v lastpass.log | grep -v newpass.log|grep -v passchange.log | xargs rm -rf 
+	@find . -name "*.bin" | xargs rm -rf
+	@find . -name "*.ll" | grep -v *.copy.ll | xargs rm -rf
+	@find . -name "*.s" | grep -v *.copy.s | xargs rm -rf
+	@find . -name "*.dot" | xargs rm -rf
+	@find . -name "*.res" | xargs rm -rf
 
-clean-opt:
-	@rm -rf $(OUTPUT_OPT_IR) $(OUTPUT_OPT_ASM) $(OUTPUT_OPT_LOG)
-
-clean-all:clean-test clean-app clean-opt
+clean-all:clean-test clean-app
 
 clean:clean-all
 

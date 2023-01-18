@@ -1212,7 +1212,6 @@ void FuncCallParamsNode::genCode()
     is_fp = true;
     for (auto it : paramsList)
     {
-        fprintf(stderr, "%s", it->getOperand()->getType()->toStr().c_str());
         it->genCode();
     }
     is_fp = false;
