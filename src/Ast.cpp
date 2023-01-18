@@ -565,9 +565,9 @@ void Id::genCode()
                     ((ArrayType *)curr_type)->SetDim(FunP);
                 }
                 else if (cur_type->isIntArray())
-                    curr_type = new IntType(4);
+                    curr_type = new IntType(32);
                 else
-                    curr_type = new FloatType(4);
+                    curr_type = new FloatType(32);
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                 dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 new GepInstruction(dst, addr, std::vector<Operand *>{nullptr, idx}, bb);
