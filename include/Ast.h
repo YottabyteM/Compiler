@@ -173,9 +173,10 @@ private:
     IndicesNode *indices;
     bool is_array = false, is_array_ele = false; // is_array is array. is_array_ele is array ele
     bool isleft;
+    bool is_FP = false;
 
 public:
-    Id(SymbolEntry *se, bool be_array = false, bool isleft = false) : ExprNode(se, be_array)
+    Id(SymbolEntry *se, bool be_array = false, bool isleft = false, bool is_fp = false) : ExprNode(se, be_array), is_FP(is_fp)
     {
         indices = nullptr;
         is_array_ele = se->getType()->isARRAY() && be_array;
@@ -189,6 +190,7 @@ public:
     void SetLeft() { isleft = true; };
     bool is_Array() { return is_array; };
     bool is_Array_Ele() { return is_array_ele; };
+    void Set_Fp() { is_FP = true; };
     ArrayType *get_Array_Type() { return (ArrayType *)(getSymPtr()->getType()); };
     // void typeCheck();
     void genCode();

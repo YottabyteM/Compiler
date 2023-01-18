@@ -44,6 +44,7 @@ public:
     bool isConstIntArray() const { return kind == CONST_INT_ARRAY; };
     bool isFloatArray() const { return kind == FLOAT_ARRAY || kind == CONST_FLOAT_ARRAY; };
     bool isConstFloatArray() const { return kind == CONST_FLOAT_ARRAY; };
+    bool isAnyInt() const { return isInt() || isIntArray(); };
     bool isARRAY() const { return isIntArray() || isFloatArray(); };
 };
 

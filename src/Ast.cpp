@@ -21,6 +21,7 @@ static std::vector<int> recover;
 std::vector<int> cur_dim;
 ArrayType *cur_type;
 std::vector<ExprNode *> vec_val;
+bool is_fp = false;
 
 static void get_vec_val(InitNode *cur_node)
 {
@@ -434,6 +435,7 @@ void Id::genCode()
                     tempSrc = new_addr;
                 }
             }
+            if (currr_dim.size() != indices->getExprList().size() && !isPtr) is_FP = true;
             if (!isPtr)
                 currr_dim.erase(currr_dim.begin());
             curr_type->SetDim(currr_dim);
@@ -480,7 +482,15 @@ void Id::genCode()
                 arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
                 return;
             }
-            Operand *new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+            Operand* new_dst;
+            if (!isFirst)
+                new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+            else 
+            {
+                if (curr_type->getElemType()->isAnyInt())
+                    new_dst = new Operand(new TemporarySymbolEntry(new PointerType(TypeSystem::intType), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+                else new_dst = new Operand(new TemporarySymbolEntry(new PointerType(TypeSystem::floatType), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+            }
             if (!isPtr)
             {
                 if (getType()->isInt())
@@ -494,6 +504,11 @@ void Id::genCode()
                     dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
                 else
                     dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
+            }
+            if (is_FP) {
+                dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
+                is_FP = false;
+                return;
             }
             new LoadInstruction(dst1, new_dst, bb);
             dst = dst1;
@@ -1194,10 +1209,12 @@ void WhileStmt::genCode()
 
 void FuncCallParamsNode::genCode()
 {
+    is_fp = true;
     for (auto it : paramsList)
     {
         it->genCode();
     }
+    is_fp = false;
 }
 
 void FuncCallNode::genCode()
