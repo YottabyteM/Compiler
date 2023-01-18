@@ -54,7 +54,7 @@ Type *ExprNode::getType()
     if (symbolEntry->getType()->isPTR())
     {
         // TODO :
-        return ((PointerType*)symbolEntry->getType())->getValType();
+        return ((PointerType *)symbolEntry->getType())->getValType();
     }
     else
     {
@@ -540,7 +540,8 @@ void Id::genCode()
             {
                 std::vector<int> FunP(cur_type->fetch());
                 Type *curr_type;
-                if (FunP.size() > 0) {
+                if (FunP.size() > 0)
+                {
                     FunP.erase(FunP.begin());
                     if (cur_type->isIntArray())
                     {
@@ -556,10 +557,12 @@ void Id::genCode()
                         else
                             curr_type = new FloatArrayType();
                     }
-                    ((ArrayType*)curr_type)->SetDim(FunP);
+                    ((ArrayType *)curr_type)->SetDim(FunP);
                 }
-                else if (cur_type->isIntArray()) curr_type = new IntType(4);
-                else curr_type = new FloatType(4);
+                else if (cur_type->isIntArray())
+                    curr_type = new IntType(4);
+                else
+                    curr_type = new FloatType(4);
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                 dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 new GepInstruction(dst, addr, std::vector<Operand *>{nullptr, idx}, bb);
@@ -1132,7 +1135,7 @@ void NullStmt::genCode()
 
 void BreakStmt::genCode()
 {
-    assert(whileStack.size() != 0);
+    // assert(whileStack.size() != 0 && "Break not in While loop!");
     Function *func = builder->getInsertBB()->getParent();
     BasicBlock *bb = builder->getInsertBB();
     // 首先获取当前所在的while
@@ -1148,7 +1151,7 @@ void BreakStmt::genCode()
 
 void ContinueStmt::genCode()
 {
-    assert(whileStack.size() != 0);
+    // assert(whileStack.size() != 0 && "Continue not in While loop!");
     Function *func = builder->getInsertBB()->getParent();
     BasicBlock *bb = builder->getInsertBB();
     // 首先获取当前所在的while
@@ -1271,7 +1274,8 @@ void FuncDefParamsNode::genCode()
         SymbolEntry *addr_se;
         if (it->getIndices() != nullptr)
             addr_se = new TemporarySymbolEntry(new PointerType(type), SymbolTable::getLabel());
-        else addr_se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
+        else
+            addr_se = new TemporarySymbolEntry(type, SymbolTable::getLabel());
         Operand *addr = new Operand(addr_se);
         Instruction *alloca = new AllocaInstruction(addr, se); // allocate space for local id in function stack.
         entry->insertFront(alloca);                            // allocate instructions should be inserted into the begin of the entry block.

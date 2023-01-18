@@ -178,6 +178,7 @@ public:
     };
     void setIndices(IndicesNode *new_indices) { indices = new_indices; };
     IndicesNode *getIndices() { return indices; };
+    int getidxsize() { return indices->getExprList().size(); };
     int getlen() { return indices != nullptr; };
     void output(int level);
     void SetLeft() { isleft = true; };

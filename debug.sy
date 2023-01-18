@@ -1,5 +1,0 @@
-int main() {
-  float x = 1;
-  float y = x / 192;
-  return 0;
-}
