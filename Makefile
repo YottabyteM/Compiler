@@ -1,8 +1,7 @@
 SRC_PATH ?= src
 INC_PATH += include
 BUILD_PATH ?= build
-TEST_PATH ?= test/level2-6
-# DEBUG_PATH ?= MakeDebug
+TEST_PATH ?= test
 OPTTEST_PATH ?= opttest
 OBJ_PATH ?= $(BUILD_PATH)/obj
 BINARY ?= $(BUILD_PATH)/compiler
@@ -20,7 +19,6 @@ SRC += $(PARSER)
 OBJ = $(SRC:$(SRC_PATH)/%.cpp=$(OBJ_PATH)/%.o)
 PARSERH ?= $(INC_PATH)/$(addsuffix .h, $(notdir $(basename $(PARSER))))
 
-# TESTCASE = $(shell find $(DEBUG_PATH) -name "*.sy")
 TESTCASE = $(shell find $(TEST_PATH) -name "*.sy")
 OPTTESTCASE = $(shell find $(OPTTEST_PATH) -name "*.sy")
 TESTCASE_NUM = $(words $(TESTCASE))
@@ -200,7 +198,7 @@ lltest:app
 		OUT=$${file%.*}.out
 		FILE=$${file##*/}
 		FILE=$${FILE%.*}
-		timeout 300s $(BINARY) $${file} -o $${IR} -O2 -i 2>$${LOG}
+		timeout 5s $(BINARY) $${file} -o $${IR} -O2 -i 2>$${LOG}
 		RETURN_VALUE=$$?
 		if [ $$RETURN_VALUE = 124 ]; then
 			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Timeout\033[0m"
@@ -215,9 +213,9 @@ lltest:app
 			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mAssemble Error\033[0m"
 		else
 			if [ -f "$${IN}" ]; then
-				timeout 50s $${BIN} <$${IN} >$${RES} 2>>$${LOG}
+				timeout 2s $${BIN} <$${IN} >$${RES} 2>>$${LOG}
 			else
-				timeout 50s $${BIN} >$${RES} 2>>$${LOG}
+				timeout 2s $${BIN} >$${RES} 2>>$${LOG}
 			fi
 			RETURN_VALUE=$$?
 			FINAL=`tail -c 1 $${RES}`

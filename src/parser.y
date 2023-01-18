@@ -9,7 +9,7 @@
     Type *curType = nullptr;
     Type *retType = nullptr;
     bool isLeft = false;
-    bool inWhileBlock = false;
+    int whileDepth = 0;
     std::vector<int> arrayIdx;
     bool needRet = false;
 }
@@ -450,31 +450,23 @@ IfStmt
 WhileStmt
     // Stmt不为 BlockStmt 则符号表作用域未变，可能出现问题
     : WHILE LPAREN Cond RPAREN {
-        inWhileBlock = true;
+        whileDepth++;
     } Stmt {
         $$ = new WhileStmt($3, $6);
-        inWhileBlock = false;
+        whileDepth--;
     }
     ;
 BreakStmt
     : BREAK SEMICOLON {
         // 类型检查8：while-break
-        if(!inWhileBlock)
-        {
-            fprintf(stderr, "\"break\" not in whilestmt\n");
-            assert(inWhileBlock);
-        }
+        assert(whileDepth && "\"break\" not in whilestmt\n");
         $$ = new BreakStmt();
     }
     ;
 ContinueStmt
     : CONTINUE SEMICOLON {
         // 类型检查8：while-continue
-        if(!inWhileBlock)
-        {
-            fprintf(stderr, "\"continue\" not in whilestmt\n");
-            assert(inWhileBlock);
-        }
+        assert(whileDepth && "\"continue\" not in whilestmt\n");
         $$ = new ContinueStmt();
     }
     ;

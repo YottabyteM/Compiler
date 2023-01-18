@@ -5,7 +5,23 @@
 
 std::string Operand::toStr() const
 {
-    return se->toStr();
+    auto type = se->getType();
+    if (se->isVariable())
+    {
+        auto se_id = (IdentifierSymbolEntry *)se;
+        if (type->isConst() && !type->isARRAY())
+        {
+            return se_id->toStr();
+        }
+        else if (se_id->isGlobal())
+        {
+            return type->isFunc() ? se_id->toStr() : "@" + se_id->toStr();
+        }
+        assert(se_id->isParam());
+        return se_id->toStr();
+    }
+    else
+        return se->toStr();
 }
 
 void Operand::removeUse(Instruction *inst)
