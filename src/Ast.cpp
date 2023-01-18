@@ -308,28 +308,7 @@ std::vector<Type *> FuncCallParamsNode::getParamsType()
 {
     std::vector<Type *> ans;
     for (auto param : paramsList)
-    {
-        if (!param->getSymPtr()->getType()->isARRAY())
-            ans.push_back(param->getType());
-        else 
-        {
-            if (((ArrayType*)param->getSymPtr()->getType())->fetch().size() == ((Id*)param)->getidxsize()) {
-                ans.push_back(param->getType());
-            }
-            else 
-            {
-                int t = ((Id*)param)->getidxsize();
-                Type* cu_type = (ArrayType *)(param->getSymPtr()->getType());
-                std::vector<int> cud = ((ArrayType*)cu_type)->fetch();
-                while (t -- ) {
-                    cud.erase(cud.begin());
-                }
-                ((ArrayType*)cu_type)->SetDim(cud);
-                cu_type = new PointerType(cu_type);
-                ans.push_back(cu_type);
-            }
-        }
-    }
+        ans.push_back(param->getType());
     return ans;
 }
 
@@ -521,31 +500,10 @@ void Id::genCode()
             }
             else
             {
-                if (indices->getExprList().size() == ((ArrayType*)symbolEntry->getType())->fetch().size()) {
-                    if (curr_type->getElemType()->isInt())
-                        dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
-                    else
-                        dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
-                }
-                else 
-                {
-                    if (curr_type->isIntArray())
-                    {
-                        if (curr_type->isConst())
-                            curr_type = new ConstIntArrayType();
-                        else
-                            curr_type = new IntArrayType();
-                    }
-                    else
-                    {
-                        if (curr_type->isConst())
-                            curr_type = new ConstFloatArrayType();
-                        else
-                            curr_type = new FloatArrayType();
-                    }
-                    curr_type->SetDim(currr_dim);
-                    dst1 = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
-                }
+                if (curr_type->getElemType()->isInt())
+                    dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
+                else
+                    dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
             }
             new LoadInstruction(dst1, new_dst, bb);
             dst = dst1;
@@ -1174,7 +1132,7 @@ void NullStmt::genCode()
 
 void BreakStmt::genCode()
 {
-    assert(whileStack.size() != 0);
+    assert(whileStack.size() != 0 && "Break not in While loop!");
     Function *func = builder->getInsertBB()->getParent();
     BasicBlock *bb = builder->getInsertBB();
     // 首先获取当前所在的while
@@ -1190,7 +1148,7 @@ void BreakStmt::genCode()
 
 void ContinueStmt::genCode()
 {
-    assert(whileStack.size() != 0);
+    assert(whileStack.size() != 0 && "Continue not in While loop!");
     Function *func = builder->getInsertBB()->getParent();
     BasicBlock *bb = builder->getInsertBB();
     // 首先获取当前所在的while
