@@ -476,10 +476,12 @@ WHITE [\t ]
         if (!cur_str[part].count(std::string(yytext))) cur_str[part].insert(std::string(yytext));
         is_stack[std::string(yytext)].push_back(part);
         DEBUG_FOR_LEX("ID", std::string(yytext));
+        fprintf(stderr, "ID size is %d\n", std::string(yytext).size());
         offset += strlen(yytext);
     }
-    yylval.strtype = (char*)malloc(strlen(yytext) + 1);
-    strcpy(yylval.strtype, yytext);
+    char* lexeme = new char[strlen(yytext) + 1];
+    strcpy(lexeme, yytext);
+    yylval.strtype = lexeme;
     return ID;
 }
 {HEX} {
