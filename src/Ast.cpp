@@ -65,19 +65,9 @@ Type *ExprNode::getType()
     }
 }
 
-void ExprNode::setType(Type *type)
-{
-    symbolEntry->setType(type);
-}
-
 double ExprNode::getValue()
 {
     return symbolEntry->getValue();
-}
-
-void ExprNode::setValue(double value)
-{
-    symbolEntry->setValue(value);
 }
 
 void Id::output(int level)
@@ -932,7 +922,6 @@ DeclStmt::DeclStmt(Id *id, InitNode *expr, bool isConst, bool isArray) : id(id),
 
     if (expr != nullptr)
     {
-        fprintf(stderr, "---------------------------\n");
         if (id->getType()->isARRAY())
         {
             std::vector<int> origin_dim = ((ArrayType *)(id->getType()))->fetch();
@@ -1206,7 +1195,10 @@ void WhileStmt::genCode()
 void FuncCallParamsNode::genCode()
 {
     for (auto it : paramsList)
+    {
+        fprintf(stderr, "%s", it->getOperand()->getType()->toStr().c_str());
         it->genCode();
+    }
 }
 
 void FuncCallNode::genCode()
@@ -1281,7 +1273,6 @@ void FuncDefParamsNode::genCode()
         entry->insertFront(alloca);                            // allocate instructions should be inserted into the begin of the entry block.
         se->setAddr(addr);
         Operand *src = it->getOperand();
-        fprintf(stderr, "name is %s, \n", ((IdentifierSymbolEntry *)(it->getSymPtr()))->getName().c_str());
         /***
          * We haven't implemented array yet, the lval can only be ID. So we just store the result of the `expr` to the addr of the id.
          * If you want to implement array, you have to caculate the address first and then store the result into it.
@@ -1402,18 +1393,31 @@ ExprNode *typeCast(ExprNode *fromNode, Type *to)
         !(from == TypeSystem::constFloatType && to == TypeSystem::floatType) &&
         !(from == TypeSystem::constBoolType && to == TypeSystem::boolType)) // need cast
     {
-        if (fromNode->getSymPtr()->isConstant()) // 字面常量的转换不再占用隐式转换ast节点
+        if (fromNode->getSymPtr()->getType()->isConst()) // 常量的转换不再占用隐式转换ast节点
         {
-            fromNode->setType(Var2Const(to));
+            double val;
             if (to == TypeSystem::boolType || to == TypeSystem::constBoolType)
-                fromNode->setValue(static_cast<bool>(fromNode->getValue()));
+                val = static_cast<bool>(fromNode->getValue());
             else if (to == TypeSystem::intType || to == TypeSystem::constIntType)
-                fromNode->setValue(static_cast<int>(fromNode->getValue()));
+                val = static_cast<int>(fromNode->getValue());
             else
             {
                 assert(to == TypeSystem::floatType || to == TypeSystem::constFloatType);
-                fromNode->setValue(static_cast<double>(fromNode->getValue()));
+                val = static_cast<double>(fromNode->getValue());
             }
+            // 字面常量
+            if (fromNode->getSymPtr()->isConstant())
+                ;
+            // 常变量
+            else
+            {
+                assert(fromNode->getSymPtr()->isVariable());
+                auto newSymPtr = new IdentifierSymbolEntry(*(IdentifierSymbolEntry *)(fromNode->getSymPtr()));
+                fromNode->setSymPtr(newSymPtr);
+                fromNode->setDst(new Operand(newSymPtr));
+            }
+            fromNode->getSymPtr()->setType(Var2Const(to));
+            fromNode->getSymPtr()->setValue(val);
             return fromNode;
         }
         // 类型检查2：隐式转换

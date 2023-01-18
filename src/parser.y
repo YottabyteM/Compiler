@@ -213,7 +213,10 @@ UnaryExpr
             std::vector<ExprNode *> RParams = dynamic_cast<FuncCallParamsNode *>$3->getParams();
             std::vector<Type *> FParamsType = dynamic_cast<FunctionType *>(se->getType())->getParamsType();
             for(size_t i = 0; i != RParams.size(); i++)
-                RParams[i] = typeCast(RParams[i], FParamsType[i]);
+            {
+                if(!FParamsType[i]->isARRAY())
+                    RParams[i] = typeCast(RParams[i], FParamsType[i]);
+            }
             dynamic_cast<FuncCallParamsNode *>$3->setParams(RParams);
         }
         Type *retType = dynamic_cast<FunctionType *>(se->getType())->getRetType();
@@ -409,7 +412,7 @@ AssignStmt
         if($1->getType()->isConst()) {
             fprintf(stderr, "%s can't assign a constant which can only be read", dynamic_cast<IdentifierSymbolEntry*>(($1)->getSymPtr())->getName().c_str());
             assert(!$1->getType()->isConst());
-            $1->setValue(t->getValue()); // 常量定义后应该不会再赋值，这段话不会执行
+            // $1->setValue(t->getValue()); // 常量定义后应该不会再赋值，这段话不会执行
         }
         $$ = new AssignStmt($1, t); 
     }

@@ -51,11 +51,16 @@ protected:
 public:
     ExprNode(SymbolEntry *symbolEntry, bool be_array = false) : symbolEntry(symbolEntry), dst(new Operand(symbolEntry)), is_array_ele(be_array){};
     Type *getType();
-    void setType(Type *type);
     double getValue();
-    void setValue(double value);
     Operand *getOperand() { return dst; };
     SymbolEntry *getSymPtr() { return symbolEntry; };
+    void setSymPtr(SymbolEntry *newSymPtr) { symbolEntry = newSymPtr; };
+    void setDst(Operand *newDst)
+    {
+        if (dst != nullptr)
+            delete dst;
+        dst = newDst;
+    }
     ~ExprNode(){};
 };
 
@@ -278,7 +283,7 @@ public:
     DeclStmt(Id *id, InitNode *expr = nullptr, bool isConst = false, bool isArray = false);
     void setNext(DeclStmt *next);
     DeclStmt *getNext();
-    void setHead(DeclStmt* head){this->head = head;};
+    void setHead(DeclStmt *head) { this->head = head; };
     DeclStmt *getHead() { return head; };
     void output(int level);
     // void typeCheck();
