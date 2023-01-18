@@ -1196,7 +1196,6 @@ void FuncCallParamsNode::genCode()
 {
     for (auto it : paramsList)
     {
-        fprintf(stderr, "%s", it->getOperand()->getType()->toStr().c_str());
         it->genCode();
     }
 }
