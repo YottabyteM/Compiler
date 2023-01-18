@@ -308,7 +308,28 @@ std::vector<Type *> FuncCallParamsNode::getParamsType()
 {
     std::vector<Type *> ans;
     for (auto param : paramsList)
-        ans.push_back(param->getType());
+    {
+        if (!param->getSymPtr()->getType()->isARRAY())
+            ans.push_back(param->getType());
+        else 
+        {
+            if (((ArrayType*)param->getSymPtr()->getType())->fetch().size() == ((Id*)param)->getidxsize()) {
+                ans.push_back(param->getType());
+            }
+            else 
+            {
+                int t = ((Id*)param)->getidxsize();
+                Type* cu_type = (ArrayType *)(param->getSymPtr()->getType());
+                std::vector<int> cud = ((ArrayType*)cu_type)->fetch();
+                while (t -- ) {
+                    cud.erase(cud.begin());
+                }
+                ((ArrayType*)cu_type)->SetDim(cud);
+                cu_type = new PointerType(cu_type);
+                ans.push_back(cu_type);
+            }
+        }
+    }
     return ans;
 }
 
@@ -500,10 +521,31 @@ void Id::genCode()
             }
             else
             {
-                if (curr_type->getElemType()->isInt())
-                    dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
-                else
-                    dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
+                if (indices->getExprList().size() == ((ArrayType*)symbolEntry->getType())->fetch().size()) {
+                    if (curr_type->getElemType()->isInt())
+                        dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel()));
+                    else
+                        dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
+                }
+                else 
+                {
+                    if (curr_type->isIntArray())
+                    {
+                        if (curr_type->isConst())
+                            curr_type = new ConstIntArrayType();
+                        else
+                            curr_type = new IntArrayType();
+                    }
+                    else
+                    {
+                        if (curr_type->isConst())
+                            curr_type = new ConstFloatArrayType();
+                        else
+                            curr_type = new FloatArrayType();
+                    }
+                    curr_type->SetDim(currr_dim);
+                    dst1 = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+                }
             }
             new LoadInstruction(dst1, new_dst, bb);
             dst = dst1;
