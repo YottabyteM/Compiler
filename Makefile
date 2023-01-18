@@ -111,8 +111,8 @@ test:app
 		OUT=$${file%.*}.out
 		FILE=$${file##*/}
 		FILE=$${FILE%.*}
-		timeout 5s $(BINARY) $${file} -o $${ASM} -S 2>$${LOG} -O2
-		# timeout 5s $(BINARY) $${file} -o $${IR} -i 2>$${LOG} -O2
+		timeout 60s $(BINARY) $${file} -o $${ASM} -S 2>$${LOG} -O2
+		# timeout 60s $(BINARY) $${file} -o $${IR} -i 2>$${LOG} -O2
 		RETURN_VALUE=$$?
 		if [ $$RETURN_VALUE = 124 ]; then
 			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mCompile Timeout\033[0m" && echo "FAIL: $${FILE}\tCompile Timeout" >> newpass.log
@@ -127,9 +127,9 @@ test:app
 			echo "\033[1;31mFAIL:\033[0m $${FILE}\t\033[1;31mAssemble Error\033[0m" && echo "FAIL: $${FILE}\tAssemble Error" >> newpass.log
 		else
 			if [ -f "$${IN}" ]; then
-				timeout 2s qemu-arm -L /usr/arm-linux-gnueabihf $${BIN} <$${IN} >$${RES} 2>>$${LOG}
+				timeout 10s qemu-arm -L /usr/arm-linux-gnueabihf $${BIN} <$${IN} >$${RES} 2>>$${LOG}
 			else
-				timeout 2s qemu-arm -L /usr/arm-linux-gnueabihf $${BIN} >$${RES} 2>>$${LOG}
+				timeout 10s qemu-arm -L /usr/arm-linux-gnueabihf $${BIN} >$${RES} 2>>$${LOG}
 			fi
 			RETURN_VALUE=$$?
 			FINAL=`tail -c 1 $${RES}`

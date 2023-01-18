@@ -259,9 +259,18 @@ void LinearScan::genSpillCode()
 
         for (auto def : interval->defs)
         {
-            assert(isShifterOperandVal((unsigned)interval->disp));
             MachineBlock *block = def->getParent()->getParent();
-            block->insertAfter(def->getParent(), new StoreMInstruction(block, new MachineOperand(*def), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+            auto pos = def->getParent();
+            auto offset = new MachineOperand(MachineOperand::IMM, -interval->disp);
+            if (offset->isIllegalShifterOperand())
+            {
+                auto internal_reg = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel());
+                auto next_pos = new LoadMInstruction(def->getParent()->getParent(), internal_reg, offset);
+                block->insertAfter(pos, next_pos);
+                offset = new MachineOperand(*internal_reg);
+                pos = next_pos;
+            }
+            block->insertAfter(pos, new StoreMInstruction(block, new MachineOperand(*def), new MachineOperand(MachineOperand::REG, 11), offset));
         }
     }
 }

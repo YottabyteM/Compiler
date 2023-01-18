@@ -84,6 +84,8 @@ void SimplifyCFG::pass()
                     succs[0]->addPred(pred);
                     // toDO : PHI
                 }
+                if (bb == func->getEntry())
+                    func->setEntry(succs[0]);
                 func->remove(bb);
                 freeList.insert(bb);
             }

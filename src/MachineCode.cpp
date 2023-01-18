@@ -796,7 +796,7 @@ void MachineFunction::output()
         offset->setVal(offset->getVal() + 4 * (regs.size() + sregs.size()));
     // fp = sp
     fprintf(yyout, "\tmov fp, sp\n");
-    if (dynamic_cast<IdentifierSymbolEntry *>(sym_ptr)->need8BytesAligned() &&
+    if (/*dynamic_cast<IdentifierSymbolEntry *>(sym_ptr)->need8BytesAligned() && */
         (4 * (regs.size() + sregs.size() + std::max(0, (int)dynamic_cast<FunctionType *>(sym_ptr->getType())->getParamsType().size() - 4)) + stack_size) % 8)
         stack_size += 4;
     // Allocate stack space for local variable
