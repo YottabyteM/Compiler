@@ -543,31 +543,47 @@ void Id::genCode()
             }
             else
             {
-                std::vector<int> FunP(cur_type->fetch());
+                std::vector<int> FunP(((ArrayType*)symbolEntry->getType())->fetch());
                 Type *curr_type;
                 if (FunP.size() > 0)
                 {
                     FunP.erase(FunP.begin());
-                    if (cur_type->isIntArray())
-                    {
-                        if (cur_type->isConst())
-                            curr_type = new ConstIntArrayType();
+                    if (FunP.size() != 0) {
+                        if (cur_type->isIntArray())
+                        {
+                            if (cur_type->isConst())
+                                curr_type = new ConstIntArrayType();
+                            else
+                                curr_type = new IntArrayType();
+                        }
                         else
-                            curr_type = new IntArrayType();
+                        {
+                            if (cur_type->isConst())
+                                curr_type = new ConstFloatArrayType();
+                            else
+                                curr_type = new FloatArrayType();
+                        }
+                        ((ArrayType *)curr_type)->SetDim(FunP);
                     }
                     else
                     {
-                        if (cur_type->isConst())
-                            curr_type = new ConstFloatArrayType();
+                        if (cur_type->isIntArray())
+                        {
+                            if (cur_type->isConst())
+                                curr_type = TypeSystem::constIntType;
+                            else
+                                curr_type = TypeSystem::intType;
+                        }
                         else
-                            curr_type = new FloatArrayType();
+                        {
+                            if (cur_type->isConst())
+                                curr_type = TypeSystem::constFloatType;
+                            else
+                                curr_type = TypeSystem::floatType;
+                        }
                     }
-                    ((ArrayType *)curr_type)->SetDim(FunP);
                 }
-                else if (cur_type->isIntArray())
-                    curr_type = new IntType(32);
-                else
-                    curr_type = new FloatType(32);
+                else assert(0);
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                 dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 new GepInstruction(dst, addr, std::vector<Operand *>{nullptr, idx}, bb);
