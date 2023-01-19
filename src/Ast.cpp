@@ -480,6 +480,7 @@ void Id::genCode()
             if (isleft)
             {
                 arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+                dst = arrayAddr;
                 return;
             }
             Operand* new_dst;

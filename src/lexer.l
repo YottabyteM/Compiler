@@ -1,5 +1,4 @@
 %option noyywrap
-%option yylineno
 %{
     #define YY_NO_UNPUT
     #define YY_NO_INPUT
@@ -23,10 +22,10 @@
     bool dump_first_line = true;
     void DEBUG_FOR_LEX(std::string token, std::string lexeme){
         if(dump_first_line){
-            fprintf(yyout, "[DEBUG LEX]:  %12s%12s%12s%12s%12s\n","token", "lexeme", "lineno", "offset", "blockpart");
+            fprintf(yyout, "[DEBUG LEX]:  %12s%12s%12s%12s%12s\n","token", "lexeme", "offset", "blockpart");
             dump_first_line = false;
         }
-        fprintf(yyout, "[DEBUG LEX]:  %12s%12s%12d%12d%12d\n", token.c_str(), lexeme.c_str(), yylineno, offset, part);
+        fprintf(yyout, "[DEBUG LEX]:  %12s%12s%12d%12d\n", token.c_str(), lexeme.c_str(), offset, part);
     }
 %}
 
@@ -36,19 +35,18 @@ OCT 0[1-7][0-7]*
 DECIMAL_FLOAT ((([0-9]*[.][0-9]*([eE][+-]?[0-9]+)?)|([0-9]+[eE][+-]?[0-9]+))[fLlL]?)
 HEXADECIMAL_FLOAT (0[xX](([0-9A-Fa-f]*[.][0-9A-Fa-f]*([pP][+-]?[0-9]+)?)|([0-9A-Fa-f]+[pP][+-]?[0-9]+))[fLlL]?)
 ID [[:alpha:]_][[:alpha:][:digit:]_]*
-LINECOMMENT (\/\/[^\n]*)
-
-commentblockbegin "/*"
-commentelement .|\n
-commentblockend "*/"
 EOL (\r\n|\n|\r)
 WHITE [\t ]
-%x BLOCKCOMMENT
 
+commentblockbegin \/\*
+commentelement .
+commentblockend \*\/
+%x BLOCKCOMMENT
+LINECOMMENT (\/\/[^\n]*)
 %%
 {commentblockbegin} {BEGIN BLOCKCOMMENT;}
 <BLOCKCOMMENT>{commentelement} {}
-<BLOCKCOMMENT>{commentblockend} {/*/**/BEGIN INITIAL;}
+<BLOCKCOMMENT>{commentblockend} {BEGIN INITIAL;}
 
 "int" {
     if(dump_tokens){
@@ -504,7 +502,7 @@ WHITE [\t ]
     yylval.itype = dec;
     return INTEGERCONST;
 }
-{EOL} {
+<*>{EOL} {
     if(dump_tokens)
         offset = 1;
 } 

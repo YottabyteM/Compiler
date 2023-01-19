@@ -109,7 +109,7 @@ test:app
 		OUT=$${file%.*}.out
 		FILE=$${file##*/}
 		FILE=$${FILE%.*}
-		timeout 60s $(BINARY) $${file} -o $${ASM} -S 2>$${LOG} -O2
+		timeout 5s $(BINARY) $${file} -o $${ASM} -S 2>$${LOG} -O2
 		# timeout 60s $(BINARY) $${file} -o $${IR} -i 2>$${LOG} -O2
 		RETURN_VALUE=$$?
 		if [ $$RETURN_VALUE = 124 ]; then

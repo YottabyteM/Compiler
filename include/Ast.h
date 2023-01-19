@@ -172,11 +172,11 @@ class Id : public ExprNode
 private:
     IndicesNode *indices;
     bool is_array = false, is_array_ele = false; // is_array is array. is_array_ele is array ele
-    bool isleft;
+    bool isleft = false;
     bool is_FP = false;
 
 public:
-    Id(SymbolEntry *se, bool be_array = false, bool isleft = false, bool is_fp = false) : ExprNode(se, be_array), is_FP(is_fp)
+    Id(SymbolEntry *se, bool be_array = false, bool isleft = false, bool is_fp = false) : ExprNode(se, be_array), is_FP(is_fp), isleft(isleft)
     {
         indices = nullptr;
         is_array_ele = se->getType()->isARRAY() && be_array;
