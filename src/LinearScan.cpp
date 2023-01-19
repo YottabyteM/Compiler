@@ -259,10 +259,9 @@ void LinearScan::genSpillCode()
             if (offset->isIllegalShifterOperand())
             {
                 auto internal_reg = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel());
-                auto next_pos = new LoadMInstruction(use->getParent()->getParent(), internal_reg, offset);
-                block->insertAfter(pos, next_pos);
+                auto ldr = new LoadMInstruction(use->getParent()->getParent(), internal_reg, offset);
+                block->insertBefore(pos, ldr);
                 offset = new MachineOperand(*internal_reg);
-                pos = next_pos;
             }
             block->insertBefore(pos, new LoadMInstruction(block, new MachineOperand(*use), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
         }
@@ -275,10 +274,10 @@ void LinearScan::genSpillCode()
             if (offset->isIllegalShifterOperand())
             {
                 auto internal_reg = new MachineOperand(MachineOperand::VREG, SymbolTable::getLabel());
-                auto next_pos = new LoadMInstruction(def->getParent()->getParent(), internal_reg, offset);
-                block->insertAfter(pos, next_pos);
+                auto ldr = new LoadMInstruction(def->getParent()->getParent(), internal_reg, offset);
+                block->insertAfter(pos, ldr);
                 offset = new MachineOperand(*internal_reg);
-                pos = next_pos;
+                pos = ldr;
             }
             block->insertAfter(pos, new StoreMInstruction(block, new MachineOperand(*def), new MachineOperand(MachineOperand::REG, 11), offset));
         }
