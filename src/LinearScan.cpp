@@ -263,7 +263,7 @@ void LinearScan::genSpillCode()
                 block->insertBefore(pos, ldr);
                 offset = new MachineOperand(*internal_reg);
             }
-            block->insertBefore(pos, new LoadMInstruction(block, new MachineOperand(*use), new MachineOperand(MachineOperand::REG, 11), new MachineOperand(MachineOperand::IMM, -interval->disp)));
+            block->insertBefore(pos, new LoadMInstruction(block, new MachineOperand(*use), new MachineOperand(MachineOperand::REG, 11), offset));
         }
 
         for (auto def : interval->defs)

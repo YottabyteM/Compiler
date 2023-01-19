@@ -148,7 +148,7 @@ bool MachineOperand::isIllegalShifterOperand()
     assert(valType->isInt());
     signed signed_val = (int)(this->val);
     bin_val = reinterpret_cast<unsigned &>(signed_val);
-    return this->val >= 0 ? !isShifterOperandVal(bin_val) : !isShifterOperandVal(~bin_val + 1);
+    return this->val >= 0 ? !isShifterOperandVal(bin_val) : signed_val < -255;
 }
 
 void MachineInstruction::printCond()
