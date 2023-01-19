@@ -555,6 +555,7 @@ void Id::genCode()
             {
                 std::vector<int> FunP(((ArrayType *)symbolEntry->getType())->fetch());
                 Type *curr_type;
+                cur_type = ((ArrayType *)getSymPtr()->getType());
                 if (FunP.size() > 0)
                 {
                     FunP.erase(FunP.begin());

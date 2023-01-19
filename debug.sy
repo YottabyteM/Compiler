@@ -1,13 +1,15 @@
-int f(int a[])
-{
-  return a[0];
+int aa(int i, float x[]) {
+  return i;
 }
 
 int main()
 {
-  int a[5][5][5][5][5];
-  getarray(a[2][2][2][2]);
-  putarray(5, a[2][2][2][2]);
-  putint(f(a[2][2][2][2]));
-  return 0;
+  int x = 0;
+  float y = 1.0;
+  float b[2] = {y, y + 1};
+  int a[2] = {x, x + 1};
+  int c[2] = {x, x + 1};
+  aa(1, b);
+  return 1;
+  return 1;
 }
