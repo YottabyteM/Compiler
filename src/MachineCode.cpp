@@ -796,7 +796,7 @@ void MachineFunction::output()
         offset->setVal(offset->getVal() + 4 * (regs.size() + sregs.size()));
     // fp = sp
     fprintf(yyout, "\tmov fp, sp\n");
-    if (/*dynamic_cast<IdentifierSymbolEntry *>(sym_ptr)->need8BytesAligned() && */
+    if (dynamic_cast<IdentifierSymbolEntry *>(sym_ptr)->need8BytesAligned() &&
         (4 * (regs.size() + sregs.size() + std::max(0, (int)dynamic_cast<FunctionType *>(sym_ptr->getType())->getParamsType().size() - 4)) + stack_size) % 8)
         stack_size += 4;
     // Allocate stack space for local variable
@@ -841,17 +841,7 @@ void MachineFunction::output()
         fprintf(yyout, ".L%s_END:\n", this->sym_ptr->toStr().erase(0, 1).c_str()); // skip '@'
     // recycle stack space
     if (stack_size)
-    {
-        if (!isShifterOperandVal(stack_size))
-        {
-            auto reg_no = (*saved_rregs.begin());
-            assert(reg_no < 11);
-            fprintf(yyout, "\tldr r%d, =%d\n", reg_no, stack_size);
-            fprintf(yyout, "\tadd sp, sp, r%d\n", reg_no);
-        }
-        else
-            fprintf(yyout, "\tadd sp, sp, #%d\n", stack_size);
-    }
+        fprintf(yyout, "\tmov sp, fp\n");
     // Restore saved registers
     i = 0;
     while (i != sregs.size())

@@ -90,15 +90,15 @@ int main(int argc, char *argv[])
     }
     if (optimize)
     {
-        // SimplifyCFG sc(&unit);
+        SimplifyCFG sc(&unit);
+        sc.pass();
+        Mem2Reg m2r(&unit);
+        m2r.pass();
         // sc.pass();
-        // Mem2Reg m2r(&unit);
-        // m2r.pass();
-        // // sc.pass();
-        // ElimPHI ep(&unit);
-        // ep.pass();
+        ElimPHI ep(&unit);
+        ep.pass();
         // sc.pass();
-        // fprintf(stderr, "opt ir generated\n");
+        fprintf(stderr, "opt ir generated\n");
     }
     if (dump_ir && optimize)
     {

@@ -23,7 +23,7 @@ void SimplifyCFG::pass()
             std::vector<BasicBlock *> preds(bb->pred_begin(), bb->pred_end());
             std::vector<BasicBlock *> succs(bb->succ_begin(), bb->succ_end());
             // 消除空的基本块，比如某些end_bb
-            if (bb->empty())
+            if (bb->empty() && bb != func->getEntry())
             {
                 assert(bb->succEmpty());
                 for (auto pred : preds)
@@ -54,6 +54,8 @@ void SimplifyCFG::pass()
             else if (bb->begin()->getNext() == bb->end() && bb->begin()->isUncond())
             {
                 assert(bb->getNumOfSucc() == 1);
+                if (bb == func->getEntry() && succs[0]->getNumOfPred())
+                    goto Next;
                 succs[0]->removePred(bb);
                 for (auto pred : preds)
                 {
@@ -90,7 +92,7 @@ void SimplifyCFG::pass()
                 freeList.insert(bb);
             }
             // 如果仅有一个前驱且该前驱仅有一个后继，将基本块与前驱合并
-            else if (bb->getNumOfPred() == 1 && (*(bb->pred_begin()))->getNumOfSucc() == 1)
+            else if (bb->getNumOfPred() == 1 && (*(bb->pred_begin()))->getNumOfSucc() == 1 && bb != func->getEntry())
             {
                 auto pred = *(bb->pred_begin());
                 pred->removeSucc(bb);
@@ -116,6 +118,7 @@ void SimplifyCFG::pass()
                 func->remove(bb);
                 freeList.insert(bb);
             }
+        Next:
             q.pop();
             for (auto succ : succs)
             {

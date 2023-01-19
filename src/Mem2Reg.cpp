@@ -6,6 +6,8 @@ static std::map<BasicBlock *, std::set<BasicBlock *>> SDoms;
 static std::map<Instruction *, unsigned> InstNumbers;
 static std::vector<PhiInstruction *> newPHIs;
 static std::set<Instruction *> freeList;
+
+static std::map<Operand *, std::set<PhiInstruction *>> defs;
 struct AllocaInfo
 {
 
@@ -348,6 +350,16 @@ static bool promoteSingleBlockAlloca(AllocaInstruction *alloca)
     return true;
 }
 
+static bool StoreBeforeLoad(BasicBlock *BB, AllocaInstruction *alloca)
+{
+    for (auto I = BB->begin(); I != BB->end(); I = I->getNext())
+        if (I->isLoad() && I->getUses()[0]->getEntry() == alloca->getDef()[0]->getEntry())
+            return false;
+        else if (I->isStore() && I->getUses()[0]->getEntry() == alloca->getDef()[0]->getEntry())
+            return true;
+    return false;
+}
+
 // 对于一个alloca，检查每一个usingblock，是否在对这个变量load之前有store，有则说明原来的alloca变量被覆盖了，不是live in的
 static std::set<BasicBlock *> ComputeLiveInBlocks(AllocaInstruction *alloca, AllocaInfo &Info)
 {
@@ -358,14 +370,8 @@ static std::set<BasicBlock *> ComputeLiveInBlocks(AllocaInstruction *alloca, All
     std::set<BasicBlock *> LiveInBlocks = UseBlocks;
     for (auto BB : BlocksToCheck)
     {
-        for (auto I = BB->begin(); I != BB->end(); I = I->getNext())
-            if (I->isLoad() && I->getUses()[0]->getEntry() == alloca->getDef()[0]->getEntry())
-                break;
-            else if (I->isStore() && I->getUses()[0]->getEntry() == alloca->getDef()[0]->getEntry())
-            {
-                LiveInBlocks.erase(BB);
-                break;
-            }
+        if (StoreBeforeLoad(BB, alloca))
+            LiveInBlocks.erase(BB);
     }
     // bfs，迭代添加前驱
     std::queue<BasicBlock *> workList;
@@ -377,14 +383,14 @@ static std::set<BasicBlock *> ComputeLiveInBlocks(AllocaInstruction *alloca, All
         workList.push(bb);
         is_visited[bb] = true;
     }
-    for (auto bb : DefBlocks) // 到def not use的基本块， live in的迭代终止
-        is_visited[bb] = true;
+    // for (auto bb : DefBlocks) // 到def not use的基本块， live in的迭代终止
+    //     is_visited[bb] = true;
     while (!workList.empty())
     {
         auto bb = workList.front();
         workList.pop();
         for (auto pred = bb->pred_begin(); pred != bb->pred_end(); pred++)
-            if (!is_visited[*pred])
+            if (!is_visited[*pred] && (DefBlocks.find(*pred) == DefBlocks.end() || !StoreBeforeLoad(*pred, alloca)))
             {
                 LiveInBlocks.insert(*pred);
                 workList.push(*pred);
@@ -491,11 +497,11 @@ void Mem2Reg::Rename(Function *func)
     // std::map<BasicBlock *, std::set<BasicBlock *>> DT_succ; // DominatorTree
     // // 将IDom反向得到DominatorTree
     // for (auto kv : IDom)
-    //     DT_succ[kv.first].insert(*kv.second.begin());
+    //     DT_succ[*kv.second.begin()].insert(kv.first);
 
     using RenamePassData = std::pair<BasicBlock *, std::map<Operand *, Operand *>>; //(bb, addr2val)
 
-    // bfs-CFG
+    // bfs
     std::map<BasicBlock *, bool> isVisited;
     for (auto bb : func->getBlockList())
         isVisited[bb] = false;
@@ -540,16 +546,27 @@ void Mem2Reg::Rename(Function *func)
             {
                 assert(inst->getDef()[0]->getEntry()->getType()->isPTR());
                 auto new_dst = new Operand(new TemporarySymbolEntry(dynamic_cast<PointerType *>(inst->getDef()[0]->getType())->getValType(),
-                                                                    dynamic_cast<TemporarySymbolEntry *>(inst->getDef()[0]->getEntry())->getLabel()));
+                                                                    /*dynamic_cast<TemporarySymbolEntry *>(inst->getDef()[0]->getEntry())->getLabel()*/
+                                                                    SymbolTable::getLabel()));
                 IncomingVals[inst->getDef()[0]] = new_dst;
                 dynamic_cast<PhiInstruction *>(inst)->updateDst(new_dst); // i32*->i32
             }
         }
         for (auto succ = BB->succ_begin(); succ != BB->succ_end(); succ++)
+        // for (auto succ : DT_succ[BB])
         {
+            // workList.push(std::make_pair(succ, IncomingVals));
+            // for (auto phi = succ->begin(); phi != succ->end() && phi->isPHI(); phi = phi->getNext())
+            // {
+            //     if (IncomingVals.count(dynamic_cast<PhiInstruction *>(phi)->getAddr()))
+            //         dynamic_cast<PhiInstruction *>(phi)->addEdge(BB, IncomingVals[dynamic_cast<PhiInstruction *>(phi)->getAddr()]);
+            // }
             workList.push(std::make_pair(*succ, IncomingVals));
             for (auto phi = (*succ)->begin(); phi != (*succ)->end() && phi->isPHI(); phi = phi->getNext())
-                dynamic_cast<PhiInstruction *>(phi)->addEdge(BB, IncomingVals[dynamic_cast<PhiInstruction *>(phi)->getAddr()]);
+            {
+                if (IncomingVals.count(dynamic_cast<PhiInstruction *>(phi)->getAddr()))
+                    dynamic_cast<PhiInstruction *>(phi)->addEdge(BB, IncomingVals[dynamic_cast<PhiInstruction *>(phi)->getAddr()]);
+            }
         }
     }
     SimplifyInstruction();

@@ -478,7 +478,8 @@ void FuncCallInstruction::output() const
 PhiInstruction::PhiInstruction(Operand *dst, BasicBlock *insert_bb) : Instruction(PHI, insert_bb)
 {
     def_list.push_back(dst);
-    // dst->setDef(this);
+    // if (dst->getDef() == nullptr)
+    //     dst->setDef(this);
     addr = dst;
 }
 
@@ -595,8 +596,8 @@ MachineOperand *Instruction::genMachineOperand(Operand *ope)
         }
         else
         {
-            // assert(0);
-            // exit(0);
+            assert(0);
+            exit(0);
         }
     }
     return mope;
