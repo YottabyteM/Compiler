@@ -90,13 +90,13 @@ int main(int argc, char *argv[])
     }
     if (optimize)
     {
-        SimplifyCFG sc(&unit);
-        sc.pass();
-        Mem2Reg m2r(&unit);
-        m2r.pass();
+        // SimplifyCFG sc(&unit);
         // sc.pass();
-        ElimPHI ep(&unit);
-        ep.pass();
+        // Mem2Reg m2r(&unit);
+        // m2r.pass();
+        // // sc.pass();
+        // ElimPHI ep(&unit);
+        // ep.pass();
         // sc.pass();
         fprintf(stderr, "opt ir generated\n");
     }

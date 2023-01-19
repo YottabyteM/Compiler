@@ -435,24 +435,22 @@ void Id::genCode()
                     tempSrc = new_addr;
                 }
             }
-            if (currr_dim.size() != indices->getExprList().size() && !isPtr) is_FP = true;
+            if (currr_dim.size() != indices->getExprList().size() && !isPtr)
+                is_FP = true;
             if (!isPtr)
                 currr_dim.erase(currr_dim.begin());
             curr_type->SetDim(currr_dim);
             Operand *tempDst;
-            if (currr_dim.size() != 0)
-                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
-            else
-                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), SymbolTable::getLabel()));
+            // if (currr_dim.size() != 0)
+            // {
+            //     tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+            // }
+            // else
+            //     tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), SymbolTable::getLabel()));
             bool isFirst = true;
             for (auto idx : indices->getExprList())
             {
-                idx->genCode();
-                if (isPtr && isFirst)
-                    new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{idx->getOperand()}, bb);
-                else
-                    new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{nullptr, idx->getOperand()}, bb);
-                if (!currr_dim.empty())
+                if (!currr_dim.empty() && !isFirst)
                 {
                     currr_dim.erase(currr_dim.begin());
                     if (curr_type->isIntArray())
@@ -471,26 +469,36 @@ void Id::genCode()
                     }
                     curr_type->SetDim(currr_dim);
                 }
-                else
-                    break;
-                tempSrc = tempDst;
+                idx->genCode();
                 tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+                if (isPtr && isFirst)
+                    new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{idx->getOperand()}, bb);
+                else
+                    new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{nullptr, idx->getOperand()}, bb);
+                tempSrc = tempDst;
                 isFirst = false;
+            }
+            if (is_FP)
+            {
+                tempDst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
+                new GepInstruction(tempDst, tempSrc, std::vector<Operand *>{nullptr, nullptr}, bb);
+                tempSrc = tempDst;
             }
             if (isleft)
             {
-                arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+                arrayAddr = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
                 dst = arrayAddr;
                 return;
             }
-            Operand* new_dst;
+            Operand *new_dst;
             if (!isFirst)
-                new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
-            else 
+                new_dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
+            else
             {
                 if (curr_type->getElemType()->isAnyInt())
-                    new_dst = new Operand(new TemporarySymbolEntry(new PointerType(TypeSystem::intType), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
-                else new_dst = new Operand(new TemporarySymbolEntry(new PointerType(TypeSystem::floatType), ((TemporarySymbolEntry *)tempDst->getEntry())->getLabel()));
+                    new_dst = new Operand(new TemporarySymbolEntry(new PointerType(TypeSystem::intType), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
+                else
+                    new_dst = new Operand(new TemporarySymbolEntry(new PointerType(TypeSystem::floatType), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
             }
             if (!isPtr)
             {
@@ -506,7 +514,8 @@ void Id::genCode()
                 else
                     dst1 = new Operand(new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel()));
             }
-            if (is_FP) {
+            if (is_FP)
+            {
                 dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type->getElemType()), ((TemporarySymbolEntry *)tempSrc->getEntry())->getLabel()));
                 is_FP = false;
                 return;
@@ -544,12 +553,13 @@ void Id::genCode()
             }
             else
             {
-                std::vector<int> FunP(((ArrayType*)symbolEntry->getType())->fetch());
+                std::vector<int> FunP(((ArrayType *)symbolEntry->getType())->fetch());
                 Type *curr_type;
                 if (FunP.size() > 0)
                 {
                     FunP.erase(FunP.begin());
-                    if (FunP.size() != 0) {
+                    if (FunP.size() != 0)
+                    {
                         if (cur_type->isIntArray())
                         {
                             if (cur_type->isConst())
@@ -584,7 +594,8 @@ void Id::genCode()
                         }
                     }
                 }
-                else assert(0);
+                else
+                    assert(0);
                 Operand *idx = new Operand(new ConstantSymbolEntry(TypeSystem::constIntType, 0));
                 dst = new Operand(new TemporarySymbolEntry(new PointerType(curr_type), SymbolTable::getLabel()));
                 new GepInstruction(dst, addr, std::vector<Operand *>{nullptr, idx}, bb);

@@ -1,4 +1,5 @@
 %option noyywrap
+%option yylineno
 %{
     #define YY_NO_UNPUT
     #define YY_NO_INPUT
@@ -22,10 +23,10 @@
     bool dump_first_line = true;
     void DEBUG_FOR_LEX(std::string token, std::string lexeme){
         if(dump_first_line){
-            fprintf(yyout, "[DEBUG LEX]:  %12s%12s%12s%12s%12s\n","token", "lexeme", "offset", "blockpart");
+            fprintf(yyout, "[DEBUG LEX]:  %12s%12s%12s%12s%12s\n","token", "lexeme", "lineno", "offset", "blockpart");
             dump_first_line = false;
         }
-        fprintf(yyout, "[DEBUG LEX]:  %12s%12s%12d%12d\n", token.c_str(), lexeme.c_str(), offset, part);
+        fprintf(yyout, "[DEBUG LEX]:  %12s%12s%12d%12d%12d\n", token.c_str(), lexeme.c_str(), yylineno, offset, part);
     }
 %}
 
@@ -474,7 +475,6 @@ LINECOMMENT (\/\/[^\n]*)
         if (!cur_str[part].count(std::string(yytext))) cur_str[part].insert(std::string(yytext));
         is_stack[std::string(yytext)].push_back(part);
         DEBUG_FOR_LEX("ID", std::string(yytext));
-        fprintf(stderr, "ID size is %d\n", std::string(yytext).size());
         offset += strlen(yytext);
     }
     char* lexeme = new char[strlen(yytext) + 1];

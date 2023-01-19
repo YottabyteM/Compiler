@@ -32,7 +32,7 @@ float my_sin(float x) {
 
 float my_cos(float x) { return my_sin(x + PI / 2); }
 
-void write_mat(int mat[][MAX_DIM_Y], int n, int m) {
+void write_mat(float mat[][MAX_DIM_Y], int n, int m) {
   int i = 0;
   while (i < n) {
     putfloat(mat[i][0]);
@@ -125,7 +125,7 @@ int main() {
   write_mat(test_dct, dim_x, dim_y);
 
   idct(test_idct, test_dct, dim_x, dim_y);
-  write_mat(test_dct, dim_x, dim_y);
+  write_mat(test_idct, dim_x, dim_y);
 
   return 0;
 }

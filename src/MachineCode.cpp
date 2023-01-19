@@ -272,14 +272,14 @@ LoadMInstruction::LoadMInstruction(MachineBlock *p,
 
 void LoadMInstruction::output()
 {
-    // 这段只针对栈中偏移更新前合法但更新后不合法的情况
-    if (this->use_list.size() > 1 && this->use_list[1]->isImm() && this->use_list[1]->isIllegalShifterOperand())
-    {
-        fprintf(yyout, "\tldr ");
-        this->def_list[0]->output();
-        fprintf(yyout, ", =%d\n", (int)this->use_list[0]->getVal());
-        this->use_list[1] = this->def_list[0];
-    }
+    // // 这段只针对栈中偏移更新前合法但更新后不合法的情况
+    // if (this->use_list.size() > 1 && this->use_list[1]->isImm() && this->use_list[1]->isIllegalShifterOperand())
+    // {
+    //     fprintf(yyout, "\tldr ");
+    //     this->def_list[0]->output();
+    //     fprintf(yyout, ", =%d\n", (int)this->use_list[1]->getVal());
+    //     this->use_list[1] = this->def_list[0];
+    // }
 
     // 小的立即数用MOV优化一下，arm汇编器会自动做?
     if ((this->use_list.size() == 1) && this->use_list[0]->isImm() && !this->use_list[0]->isIllegalShifterOperand())
